@@ -1,0 +1,6 @@
+WEBPORT=80
+OCSP=http://localhost:80/ocsp
+CRL=http://localhost:80/CRL/{CID}.crl
+CRT=http://localhost:80/CRT/{CID}.crt
+CPS=https://gitee.com/wxgshuju/modpkica/
+CPS_Nonice=WOAINI\nniaiwo\n521

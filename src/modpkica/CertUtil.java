@@ -1,0 +1,444 @@
+package modpkica;
+
+import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.DERNull;
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.x509.AccessDescription;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
+import org.bouncycastle.asn1.x509.BasicConstraints;
+import org.bouncycastle.asn1.x509.CRLDistPoint;
+import org.bouncycastle.asn1.x509.DistributionPoint;
+import org.bouncycastle.asn1.x509.DistributionPointName;
+import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.GeneralName;
+import org.bouncycastle.asn1.x509.GeneralNames;
+import org.bouncycastle.asn1.x509.KeyPurposeId;
+import org.bouncycastle.asn1.x509.KeyUsage;
+import org.bouncycastle.asn1.x509.PolicyInformation;
+import org.bouncycastle.asn1.x509.PolicyQualifierInfo;
+import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
+import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
+import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
+import org.bouncycastle.crypto.params.ParametersWithID;
+import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.crypto.signers.SM2Signer;
+import org.bouncycastle.jce.spec.ECNamedCurveSpec;
+import org.bouncycastle.operator.ContentSigner;
+import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.X509v3CertificateBuilder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
+
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
+import java.math.BigInteger;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.MessageDigest;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
+import java.security.spec.ECGenParameterSpec;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
+
+import javax.security.auth.x500.X500Principal;
+
+/**
+ * CertUtil —— 密钥对生成与 X.509 证书生成 / 签名工具。
+ *
+ * <p><b>签名算法自适应规则</b>（核心）：
+ * <ul>
+ *   <li>RSA 颁发者 → {@code SHAxxxWithRSA}（SHA1/SHA256/SHA384/SHA512）</li>
+ *   <li>ECC 颁发者 → {@code ECDSAWithSHAxxx}</li>
+ *   <li>SM2 颁发者 → {@code SM3withSM2}（固定 SM3 摘要）</li>
+ * </ul>
+ *
+ * <p>SM2 签名必须用自定义 {@link SM2ContentSigner}：BC 标准 ContentSigner 走 JCA
+ * 时不会按 GB/T 32918 计算 ZA，因此这里手动用 {@link SM2Signer} +
+ * {@link ParametersWithID}（默认用户 ID）来完成 {@code e=SM3(ZA||TBS)}。
+ */
+public final class CertUtil {
+
+    /** 摘要名称集合，便于归一化 */
+    private static final Set<String> HASH_NAMES = new HashSet<>();
+
+    /** 注册 BC Provider（类加载时执行，所有程序入口都会用到本类） */
+    static {
+        Bc.init();
+        HASH_NAMES.add("SHA1");
+        HASH_NAMES.add("SHA-1");
+        HASH_NAMES.add("SHA256");
+        HASH_NAMES.add("SHA-256");
+        HASH_NAMES.add("SHA384");
+        HASH_NAMES.add("SHA-384");
+        HASH_NAMES.add("SHA512");
+        HASH_NAMES.add("SHA-512");
+        HASH_NAMES.add("SM3");
+    }
+
+    private CertUtil() {
+    }
+
+    // ============================ 密钥对生成 ============================
+
+    /** 生成 RSA 密钥对。 */
+    public static KeyPair generateRsaKeyPair(int bits) throws Exception {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", "BC");
+        kpg.initialize(bits, new SecureRandom());
+        return kpg.generateKeyPair();
+    }
+
+    /**
+     * 生成 ECC 密钥对（224/256/384/521，对应 secp224r1/secp256r1/secp384r1/secp521r1）。
+     */
+    public static KeyPair generateEccKeyPair(int bits) throws Exception {
+        String curve;
+        switch (bits) {
+            case 224:
+                curve = "secp224r1";
+                break;
+            case 384:
+                curve = "secp384r1";
+                break;
+            case 521:
+                curve = "secp521r1";
+                break;
+            case 256:
+            default:
+                curve = "secp256r1";
+                break;
+        }
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC", "BC");
+        kpg.initialize(new ECGenParameterSpec(curve));
+        return kpg.generateKeyPair();
+    }
+
+    /** 生成 SM2 密钥对（sm2p256v1）。 */
+    public static KeyPair generateSm2KeyPair() throws Exception {
+        return Sm2Util.generateSm2JcaKeyPair();
+    }
+
+    // ============================ 签名算法 OID ============================
+
+    /**
+     * 根据颁发者密钥类型与摘要返回签名算法 OID。
+     *
+     * @param keyType "RSA" / "ECC" / "SM2"
+     * @param hash   摘要名（RSA/ECC 时使用；SM2 忽略，固定 SM3）
+     */
+    public static ASN1ObjectIdentifier getSignatureAlgOid(String keyType, String hash) {
+        if ("SM2".equalsIgnoreCase(keyType)) {
+            return new ASN1ObjectIdentifier(Sm2Util.OID_SM3_WITH_SM2);
+        }
+        String h = normalizeHash(hash);
+        if ("RSA".equalsIgnoreCase(keyType)) {
+            switch (h) {
+                case "SHA1":
+                    return new ASN1ObjectIdentifier("1.2.840.113549.1.1.5");
+                case "SHA384":
+                    return new ASN1ObjectIdentifier("1.2.840.113549.1.1.12");
+                case "SHA512":
+                    return new ASN1ObjectIdentifier("1.2.840.113549.1.1.13");
+                case "SHA256":
+                default:
+                    return new ASN1ObjectIdentifier("1.2.840.113549.1.1.11");
+            }
+        }
+        // ECC
+        switch (h) {
+            case "SHA1":
+                return new ASN1ObjectIdentifier("1.2.840.10045.4.1");
+            case "SHA384":
+                return new ASN1ObjectIdentifier("1.2.840.10045.4.3.3");
+            case "SHA512":
+                return new ASN1ObjectIdentifier("1.2.840.10045.4.3.4");
+            case "SHA256":
+            default:
+                return new ASN1ObjectIdentifier("1.2.840.10045.4.3.2");
+        }
+    }
+
+    /** 归一化摘要名为 SHA1/SHA256/SHA384/SHA512/SM3。 */
+    private static String normalizeHash(String hash) {
+        if (hash == null) {
+            return "SHA256";
+        }
+        String h = hash.toUpperCase().replace("-", "");
+        switch (h) {
+            case "SHA1":
+                return "SHA1";
+            case "SHA256":
+                return "SHA256";
+            case "SHA384":
+                return "SHA384";
+            case "SHA512":
+                return "SHA512";
+            case "SM3":
+                return "SM3";
+            default:
+                return "SHA256";
+        }
+    }
+
+    // ============================ ContentSigner ============================
+
+    /**
+     * 读取 PEM 私钥文件并转为 JCA PrivateKey（RSA/ECC/SM2 通用）。
+     *
+     * <p>内部通过 {@code JcaPEMKeyConverter} 把 BC 的 AsymmetricKeyParameter
+     * 转为 JCA PrivateKey，供 JcaContentSignerBuilder 等使用。
+     */
+    public static PrivateKey readJcaPrivateKey(String path) throws Exception {
+        org.bouncycastle.crypto.params.AsymmetricKeyParameter akp = PemIO.readPrivateKey(path);
+        return new org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter().setProvider("BC")
+                .getPrivateKey(org.bouncycastle.crypto.util.PrivateKeyInfoFactory
+                        .createPrivateKeyInfo(akp));
+    }
+
+    /**
+     * 根据颁发者私钥与算法类型构造 ContentSigner。
+     * SM2 时返回自定义 {@link SM2ContentSigner}。
+     *
+     * @param key     颁发者私钥（JCA PrivateKey）
+     * @param keyType "RSA" / "ECC" / "SM2"
+     * @param hash    摘要名
+     */
+    public static ContentSigner createContentSigner(PrivateKey key, String keyType, String hash)
+            throws OperatorCreationException {
+        if ("SM2".equalsIgnoreCase(keyType)) {
+            // JCA 私钥 -> ECPrivateKeyParameters
+            ECPrivateKeyParameters priv = Sm2Util.toEcPrivateParams(key);
+            return new SM2ContentSigner(priv);
+        }
+        String h = normalizeHash(hash).toLowerCase();
+        String jcaAlg;
+        if ("RSA".equalsIgnoreCase(keyType)) {
+            jcaAlg = h + "WITHRSA";
+        } else {
+            // ECC（标准椭圆曲线）只支持 SHA1/SHA256/SHA384/SHA512；
+            // SM3withECDSA 仅对 SM2 曲线（sm2p256v1）有效，对普通 ECC 报 Unknown signature type
+            if ("sm3".equals(h)) {
+                throw new OperatorCreationException(
+                        "ECC 类型证书不支持 SM3 摘要（SM3 仅用于 SM2 国密），请改用 SHA256/SHA384/SHA512");
+            }
+            jcaAlg = h + "WITHECDSA";
+        }
+        return new JcaContentSignerBuilder(jcaAlg).setProvider("BC").build(key);
+    }
+
+    /**
+     * SM2 专用 ContentSigner。
+     *
+     * <p>BC 的 JcaContentSignerBuilder("SM3withSM2") 不保证按 GB/T 32918 计算 ZA，
+     * 这里直接用 SM2Signer + ParametersWithID（默认用户ID），对 getOutputStream()
+     * 收到的 TBS 原文计算 e=SM3(ZA||TBS)，输出 DER(r,s)。
+     */
+    public static class SM2ContentSigner implements ContentSigner {
+        private final AlgorithmIdentifier algId;
+        private final SM2Signer signer = new SM2Signer();
+        private final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+
+        public SM2ContentSigner(ECPrivateKeyParameters priv) {
+            this.algId = new AlgorithmIdentifier(
+                    new ASN1ObjectIdentifier(Sm2Util.OID_SM3_WITH_SM2), DERNull.INSTANCE);
+            // 外层 ParametersWithID，内层 ParametersWithRandom
+            ParametersWithID p = new ParametersWithID(
+                    new ParametersWithRandom(priv, new SecureRandom()),
+                    Sm2Util.getSm2UidBytes());
+            signer.init(true, p);
+        }
+
+        @Override
+        public AlgorithmIdentifier getAlgorithmIdentifier() {
+            return algId;
+        }
+
+        @Override
+        public OutputStream getOutputStream() {
+            return buffer;
+        }
+
+        @Override
+        public byte[] getSignature() {
+            byte[] msg = buffer.toByteArray();
+            signer.update(msg, 0, msg.length);
+            try {
+                return signer.generateSignature();
+            } catch (org.bouncycastle.crypto.CryptoException e) {
+                throw new IllegalStateException("SM2 签名失败", e);
+            }
+        }
+    }
+
+    // ============================ SubjectKeyIdentifier ============================
+
+    /**
+     * 计算公钥的 SubjectKeyIdentifier：对公钥 SubjectPublicKeyInfo 中的
+     * subjectPublicKey 位串做 SHA-1（RFC5280 方法 1）。
+     */
+    public static byte[] getSubjectKeyIdentifier(PublicKey pubKey) throws Exception {
+        // pubKey.getEncoded() 即 SubjectPublicKeyInfo DER
+        byte[] spki = pubKey.getEncoded();
+        // 解析出 subjectPublicKey 的原始位串内容
+        org.bouncycastle.asn1.x509.SubjectPublicKeyInfo info =
+                org.bouncycastle.asn1.x509.SubjectPublicKeyInfo.getInstance(spki);
+        byte[] keyBits = info.getPublicKeyData().getBytes();
+        MessageDigest md = MessageDigest.getInstance("SHA-1");
+        return md.digest(keyBits);
+    }
+
+    // ============================ 证书生成 ============================
+
+    /**
+     * 生成自签名根证书。
+     *
+     * @param subject   主体 DN
+     * @param kp        根密钥对
+     * @param serial    序列号
+     * @param notBefore 生效起
+     * @param notAfter  生效止
+     * @param keyType   "RSA" / "ECC" / "SM2"
+     * @param hash      摘要名
+     */
+    public static X509Certificate buildSelfSignedRoot(X500Principal subject, KeyPair kp,
+                                                      BigInteger serial, Date notBefore, Date notAfter,
+                                                      String keyType, String hash) throws Exception {
+        ContentSigner signer = createContentSigner(kp.getPrivate(), keyType, hash);
+        JcaX509v3CertificateBuilder cb = new JcaX509v3CertificateBuilder(
+                subject, serial, notBefore, notAfter, subject, kp.getPublic());
+
+        // KeyUsage: 证书签名 + CRL 签名
+        cb.addExtension(Extension.keyUsage, true,
+                new KeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign));
+        // BasicConstraints: 根 CA（无 pathLen 限制，对齐 Go 版）
+        cb.addExtension(Extension.basicConstraints, true, new BasicConstraints(true));
+        // SubjectKeyIdentifier
+        cb.addExtension(Extension.subjectKeyIdentifier, false,
+                new SubjectKeyIdentifier(getSubjectKeyIdentifier(kp.getPublic())));
+        // 自签根：AKI 等于 SKI
+        cb.addExtension(Extension.authorityKeyIdentifier, false,
+                new AuthorityKeyIdentifier(getSubjectKeyIdentifier(kp.getPublic())));
+
+        X509CertificateHolder holder = cb.build(signer);
+        return new JcaX509CertificateConverter().setProvider("BC").getCertificate(holder);
+    }
+
+    /**
+     * 由颁发者签发一张证书（终端或中间 CA）。
+     *
+     * @param issuerCert 颁发者证书
+     * @param issuerKey  颁发者私钥
+     * @param subject    新证书主体 DN
+     * @param subjectPub 新证书公钥
+     * @param serial     序列号
+     * @param notBefore  生效起
+     * @param notAfter   生效止
+     * @param keyType    颁发者类型 "RSA" / "ECC" / "SM2"
+     * @param hash       摘要名
+     * @param isCa       是否为 CA（true 则 BasicConstraints pathLen=0）
+     * @param crlUrl     CRL 分发点（可为空）
+     * @param ocspUrl    OCSP AIA（可为空）
+     * @param caIssuerUrl caIssuers AIA（可为空）
+     * @param cpsUri     CPS 策略 URI（可为空）
+     * @param userNotice 用户通告文本（可为空）
+     */
+    public static X509Certificate buildSignedCert(X509Certificate issuerCert, PrivateKey issuerKey,
+                                                   X500Principal subject, PublicKey subjectPub,
+                                                   BigInteger serial, Date notBefore, Date notAfter,
+                                                   String keyType, String hash, boolean isCa,
+                                                   String crlUrl, String ocspUrl, String caIssuerUrl,
+                                                   String cpsUri, String userNotice) throws Exception {
+        ContentSigner signer = createContentSigner(issuerKey, keyType, hash);
+        JcaX509v3CertificateBuilder cb = new JcaX509v3CertificateBuilder(
+                issuerCert, serial, notBefore, notAfter, subject, subjectPub);
+
+        // KeyUsage
+        int usage = KeyUsage.digitalSignature | KeyUsage.nonRepudiation | KeyUsage.keyEncipherment;
+        if (isCa) {
+            usage = KeyUsage.keyCertSign | KeyUsage.cRLSign;
+        }
+        cb.addExtension(Extension.keyUsage, true, new KeyUsage(usage));
+        // BasicConstraints：CA 无 pathLen 限制（对齐 Go 版，不启用 MaxPathLen）；非 CA 为 false
+        cb.addExtension(Extension.basicConstraints, true,
+                isCa ? new BasicConstraints(true) : new BasicConstraints(false));
+        // SubjectKeyIdentifier
+        byte[] ski = getSubjectKeyIdentifier(subjectPub);
+        cb.addExtension(Extension.subjectKeyIdentifier, false, new SubjectKeyIdentifier(ski));
+        // AuthorityKeyIdentifier（取颁发者公钥 SKI）
+        byte[] aki = getSubjectKeyIdentifier(issuerCert.getPublicKey());
+        cb.addExtension(Extension.authorityKeyIdentifier, false, new AuthorityKeyIdentifier(aki));
+
+        // CRL 分发点
+        if (crlUrl != null && !crlUrl.isEmpty()) {
+            GeneralName gn = new GeneralName(GeneralName.uniformResourceIdentifier, crlUrl);
+            GeneralNames gn1 = new GeneralNames(gn);
+            DistributionPoint dp = new DistributionPoint(
+                    new DistributionPointName(DistributionPointName.FULL_NAME, gn1), null, null);
+            cb.addExtension(Extension.cRLDistributionPoints, false, new CRLDistPoint(new DistributionPoint[]{dp}));
+        }
+
+        // AuthorityInfoAccess: OCSP + caIssuers
+        if ((ocspUrl != null && !ocspUrl.isEmpty()) || (caIssuerUrl != null && !caIssuerUrl.isEmpty())) {
+            ASN1EncodableVector vec = new ASN1EncodableVector();
+            if (ocspUrl != null && !ocspUrl.isEmpty()) {
+                vec.add(new AccessDescription(AccessDescription.id_ad_ocsp,
+                        new GeneralName(GeneralName.uniformResourceIdentifier, ocspUrl)));
+            }
+            if (caIssuerUrl != null && !caIssuerUrl.isEmpty()) {
+                vec.add(new AccessDescription(X509ObjectIdentifiers.id_ad_caIssuers,
+                        new GeneralName(GeneralName.uniformResourceIdentifier, caIssuerUrl)));
+            }
+            cb.addExtension(Extension.authorityInfoAccess, false,
+                    org.bouncycastle.asn1.x509.AuthorityInformationAccess.getInstance(
+                            new DERSequence(vec)));
+        }
+
+        // CertificatePolicies(CPS + UserNotice)
+        if (cpsUri != null && !cpsUri.isEmpty()) {
+            cb.addExtension(Extension.certificatePolicies, false,
+                    buildCpsPolicy(cpsUri, userNotice));
+        }
+
+        X509CertificateHolder holder = cb.build(signer);
+        return new JcaX509CertificateConverter().setProvider("BC").getCertificate(holder);
+    }
+
+    /**
+     * 构造 CertificatePolicies 扩展值（PolicyInformation + CPS URI + UserNotice）。
+     * 参考 Go 版 internal/cps/cps.go。
+     */
+    private static PolicyInformation buildCpsPolicy(String cpsUri, String userNotice) {
+        // 策略 OID（占位），限定符指向 CPS / UserNotice
+        ASN1ObjectIdentifier policyOid = new ASN1ObjectIdentifier("1.2.3.4.1");
+        java.util.List<PolicyQualifierInfo> qualifiers = new java.util.ArrayList<>();
+
+        // CPS URI（IA5String）：BC 便捷构造器自动使用 OID 1.3.6.1.5.5.7.2.1
+        qualifiers.add(new PolicyQualifierInfo(cpsUri));
+
+        // UserNotice（UTF8String）：OID 1.3.6.1.5.5.7.2.2
+        if (userNotice != null && !userNotice.isEmpty()) {
+            org.bouncycastle.asn1.x509.DisplayText dt =
+                    new org.bouncycastle.asn1.x509.DisplayText(userNotice);
+            org.bouncycastle.asn1.x509.UserNotice un =
+                    new org.bouncycastle.asn1.x509.UserNotice(null, dt);
+            qualifiers.add(new PolicyQualifierInfo(
+                    new ASN1ObjectIdentifier("1.3.6.1.5.5.7.2.2"), un));
+        }
+
+        ASN1EncodableVector qvec = new ASN1EncodableVector();
+        for (PolicyQualifierInfo q : qualifiers) {
+            qvec.add(q);
+        }
+        return new PolicyInformation(policyOid, new DERSequence(qvec));
+    }
+}
