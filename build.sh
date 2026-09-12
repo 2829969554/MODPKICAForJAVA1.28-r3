@@ -14,10 +14,8 @@ then
     exit 1
 fi
 
-# ---- FIX: Linux javac cannot expand BC185/* wildcard, use find to build classpath ----
-BC_JARS=$(find BC185 -maxdepth 1 -type f -name "*.jar" | tr '\n' ':')
-# 去掉末尾多余冒号
-BC_CP="${BC_JARS%:}"
+# ---- offline BC classpath (wildcard for javac/java) ----
+BC_CP="BC185/*"
 
 # ---- clean and recreate output dir ----
 if [ -d "out" ]; then
@@ -29,7 +27,6 @@ echo "============================================"
 echo "MODPKICA Java One-Click Build (offline)"
 echo "============================================"
 echo "[1/2] Compiling shared library and all 7 main programs..."
-echo "Classpath: $BC_CP"
 
 javac -encoding UTF-8 -cp "${BC_CP}" -d out src/modpkica/*.java
 
