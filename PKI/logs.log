@@ -1,0 +1,3858 @@
+2026/09/11 20:49:20
+WebAdmin API 异常
+/api/init 错误=java.lang.ClassCastException: class org.bouncycastle.asn1.DLSequence cannot be cast to class org.bouncycastle.asn1.ASN1OctetString (org.bouncycastle.asn1.DLSequence and org.bouncycastle.asn1.ASN1OctetString are in unnamed module of loader 'app')
+
+2026/09/11 20:49:30
+WebAdmin API 异常
+/api/init 错误=java.lang.ClassCastException: class org.bouncycastle.asn1.DLSequence cannot be cast to class org.bouncycastle.asn1.ASN1OctetString (org.bouncycastle.asn1.DLSequence and org.bouncycastle.asn1.ASN1OctetString are in unnamed module of loader 'app')
+
+2026/09/11 20:49:31
+WebAdmin API 异常
+/api/init 错误=java.lang.ClassCastException: class org.bouncycastle.asn1.DLSequence cannot be cast to class org.bouncycastle.asn1.ASN1OctetString (org.bouncycastle.asn1.DLSequence and org.bouncycastle.asn1.ASN1OctetString are in unnamed module of loader 'app')
+
+2026/09/11 20:49:32
+WebAdmin API 异常
+/api/init 错误=java.lang.ClassCastException: class org.bouncycastle.asn1.DLSequence cannot be cast to class org.bouncycastle.asn1.ASN1OctetString (org.bouncycastle.asn1.DLSequence and org.bouncycastle.asn1.ASN1OctetString are in unnamed module of loader 'app')
+
+2026/09/11 20:49:32
+WebAdmin API 异常
+/api/init 错误=java.nio.file.FileAlreadyExistsException: C:\Users\28299\Desktop\modpkica4JAVA\PKI\CERTS.txt.old.1789130972
+
+2026/09/11 20:49:37
+WebAdmin API 异常
+/api/init 错误=java.lang.ClassCastException: class org.bouncycastle.asn1.DLSequence cannot be cast to class org.bouncycastle.asn1.ASN1OctetString (org.bouncycastle.asn1.DLSequence and org.bouncycastle.asn1.ASN1OctetString are in unnamed module of loader 'app')
+
+2026/09/11 20:49:42
+ADMIN initOCSP
+OCSP 签名证书 13fbe86586cf8e5 算法=RSA
+
+2026/09/11 20:49:44
+ADMIN initTIMSTAMP
+TSA 证书 RSA_sha1 根=13fbe86586cf8e5
+
+2026/09/11 20:49:44
+ADMIN initTIMSTAMP
+TSA 证书 RSA_sha256 根=13fbe86586cf8e5
+
+2026/09/11 20:49:44
+ADMIN init
+初始化环境完成
+
+2026/09/11 20:51:16
+ADMIN initOCSP
+OCSP 签名证书 13fbe86586cf8e5 算法=RSA
+
+2026/09/11 20:51:24
+WebAdmin API 异常
+/api/makeroot 错误=java.lang.ClassCastException: class org.bouncycastle.asn1.DLSequence cannot be cast to class org.bouncycastle.asn1.ASN1OctetString (org.bouncycastle.asn1.DLSequence and org.bouncycastle.asn1.ASN1OctetString are in unnamed module of loader 'app')
+
+2026/09/11 20:51:35
+WebAdmin API 异常
+/api/makeroot 错误=java.lang.ClassCastException: class org.bouncycastle.asn1.DLSequence cannot be cast to class org.bouncycastle.asn1.ASN1OctetString (org.bouncycastle.asn1.DLSequence and org.bouncycastle.asn1.ASN1OctetString are in unnamed module of loader 'app')
+
+2026/09/11 20:51:40
+WebAdmin API 异常
+/api/makeroot 错误=java.lang.ClassCastException: class org.bouncycastle.asn1.DLSequence cannot be cast to class org.bouncycastle.asn1.ASN1OctetString (org.bouncycastle.asn1.DLSequence and org.bouncycastle.asn1.ASN1OctetString are in unnamed module of loader 'app')
+
+2026/09/11 20:51:42
+WebAdmin API 异常
+/api/makeroot 错误=java.lang.ClassCastException: class org.bouncycastle.asn1.DLSequence cannot be cast to class org.bouncycastle.asn1.ASN1OctetString (org.bouncycastle.asn1.DLSequence and org.bouncycastle.asn1.ASN1OctetString are in unnamed module of loader 'app')
+
+2026/09/11 20:51:43
+WebAdmin API 异常
+/api/makeroot 错误=java.lang.ClassCastException: class org.bouncycastle.asn1.DLSequence cannot be cast to class org.bouncycastle.asn1.ASN1OctetString (org.bouncycastle.asn1.DLSequence and org.bouncycastle.asn1.ASN1OctetString are in unnamed module of loader 'app')
+
+2026/09/11 20:51:45
+WebAdmin API 异常
+/api/makeroot 错误=java.lang.IllegalArgumentException: Unknown signature type requested: sm3WITHECDSA
+
+2026/09/11 20:51:53
+ADMIN makeroot
+根证书签发完成 CN=Test Root CA,O=My Org,C=CN
+
+2026/09/11 20:52:03
+WebAdmin API 异常
+/api/makeroot 错误=java.lang.ClassCastException: class org.bouncycastle.asn1.DLSequence cannot be cast to class org.bouncycastle.asn1.ASN1OctetString (org.bouncycastle.asn1.DLSequence and org.bouncycastle.asn1.ASN1OctetString are in unnamed module of loader 'app')
+
+2026/09/11 20:52:41
+ADMIN initTIMSTAMP
+TSA 证书 RSA_sha1 根=13fbe86586cf8e5
+
+2026/09/11 20:52:41
+ADMIN initTIMSTAMP
+TSA 证书 RSA_sha256 根=13fbe86586cf8e5
+
+2026/09/11 20:52:41
+ADMIN initTIMSTAMP
+TSA 证书 SM2_sm3 根=13fbe86586cf969
+
+2026/09/11 20:52:47
+ADMIN initOCSP
+OCSP 签名证书 13fbe86586cf8e5 算法=RSA
+
+2026/09/11 20:52:47
+ADMIN initOCSP
+OCSP 签名证书 13fbe86586cf969 算法=SM2
+
+2026/09/11 20:52:50
+ADMIN signCRL
+CRL 已刷新
+
+2026/09/11 20:53:31
+ADMIN signCERT
+签发证书 CN=www.test.com,O=My Org,C=CN 算法=RSA 颁发者=root
+
+2026/09/11 21:30:24
+ADMIN initOCSP
+OCSP 签名证书 13fbe86586d0270 算法=ECC
+
+2026/09/11 21:30:24
+ADMIN initTIMSTAMP
+TSA 证书 ECC_sha1 根=13fbe86586d0270
+
+2026/09/11 21:30:24
+ADMIN initTIMSTAMP
+TSA 证书 ECC_sha256 根=13fbe86586d0270
+
+2026/09/11 21:30:24
+ADMIN init
+初始化环境完成
+
+2026/09/11 21:30:33
+ADMIN initOCSP
+OCSP 签名证书 13fbe86586d0279 算法=ECC
+
+2026/09/11 21:30:33
+ADMIN initTIMSTAMP
+TSA 证书 ECC_sha1 根=13fbe86586d0279
+
+2026/09/11 21:30:33
+ADMIN initTIMSTAMP
+TSA 证书 ECC_sha256 根=13fbe86586d0279
+
+2026/09/11 21:30:33
+ADMIN init
+初始化环境完成
+
+2026/09/11 21:30:42
+ADMIN initOCSP
+OCSP 签名证书 13fbe86586d0282 算法=ECC
+
+2026/09/11 21:30:42
+ADMIN initTIMSTAMP
+TSA 证书 ECC_sha1 根=13fbe86586d0282
+
+2026/09/11 21:30:43
+ADMIN initTIMSTAMP
+TSA 证书 ECC_sha256 根=13fbe86586d0282
+
+2026/09/11 21:30:43
+ADMIN init
+初始化环境完成
+
+2026/09/11 21:31:07
+ADMIN makeroot
+根证书签发完成 CN=Test Root CA,O=My Org,C=CN
+
+2026/09/11 21:31:11
+ADMIN makeroot
+根证书签发完成 CN=Test Root CA,O=My Org,C=CN
+
+2026/09/11 21:31:18
+ADMIN makeroot
+根证书签发完成 CN=Test Root CA,O=My Org,C=CN
+
+2026/09/11 21:31:20
+ADMIN makeroot
+根证书签发完成 CN=Test Root CA,O=My Org,C=CN
+
+2026/09/11 21:31:26
+WebAdmin API 异常
+/api/makeroot 错误=java.lang.IllegalArgumentException: Unknown signature type requested: sm3WITHRSA
+
+2026/09/11 21:31:29
+ADMIN makeroot
+根证书签发完成 CN=Test Root CA,O=My Org,C=CN
+
+2026/09/11 21:32:50
+ADMIN makeroot
+根证书签发完成 CN=Test Root CA,O=My Org,C=CN
+
+2026/09/11 21:42:38
+ADMIN initTIMSTAMP
+TSA 证书 ECC_sha1 根=13fbe86586d0282
+
+2026/09/11 21:42:38
+ADMIN initTIMSTAMP
+TSA 证书 ECC_sha256 根=13fbe86586d0282
+
+2026/09/11 21:42:38
+ADMIN initTIMSTAMP
+TSA 证书 ECC_sha1 根=13fbe86586d029b
+
+2026/09/11 21:42:38
+ADMIN initTIMSTAMP
+TSA 证书 ECC_sha256 根=13fbe86586d029b
+
+2026/09/11 21:42:38
+ADMIN initTIMSTAMP
+TSA 证书 SM2_sm3 根=13fbe86586d029f
+
+2026/09/11 21:42:38
+ADMIN initTIMSTAMP
+TSA 证书 SM2_sm3 根=13fbe86586d02a6
+
+2026/09/11 21:42:38
+ADMIN initTIMSTAMP
+TSA 证书 SM2_sm3 根=13fbe86586d02a8
+
+2026/09/11 21:42:38
+ADMIN initTIMSTAMP
+TSA 证书 RSA_sha1 根=13fbe86586d02b1
+
+2026/09/11 21:42:39
+ADMIN initTIMSTAMP
+TSA 证书 RSA_sha256 根=13fbe86586d02b1
+
+2026/09/11 21:42:39
+ADMIN initTIMSTAMP
+TSA 证书 RSA_sha1 根=13fbe86586d0301
+
+2026/09/11 21:42:40
+ADMIN initTIMSTAMP
+TSA 证书 RSA_sha256 根=13fbe86586d0301
+
+2026/09/11 21:42:42
+ADMIN initOCSP
+OCSP 签名证书 13fbe86586d0282 算法=ECC
+
+2026/09/11 21:42:42
+ADMIN initOCSP
+OCSP 签名证书 13fbe86586d029b 算法=ECC
+
+2026/09/11 21:42:42
+ADMIN initOCSP
+OCSP 签名证书 13fbe86586d029f 算法=SM2
+
+2026/09/11 21:42:42
+ADMIN initOCSP
+OCSP 签名证书 13fbe86586d02a6 算法=SM2
+
+2026/09/11 21:42:42
+ADMIN initOCSP
+OCSP 签名证书 13fbe86586d02a8 算法=SM2
+
+2026/09/11 21:42:42
+ADMIN initOCSP
+OCSP 签名证书 13fbe86586d02b1 算法=RSA
+
+2026/09/11 21:42:43
+ADMIN initOCSP
+OCSP 签名证书 13fbe86586d0301 算法=RSA
+
+2026/09/11 21:43:28
+ADMIN signCRL
+CRL 已刷新
+
+2026/09/11 21:43:29
+ADMIN initOCSP
+OCSP 签名证书 13fbe86586d0282 算法=ECC
+
+2026/09/11 21:43:29
+ADMIN initOCSP
+OCSP 签名证书 13fbe86586d029b 算法=ECC
+
+2026/09/11 21:43:29
+ADMIN initOCSP
+OCSP 签名证书 13fbe86586d029f 算法=SM2
+
+2026/09/11 21:43:29
+ADMIN initOCSP
+OCSP 签名证书 13fbe86586d02a6 算法=SM2
+
+2026/09/11 21:43:29
+ADMIN initOCSP
+OCSP 签名证书 13fbe86586d02a8 算法=SM2
+
+2026/09/11 21:43:29
+ADMIN initOCSP
+OCSP 签名证书 13fbe86586d02b1 算法=RSA
+
+2026/09/11 21:43:30
+ADMIN initOCSP
+OCSP 签名证书 13fbe86586d0301 算法=RSA
+
+2026/09/11 21:43:31
+ADMIN initTIMSTAMP
+TSA 证书 ECC_sha1 根=13fbe86586d0282
+
+2026/09/11 21:43:31
+ADMIN initTIMSTAMP
+TSA 证书 ECC_sha256 根=13fbe86586d0282
+
+2026/09/11 21:43:31
+ADMIN initTIMSTAMP
+TSA 证书 ECC_sha1 根=13fbe86586d029b
+
+2026/09/11 21:43:31
+ADMIN initTIMSTAMP
+TSA 证书 ECC_sha256 根=13fbe86586d029b
+
+2026/09/11 21:43:31
+ADMIN initTIMSTAMP
+TSA 证书 SM2_sm3 根=13fbe86586d029f
+
+2026/09/11 21:43:31
+ADMIN initTIMSTAMP
+TSA 证书 SM2_sm3 根=13fbe86586d02a6
+
+2026/09/11 21:43:31
+ADMIN initTIMSTAMP
+TSA 证书 SM2_sm3 根=13fbe86586d02a8
+
+2026/09/11 21:43:31
+ADMIN initTIMSTAMP
+TSA 证书 RSA_sha1 根=13fbe86586d02b1
+
+2026/09/11 21:43:31
+ADMIN initTIMSTAMP
+TSA 证书 RSA_sha256 根=13fbe86586d02b1
+
+2026/09/11 21:43:33
+ADMIN initTIMSTAMP
+TSA 证书 RSA_sha1 根=13fbe86586d0301
+
+2026/09/11 21:43:33
+ADMIN initTIMSTAMP
+TSA 证书 RSA_sha256 根=13fbe86586d0301
+
+2026/09/11 21:44:00
+收到时间戳请求
+来源=0:0:0:0:0:0:0:1 路径=/timestamp
+
+2026/09/11 21:44:00
+时间戳处理异常
+错误=java.lang.IllegalArgumentException: Illegal base64 character d
+
+2026/09/11 21:44:12
+收到时间戳请求
+来源=0:0:0:0:0:0:0:1 路径=/timestamp
+
+2026/09/11 21:44:12
+收到时间戳请求(RFC3161)
+来源=0:0:0:0:0:0:0:1 路径=/timestamp
+
+2026/09/11 21:44:12
+时间戳请求解析(RFC3161)
+摘要算法=2.16.840.1.101.3.4.2.1 消息摘要=f3e2de69d7bbda589f6cb059d6bb374c13ec8431c1550bac95a9de0b315e28e3 Nonce=null
+
+2026/09/11 21:44:12
+时间戳处理异常(RFC3161)
+错误=java.lang.IllegalStateException: TSA 证书未在 CERTS.txt 登记颁发者: 11351ee64
+
+2026/09/11 21:44:12
+收到时间戳请求
+来源=0:0:0:0:0:0:0:1 路径=/timestamp
+
+2026/09/11 21:44:12
+收到时间戳请求(RFC3161)
+来源=0:0:0:0:0:0:0:1 路径=/timestamp
+
+2026/09/11 21:44:12
+时间戳请求解析(RFC3161)
+摘要算法=1.3.14.3.2.26 消息摘要=b2aceedac1508f375f9c2748a2f0f8035205a1dc Nonce=null
+
+2026/09/11 21:44:12
+时间戳处理异常(RFC3161)
+错误=java.lang.IllegalStateException: TSA 证书未在 CERTS.txt 登记颁发者: 11351f030
+
+2026/09/11 21:58:35
+ADMIN initOCSP
+OCSP 签名证书 13fbe86586d090b 算法=RSA
+
+2026/09/11 21:58:35
+ADMIN initTIMSTAMP
+TSA 证书 RSA_sha1 根=13fbe86586d090b
+
+2026/09/11 21:58:36
+ADMIN initTIMSTAMP
+TSA 证书 RSA_sha256 根=13fbe86586d090b
+
+2026/09/11 21:58:36
+ADMIN init
+初始化环境完成
+
+2026/09/11 21:58:50
+ADMIN initOCSP
+OCSP 签名证书 13fbe86586d091a 算法=ECC
+
+2026/09/11 21:58:50
+ADMIN initTIMSTAMP
+TSA 证书 ECC_sha1 根=13fbe86586d091a
+
+2026/09/11 21:58:50
+ADMIN initTIMSTAMP
+TSA 证书 ECC_sha256 根=13fbe86586d091a
+
+2026/09/11 21:58:50
+ADMIN init
+初始化环境完成
+
+2026/09/11 21:58:52
+ADMIN initOCSP
+OCSP 签名证书 13fbe86586d091c 算法=ECC
+
+2026/09/11 21:58:52
+ADMIN initTIMSTAMP
+TSA 证书 ECC_sha1 根=13fbe86586d091c
+
+2026/09/11 21:58:52
+ADMIN initTIMSTAMP
+TSA 证书 ECC_sha256 根=13fbe86586d091c
+
+2026/09/11 21:58:52
+ADMIN init
+初始化环境完成
+
+2026/09/11 21:58:52
+WebAdmin API 异常
+/api/init 错误=java.nio.file.FileAlreadyExistsException: C:\Users\28299\Desktop\modpkica4JAVA\PKI\CERTS.txt.old.1789135132
+
+2026/09/11 22:01:55
+ADMIN signCERT
+签发证书 CN=ca,O=My Org,C=CN,1.2.3=aaa 算法=ECC 颁发者=13fbe86586d091c
+
+2026/09/11 22:02:23
+ADMIN signCRL
+CRL 已刷新
+
+2026/09/11 22:02:23
+ADMIN initOCSP
+OCSP 签名证书 13fbe86586d091c 算法=ECC
+
+2026/09/11 22:02:23
+ADMIN initOCSP
+OCSP 签名证书 1cdd3320116b4 算法=ECC
+
+2026/09/11 22:02:24
+ADMIN initTIMSTAMP
+TSA 证书 ECC_sha1 根=13fbe86586d091c
+
+2026/09/11 22:02:24
+ADMIN initTIMSTAMP
+TSA 证书 ECC_sha256 根=13fbe86586d091c
+
+2026/09/11 22:33:28
+ADMIN signCERT
+签发证书 CN=RSACA,O=My Org,C=CN 算法=RSA 颁发者=13fbe86586d091c
+
+2026/09/11 22:33:40
+ADMIN signCERT
+签发证书 CN=SM2CA,O=My Org,C=CN 算法=SM2 颁发者=13fbe86586d091c
+
+2026/09/11 22:34:51
+ADMIN initOCSP
+OCSP 签名证书 13fbe86586d091c 算法=ECC
+
+2026/09/11 22:34:51
+ADMIN initOCSP
+OCSP 签名证书 1cdd3320116b4 算法=ECC
+
+2026/09/11 22:34:51
+ADMIN initOCSP
+OCSP 签名证书 1cdd332011eb0 算法=RSA
+
+2026/09/11 22:34:51
+ADMIN initOCSP
+OCSP 签名证书 1cdd332012057 算法=SM2
+
+2026/09/11 22:34:52
+WebAdmin API 异常
+/api/crl 错误=org.bouncycastle.operator.OperatorCreationException: cannot create signer: can't identify EC private key.
+
+2026/09/11 22:34:53
+ADMIN initTIMSTAMP
+TSA 证书 ECC_sha1 根=13fbe86586d091c
+
+2026/09/11 22:34:53
+ADMIN initTIMSTAMP
+TSA 证书 ECC_sha256 根=13fbe86586d091c
+
+2026/09/11 22:35:50
+ADMIN signCERT
+签发证书 CN=www.test.com,O=My Org,C=CN,1.2.3.4=HH 算法=SM2 颁发者=1cdd332012057
+
+2026/09/11 22:36:44
+ADMIN initTIMSTAMP
+TSA 证书 ECC_sha1 根=13fbe86586d091c
+
+2026/09/11 22:36:44
+ADMIN initTIMSTAMP
+TSA 证书 ECC_sha256 根=13fbe86586d091c
+
+2026/09/11 22:36:44
+ADMIN initOCSP
+OCSP 签名证书 13fbe86586d091c 算法=ECC
+
+2026/09/11 22:36:44
+ADMIN initOCSP
+OCSP 签名证书 1cdd3320116b4 算法=ECC
+
+2026/09/11 22:36:45
+ADMIN initOCSP
+OCSP 签名证书 1cdd332011eb0 算法=RSA
+
+2026/09/11 22:36:45
+ADMIN initOCSP
+OCSP 签名证书 1cdd332012057 算法=SM2
+
+2026/09/11 22:36:45
+WebAdmin API 异常
+/api/crl 错误=org.bouncycastle.operator.OperatorCreationException: cannot create signer: can't identify EC private key.
+
+2026/09/11 22:36:46
+WebAdmin API 异常
+/api/crl 错误=org.bouncycastle.operator.OperatorCreationException: cannot create signer: can't identify EC private key.
+
+2026/09/11 22:36:46
+WebAdmin API 异常
+/api/crl 错误=org.bouncycastle.operator.OperatorCreationException: cannot create signer: can't identify EC private key.
+
+2026/09/11 22:36:47
+ADMIN initOCSP
+OCSP 签名证书 13fbe86586d091c 算法=ECC
+
+2026/09/11 22:36:47
+ADMIN initOCSP
+OCSP 签名证书 1cdd3320116b4 算法=ECC
+
+2026/09/11 22:36:47
+ADMIN initOCSP
+OCSP 签名证书 1cdd332011eb0 算法=RSA
+
+2026/09/11 22:36:47
+ADMIN initOCSP
+OCSP 签名证书 1cdd332012057 算法=SM2
+
+2026/09/11 22:36:48
+ADMIN initTIMSTAMP
+TSA 证书 ECC_sha1 根=13fbe86586d091c
+
+2026/09/11 22:36:48
+ADMIN initTIMSTAMP
+TSA 证书 ECC_sha256 根=13fbe86586d091c
+
+2026/09/11 22:36:48
+WebAdmin API 异常
+/api/crl 错误=org.bouncycastle.operator.OperatorCreationException: cannot create signer: can't identify EC private key.
+
+2026/09/11 22:36:54
+ADMIN initOCSP
+OCSP 签名证书 13fbe86586d1206 算法=RSA
+
+2026/09/11 22:36:55
+ADMIN initTIMSTAMP
+TSA 证书 RSA_sha1 根=13fbe86586d1206
+
+2026/09/11 22:36:55
+ADMIN initTIMSTAMP
+TSA 证书 RSA_sha256 根=13fbe86586d1206
+
+2026/09/11 22:36:55
+ADMIN init
+初始化环境完成
+
+2026/09/11 22:38:18
+ADMIN signCRL
+CRL 已刷新
+
+2026/09/11 22:38:19
+ADMIN initOCSP
+OCSP 签名证书 13fbe86586d1206 算法=RSA
+
+2026/09/11 22:38:20
+ADMIN initTIMSTAMP
+TSA 证书 RSA_sha1 根=13fbe86586d1206
+
+2026/09/11 22:38:20
+ADMIN initTIMSTAMP
+TSA 证书 RSA_sha256 根=13fbe86586d1206
+
+时间: 2026/09/11 22:57:11
+时间戳: 1789138631544
+操作: ADMIN initOCSP
+命令: initOCSP RSA 13fbe86586d16c7
+结果: OCSP 签名证书 13fbe86586d16c7 算法=RSA
+
+时间: 2026/09/11 22:57:11
+时间戳: 1789138631877
+操作: ADMIN initTIMSTAMP
+命令: initTIMSTAMP SHA1 RSA 13fbe86586d16c7
+结果: TSA 证书 RSA_sha1 根=13fbe86586d16c7
+
+时间: 2026/09/11 22:57:12
+时间戳: 1789138632158
+操作: ADMIN initTIMSTAMP
+命令: initTIMSTAMP SHA256 RSA 13fbe86586d16c7
+结果: TSA 证书 RSA_sha256 根=13fbe86586d16c7
+
+时间: 2026/09/11 22:57:12
+时间戳: 1789138632162
+操作: ADMIN init
+命令: init "CN=RA,1.2.3.4.5=AAA" 2048 sha256 RSA
+结果: 初始化环境完成
+
+时间: 2026/09/11 22:57:12
+时间戳: 1789138632164
+操作: WebAdmin /api/init
+命令: POST /api/init 提交数据={"dn":"CN=RA,1.2.3.4.5=AAA","bits":"2048","hash":"sha256","algo":"RSA"}
+结果: 已清理 204 个证书/密钥/吊销列表文件\r\nCERTS.txt 已备份并重建模板\r\n根证书生成成功 序列号=13fbe86586d16c7 算法=RSA 位长=2048 哈希=sha256\r\nCRL 已生成: 13fbe86586d16c7 (算法 RSA/sha256, 吊销 0 条)\r\nCRL 生成完成，共处理颁发者 1 个\r\n\nOCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/13fbe86586d16c7_ocsp.crt\r\ninitOCSP 完成，共 1 张\n\ninitTIMSTAMP 完成，共 1 张\n
+
+时间: 2026/09/11 22:59:41
+时间戳: 1789138781025
+操作: WebAdmin /api/signcert 异常
+命令: POST /api/signcert 提交数据={"dn":"CN=www.test.com,O=My Org,C=CN","bits":"2048","hash":"sha256","keyusage":"1","exusage":"1","isca":"1","days":"1","dns":"null","ips":"null","issuer":"13fbe86586d1206","algo":"SM2"}
+结果: 
+错误: java.lang.IllegalArgumentException: 此ID既不是根证书也不是中间CA证书: 13fbe86586d1206
+
+时间: 2026/09/11 23:00:20
+时间戳: 1789138820918
+操作: ADMIN signCERT
+命令: signCERT "CN=www.test.com,O=My Org,C=CN" 2048 sha256 1 1 0 1 null null 13fbe86586d16c7 SM2
+结果: 签发证书 CN=www.test.com,O=My Org,C=CN 算法=SM2 颁发者=13fbe86586d16c7
+
+时间: 2026/09/11 23:00:20
+时间戳: 1789138820921
+操作: WebAdmin /api/signcert
+命令: POST /api/signcert 提交数据={"dn":"CN=www.test.com,O=My Org,C=CN","bits":"2048","hash":"sha256","keyusage":"1","exusage":"1","isca":"0","days":"1","dns":"null","ips":"null","issuer":"13fbe86586d16c7","algo":"SM2"}
+结果: 用户证书生成成功！\r\n
+
+时间: 2026/09/11 23:01:14
+时间戳: 1789138874105
+操作: ADMIN makeroot
+命令: makeroot "CN=Test Root CA,O=My Org,C=CN" 2048 sha256 ECC
+结果: 根证书签发完成 CN=Test Root CA,O=My Org,C=CN
+
+时间: 2026/09/11 23:01:14
+时间戳: 1789138874107
+操作: WebAdmin /api/makeroot
+命令: POST /api/makeroot 提交数据={"dn":"CN=Test Root CA,O=My Org,C=CN","bits":"2048","hash":"sha256","algo":"ECC"}
+结果: 根证书生成成功 序列号=13fbe86586d17ba 算法=ECC 位长=521 哈希=sha256\r\nCRL 已生成: 13fbe86586d16c7 (算法 RSA/sha256, 吊销 0 条)\r\nCRL 已生成: 13fbe86586d17ba (算法 ECC/sha256, 吊销 0 条)\r\nCRL 生成完成，共处理颁发者 2 个\r\n
+
+时间: 2026/09/11 23:07:57
+时间戳: 1789139277197
+操作: ADMIN initOCSP
+命令: initOCSP RSA 13fbe86586d16c7
+结果: OCSP 签名证书 13fbe86586d16c7 算法=RSA
+
+时间: 2026/09/11 23:07:57
+时间戳: 1789139277266
+操作: ADMIN initOCSP
+命令: initOCSP ECC 13fbe86586d17ba
+结果: OCSP 签名证书 13fbe86586d17ba 算法=ECC
+
+时间: 2026/09/11 23:07:57
+时间戳: 1789139277268
+操作: WebAdmin /api/initocsp
+命令: POST /api/initocsp 提交数据={}
+结果: OCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/13fbe86586d16c7_ocsp.crt\r\nOCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/13fbe86586d17ba_ocsp.crt\r\ninitOCSP 完成，共 2 张\n
+
+时间: 2026/09/11 23:07:57
+时间戳: 1789139277754
+操作: ADMIN signCRL
+命令: signCRL
+结果: CRL 已刷新
+
+时间: 2026/09/11 23:07:57
+时间戳: 1789139277756
+操作: WebAdmin /api/crl
+命令: POST /api/crl 提交数据={}
+结果: CRL 已生成: 13fbe86586d16c7 (算法 RSA/sha256, 吊销 0 条)\r\nCRL 已生成: 13fbe86586d17ba (算法 ECC/sha256, 吊销 0 条)\r\nCRL 生成完成，共处理颁发者 2 个\r\n
+
+时间: 2026/09/11 23:07:58
+时间戳: 1789139278651
+操作: ADMIN initTIMSTAMP
+命令: initTIMSTAMP SHA1 RSA 13fbe86586d16c7
+结果: TSA 证书 RSA_sha1 根=13fbe86586d16c7
+
+时间: 2026/09/11 23:07:59
+时间戳: 1789139279075
+操作: ADMIN initTIMSTAMP
+命令: initTIMSTAMP SHA256 RSA 13fbe86586d16c7
+结果: TSA 证书 RSA_sha256 根=13fbe86586d16c7
+
+时间: 2026/09/11 23:07:59
+时间戳: 1789139279122
+操作: ADMIN initTIMSTAMP
+命令: initTIMSTAMP SHA1 ECC 13fbe86586d17ba
+结果: TSA 证书 ECC_sha1 根=13fbe86586d17ba
+
+时间: 2026/09/11 23:07:59
+时间戳: 1789139279157
+操作: ADMIN initTIMSTAMP
+命令: initTIMSTAMP SHA256 ECC 13fbe86586d17ba
+结果: TSA 证书 ECC_sha256 根=13fbe86586d17ba
+
+时间: 2026/09/11 23:07:59
+时间戳: 1789139279162
+操作: WebAdmin /api/inittimestamp
+命令: POST /api/inittimestamp 提交数据={}
+结果: initTIMSTAMP 完成，共 2 张\n
+
+时间: 2026/09/11 23:08:27
+时间戳: 1789139307970
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRT/13fbe86586d16c7.crt
+
+时间: 2026/09/11 23:08:27
+时间戳: 1789139307976
+操作: 文件响应
+命令: 
+结果: 文件=13fbe86586d16c7.crt 大小=1500字节 类型=crt
+
+时间: 2026/09/11 23:08:30
+时间戳: 1789139310321
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRT/13fbe86586d17ba.crt
+
+时间: 2026/09/11 23:08:30
+时间戳: 1789139310323
+操作: 文件响应
+命令: 
+结果: 文件=13fbe86586d17ba.crt 大小=1212字节 类型=crt
+
+时间: 2026/09/11 23:17:27
+时间戳: 1789139847981
+操作: WebAdmin /api/config
+命令: POST /api/config 提交数据={"webport":"80","ocsp":"http://localhost:80/ocsp","crl":"http://localhost:80/CRL/{CID}.crl","crt":"http://localhost:80/CRT/{CID}.crt","cps":"https://gitee.com/wxgshuju/modpkica/","cpsNonice":"http://example.com/nonice/"}
+结果: CONFIG.txt 已保存
+
+时间: 2026/09/11 23:18:35
+时间戳: 1789139915243
+操作: ADMIN initOCSP
+命令: initOCSP RSA 13fbe86586d1bca
+结果: OCSP 签名证书 13fbe86586d1bca 算法=RSA
+
+时间: 2026/09/11 23:18:35
+时间戳: 1789139915943
+操作: ADMIN initTIMSTAMP
+命令: initTIMSTAMP SHA1 RSA 13fbe86586d1bca
+结果: TSA 证书 RSA_sha1 根=13fbe86586d1bca
+
+时间: 2026/09/11 23:18:36
+时间戳: 1789139916034
+操作: ADMIN initTIMSTAMP
+命令: initTIMSTAMP SHA256 RSA 13fbe86586d1bca
+结果: TSA 证书 RSA_sha256 根=13fbe86586d1bca
+
+时间: 2026/09/11 23:18:36
+时间戳: 1789139916038
+操作: ADMIN init
+命令: init "CN=My Root CA,O=My Org,C=CN,1.2.3.4.5.6.7.8.9=AAAAAAA" 2048 sha512 RSA
+结果: 初始化环境完成
+
+时间: 2026/09/11 23:18:36
+时间戳: 1789139916040
+操作: WebAdmin /api/init
+命令: POST /api/init 提交数据={"dn":"CN=My Root CA,O=My Org,C=CN,1.2.3.4.5.6.7.8.9=AAAAAAA","bits":"2048","hash":"sha512","algo":"RSA"}
+结果: 已清理 31 个证书/密钥/吊销列表文件\r\nCERTS.txt 已备份并重建模板\r\n根证书生成成功 序列号=13fbe86586d1bca 算法=RSA 位长=2048 哈希=sha512\r\nCRL 已生成: 13fbe86586d1bca (算法 RSA/sha512, 吊销 0 条)\r\nCRL 生成完成，共处理颁发者 1 个\r\n\nOCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/13fbe86586d1bca_ocsp.crt\r\ninitOCSP 完成，共 1 张\n\ninitTIMSTAMP 完成，共 1 张\n
+
+时间: 2026/09/11 23:18:38
+时间戳: 1789139918897
+操作: ADMIN signCRL
+命令: signCRL
+结果: CRL 已刷新
+
+时间: 2026/09/11 23:18:38
+时间戳: 1789139918899
+操作: WebAdmin /api/crl
+命令: POST /api/crl 提交数据={}
+结果: CRL 已生成: 13fbe86586d1bca (算法 RSA/sha512, 吊销 0 条)\r\nCRL 生成完成，共处理颁发者 1 个\r\n
+
+时间: 2026/09/11 23:18:39
+时间戳: 1789139919601
+操作: ADMIN initOCSP
+命令: initOCSP RSA 13fbe86586d1bca
+结果: OCSP 签名证书 13fbe86586d1bca 算法=RSA
+
+时间: 2026/09/11 23:18:39
+时间戳: 1789139919603
+操作: WebAdmin /api/initocsp
+命令: POST /api/initocsp 提交数据={}
+结果: OCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/13fbe86586d1bca_ocsp.crt\r\ninitOCSP 完成，共 1 张\n
+
+时间: 2026/09/11 23:18:40
+时间戳: 1789139920337
+操作: ADMIN initTIMSTAMP
+命令: initTIMSTAMP SHA1 RSA 13fbe86586d1bca
+结果: TSA 证书 RSA_sha1 根=13fbe86586d1bca
+
+时间: 2026/09/11 23:18:40
+时间戳: 1789139920653
+操作: ADMIN initTIMSTAMP
+命令: initTIMSTAMP SHA256 RSA 13fbe86586d1bca
+结果: TSA 证书 RSA_sha256 根=13fbe86586d1bca
+
+时间: 2026/09/11 23:18:40
+时间戳: 1789139920654
+操作: WebAdmin /api/inittimestamp
+命令: POST /api/inittimestamp 提交数据={}
+结果: initTIMSTAMP 完成，共 1 张\n
+
+时间: 2026/09/11 23:19:04
+时间戳: 1789139944557
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRT/13fbe86586d1bca.crt
+
+时间: 2026/09/11 23:19:04
+时间戳: 1789139944561
+操作: 文件响应
+命令: 
+结果: 文件=13fbe86586d1bca.crt 大小=1830字节 类型=crt
+
+时间: 2026/09/11 23:20:40
+时间戳: 1789140040391
+操作: WebAdmin /api/config
+命令: POST /api/config 提交数据={"webport":"80","ocsp":"http://localhost:80/ocsp","crl":"http://localhost:80/CRL/{CID}.crl","crt":"http://localhost:80/CRT/{CID}.crt","cps":"https://gitee.com/wxgshuju/modpkica/","cpsNonice":"WOAINI"}
+结果: CONFIG.txt 已保存
+
+时间: 2026/09/11 23:21:14
+时间戳: 1789140074283
+操作: ADMIN signCERT
+命令: signCERT "CN=www.test.com,O=My Org,C=CN,7.7.7.7=AAA" 2048 SM3 1 1 0 1 null null 13fbe86586d1bca SM2
+结果: 签发证书 CN=www.test.com,O=My Org,C=CN,7.7.7.7=AAA 算法=SM2 颁发者=13fbe86586d1bca
+
+时间: 2026/09/11 23:21:14
+时间戳: 1789140074284
+操作: WebAdmin /api/signcert
+命令: POST /api/signcert 提交数据={"dn":"CN=www.test.com,O=My Org,C=CN,7.7.7.7=AAA","bits":"2048","hash":"SM3","keyusage":"1","exusage":"1","isca":"0","days":"1","dns":"null","ips":"null","issuer":"13fbe86586d1bca","algo":"SM2"}
+结果: 用户证书生成成功！\r\n
+
+时间: 2026/09/11 23:21:52
+时间戳: 1789140112424
+操作: ADMIN signCERT
+命令: signCERT "7.7.7.7=AAA,CN=BBB.test.com,O=My Org,C=CN,7.7.7.7=AAA" 2048 SM3 1 1 0 1 null null 13fbe86586d1bca SM2
+结果: 签发证书 7.7.7.7=AAA,CN=BBB.test.com,O=My Org,C=CN,7.7.7.7=AAA 算法=SM2 颁发者=13fbe86586d1bca
+
+时间: 2026/09/11 23:21:52
+时间戳: 1789140112425
+操作: WebAdmin /api/signcert
+命令: POST /api/signcert 提交数据={"dn":"7.7.7.7=AAA,CN=BBB.test.com,O=My Org,C=CN,7.7.7.7=AAA","bits":"2048","hash":"SM3","keyusage":"1","exusage":"1","isca":"0","days":"1","dns":"null","ips":"null","issuer":"13fbe86586d1bca","algo":"SM2"}
+结果: 用户证书生成成功！\r\n
+
+时间: 2026/09/11 23:21:53
+时间戳: 1789140113061
+操作: ADMIN signCERT
+命令: signCERT "7.7.7.7=AAA,CN=BBB.test.com,O=My Org,C=CN,7.7.7.7=AAA" 2048 SM3 1 1 0 1 null null 13fbe86586d1bca SM2
+结果: 签发证书 7.7.7.7=AAA,CN=BBB.test.com,O=My Org,C=CN,7.7.7.7=AAA 算法=SM2 颁发者=13fbe86586d1bca
+
+时间: 2026/09/11 23:21:53
+时间戳: 1789140113062
+操作: WebAdmin /api/signcert
+命令: POST /api/signcert 提交数据={"dn":"7.7.7.7=AAA,CN=BBB.test.com,O=My Org,C=CN,7.7.7.7=AAA","bits":"2048","hash":"SM3","keyusage":"1","exusage":"1","isca":"0","days":"1","dns":"null","ips":"null","issuer":"13fbe86586d1bca","algo":"SM2"}
+结果: 用户证书生成成功！\r\n
+
+时间: 2026/09/11 23:21:53
+时间戳: 1789140113322
+操作: ADMIN signCERT
+命令: signCERT "7.7.7.7=AAA,CN=BBB.test.com,O=My Org,C=CN,7.7.7.7=AAA" 2048 SM3 1 1 0 1 null null 13fbe86586d1bca SM2
+结果: 签发证书 7.7.7.7=AAA,CN=BBB.test.com,O=My Org,C=CN,7.7.7.7=AAA 算法=SM2 颁发者=13fbe86586d1bca
+
+时间: 2026/09/11 23:21:53
+时间戳: 1789140113323
+操作: WebAdmin /api/signcert
+命令: POST /api/signcert 提交数据={"dn":"7.7.7.7=AAA,CN=BBB.test.com,O=My Org,C=CN,7.7.7.7=AAA","bits":"2048","hash":"SM3","keyusage":"1","exusage":"1","isca":"0","days":"1","dns":"null","ips":"null","issuer":"13fbe86586d1bca","algo":"SM2"}
+结果: 用户证书生成成功！\r\n
+
+时间: 2026/09/11 23:21:53
+时间戳: 1789140113648
+操作: ADMIN signCERT
+命令: signCERT "7.7.7.7=AAA,CN=BBB.test.com,O=My Org,C=CN,7.7.7.7=AAA" 2048 SM3 1 1 0 1 null null 13fbe86586d1bca SM2
+结果: 签发证书 7.7.7.7=AAA,CN=BBB.test.com,O=My Org,C=CN,7.7.7.7=AAA 算法=SM2 颁发者=13fbe86586d1bca
+
+时间: 2026/09/11 23:21:53
+时间戳: 1789140113654
+操作: WebAdmin /api/signcert
+命令: POST /api/signcert 提交数据={"dn":"7.7.7.7=AAA,CN=BBB.test.com,O=My Org,C=CN,7.7.7.7=AAA","bits":"2048","hash":"SM3","keyusage":"1","exusage":"1","isca":"0","days":"1","dns":"null","ips":"null","issuer":"13fbe86586d1bca","algo":"SM2"}
+结果: 用户证书生成成功！\r\n
+
+时间: 2026/09/11 23:22:29
+时间戳: 1789140149782
+操作: ADMIN signCERT
+命令: signCERT "1.2.7.7.7.7=AAA,CN=BBB.test.com,O=My Org,C=CN,7.7.7.7=AAA" 2048 SM3 1 1 0 1 null null 13fbe86586d1bca SM2
+结果: 签发证书 1.2.7.7.7.7=AAA,CN=BBB.test.com,O=My Org,C=CN,7.7.7.7=AAA 算法=SM2 颁发者=13fbe86586d1bca
+
+时间: 2026/09/11 23:22:29
+时间戳: 1789140149784
+操作: WebAdmin /api/signcert
+命令: POST /api/signcert 提交数据={"dn":"1.2.7.7.7.7=AAA,CN=BBB.test.com,O=My Org,C=CN,7.7.7.7=AAA","bits":"2048","hash":"SM3","keyusage":"1","exusage":"1","isca":"0","days":"1","dns":"null","ips":"null","issuer":"13fbe86586d1bca","algo":"SM2"}
+结果: 用户证书生成成功！\r\n
+
+时间: 2026/09/11 23:27:25
+时间戳: 1789140445084
+操作: WebAdmin /api/config
+命令: POST /api/config 提交数据={"webport":"80","ocsp":"http://localhost:80/ocsp","crl":"http://localhost:80/CRL/{CID}.crl","crt":"http://localhost:80/CRT/{CID}.crt","cps":"https://gitee.com/wxgshuju/modpkica/","cpsNonice":"WOAINI\nniaiwo\n521"}
+结果: CONFIG.txt 已保存
+
+时间: 2026/09/11 23:27:49
+时间戳: 1789140469589
+操作: ADMIN initOCSP
+命令: initOCSP RSA 13fbe86586d1bca
+结果: OCSP 签名证书 13fbe86586d1bca 算法=RSA
+
+时间: 2026/09/11 23:27:49
+时间戳: 1789140469593
+操作: WebAdmin /api/initocsp
+命令: POST /api/initocsp 提交数据={}
+结果: OCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/13fbe86586d1bca_ocsp.crt\r\ninitOCSP 完成，共 1 张\n
+
+时间: 2026/09/11 23:27:50
+时间戳: 1789140470768
+操作: ADMIN initTIMSTAMP
+命令: initTIMSTAMP SHA1 RSA 13fbe86586d1bca
+结果: TSA 证书 RSA_sha1 根=13fbe86586d1bca
+
+时间: 2026/09/11 23:27:51
+时间戳: 1789140471370
+操作: ADMIN initTIMSTAMP
+命令: initTIMSTAMP SHA256 RSA 13fbe86586d1bca
+结果: TSA 证书 RSA_sha256 根=13fbe86586d1bca
+
+时间: 2026/09/11 23:27:51
+时间戳: 1789140471372
+操作: WebAdmin /api/inittimestamp
+命令: POST /api/inittimestamp 提交数据={}
+结果: initTIMSTAMP 完成，共 1 张\n
+
+时间: 2026/09/11 23:33:28
+时间戳: 1789140808852
+操作: ADMIN signCERT
+命令: signCERT "CN=www.test.com,O=My Org,C=CN" 2048 sha256 1 1 0 1 null null 13fbe86586d1bca RSA
+结果: 签发证书 CN=www.test.com,O=My Org,C=CN 算法=RSA 颁发者=13fbe86586d1bca
+
+时间: 2026/09/11 23:33:28
+时间戳: 1789140808854
+操作: WebAdmin /api/signcert
+命令: POST /api/signcert 提交数据={"dn":"CN=www.test.com,O=My Org,C=CN","bits":"2048","hash":"sha256","keyusage":"1","exusage":"1","isca":"0","days":"1","dns":"null","ips":"null","issuer":"13fbe86586d1bca","algo":"RSA"}
+结果: 用户证书生成成功！\r\n
+
+时间: 2026/09/11 23:33:29
+时间戳: 1789140809459
+操作: ADMIN signCERT
+命令: signCERT "CN=www.test.com,O=My Org,C=CN" 2048 sha256 1 1 0 1 null null 13fbe86586d1bca RSA
+结果: 签发证书 CN=www.test.com,O=My Org,C=CN 算法=RSA 颁发者=13fbe86586d1bca
+
+时间: 2026/09/11 23:33:29
+时间戳: 1789140809460
+操作: WebAdmin /api/signcert
+命令: POST /api/signcert 提交数据={"dn":"CN=www.test.com,O=My Org,C=CN","bits":"2048","hash":"sha256","keyusage":"1","exusage":"1","isca":"0","days":"1","dns":"null","ips":"null","issuer":"13fbe86586d1bca","algo":"RSA"}
+结果: 用户证书生成成功！\r\n
+
+时间: 2026/09/11 23:33:32
+时间戳: 1789140812526
+操作: ADMIN signCERT
+命令: signCERT "CN=www.test.com,O=My Org,C=CN" 2048 sha256 1 1 1 1 null null 13fbe86586d1bca RSA
+结果: 签发证书 CN=www.test.com,O=My Org,C=CN 算法=RSA 颁发者=13fbe86586d1bca
+
+时间: 2026/09/11 23:33:32
+时间戳: 1789140812527
+操作: WebAdmin /api/signcert
+命令: POST /api/signcert 提交数据={"dn":"CN=www.test.com,O=My Org,C=CN","bits":"2048","hash":"sha256","keyusage":"1","exusage":"1","isca":"1","days":"1","dns":"null","ips":"null","issuer":"13fbe86586d1bca","algo":"RSA"}
+结果: 中间CA证书生成成功！\r\n
+
+时间: 2026/09/11 23:35:27
+时间戳: 1789140927247
+操作: ADMIN signCERT
+命令: signCERT "CN=www.test.com,O=My Org,C=CN" 2048 sha256 1 1,2,3,4,5,6,7,8 1 1 null null 13fbe86586d1bca RSA
+结果: 签发证书 CN=www.test.com,O=My Org,C=CN 算法=RSA 颁发者=13fbe86586d1bca
+
+时间: 2026/09/11 23:35:27
+时间戳: 1789140927248
+操作: WebAdmin /api/signcert
+命令: POST /api/signcert 提交数据={"dn":"CN=www.test.com,O=My Org,C=CN","bits":"2048","hash":"sha256","keyusage":"1","exusage":"1,2,3,4,5,6,7,8","isca":"1","days":"1","dns":"null","ips":"null","issuer":"13fbe86586d1bca","algo":"RSA"}
+结果: 中间CA证书生成成功！\r\n
+
+时间: 2026/09/11 23:36:32
+时间戳: 1789140992519
+操作: ADMIN signCERT
+命令: signCERT "CN=www.test.com,O=My Org,C=CN" 2048 sha256 1 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32 1 1 null null 13fbe86586d1bca RSA
+结果: 签发证书 CN=www.test.com,O=My Org,C=CN 算法=RSA 颁发者=13fbe86586d1bca
+
+时间: 2026/09/11 23:36:32
+时间戳: 1789140992520
+操作: WebAdmin /api/signcert
+命令: POST /api/signcert 提交数据={"dn":"CN=www.test.com,O=My Org,C=CN","bits":"2048","hash":"sha256","keyusage":"1","exusage":"1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32","isca":"1","days":"1","dns":"null","ips":"null","issuer":"13fbe86586d1bca","algo":"RSA"}
+结果: 中间CA证书生成成功！\r\n
+
+时间: 2026/09/11 23:38:27
+时间戳: 1789141107353
+操作: ADMIN signCERT
+命令: signCERT "CN=www.test.com,O=My Org,C=CN" 2048 sha256 1 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,32,33,34,35,36,37 1 1 null null 13fbe86586d1bca RSA
+结果: 签发证书 CN=www.test.com,O=My Org,C=CN 算法=RSA 颁发者=13fbe86586d1bca
+
+时间: 2026/09/11 23:38:27
+时间戳: 1789141107354
+操作: WebAdmin /api/signcert
+命令: POST /api/signcert 提交数据={"dn":"CN=www.test.com,O=My Org,C=CN","bits":"2048","hash":"sha256","keyusage":"1","exusage":"1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,32,33,34,35,36,37","isca":"1","days":"1","dns":"null","ips":"null","issuer":"13fbe86586d1bca","algo":"RSA"}
+结果: 中间CA证书生成成功！\r\n
+
+时间: 2026/09/11 23:38:34
+时间戳: 1789141114060
+操作: ADMIN signCERT
+命令: signCERT "CN=www.test.com,O=My Org,C=CN" 2048 sha256 1 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,32,33,34,35,36,37 1 1 null null 13fbe86586d1bca RSA
+结果: 签发证书 CN=www.test.com,O=My Org,C=CN 算法=RSA 颁发者=13fbe86586d1bca
+
+时间: 2026/09/11 23:38:34
+时间戳: 1789141114061
+操作: WebAdmin /api/signcert
+命令: POST /api/signcert 提交数据={"dn":"CN=www.test.com,O=My Org,C=CN","bits":"2048","hash":"sha256","keyusage":"1","exusage":"1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,32,33,34,35,36,37","isca":"1","days":"1","dns":"null","ips":"null","issuer":"13fbe86586d1bca","algo":"RSA"}
+结果: 中间CA证书生成成功！\r\n
+
+时间: 2026/09/11 23:39:27
+时间戳: 1789141167541
+操作: ADMIN signCERT
+命令: signCERT "CN=www.test.com,O=My Org,C=CN" 2048 sha256 1 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,32,33,34,35,36,37,39,40,41,42,43,44,45 1 1 null null 13fbe86586d1bca RSA
+结果: 签发证书 CN=www.test.com,O=My Org,C=CN 算法=RSA 颁发者=13fbe86586d1bca
+
+时间: 2026/09/11 23:39:27
+时间戳: 1789141167542
+操作: WebAdmin /api/signcert
+命令: POST /api/signcert 提交数据={"dn":"CN=www.test.com,O=My Org,C=CN","bits":"2048","hash":"sha256","keyusage":"1","exusage":"1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,32,33,34,35,36,37,39,40,41,42,43,44,45","isca":"1","days":"1","dns":"null","ips":"null","issuer":"13fbe86586d1bca","algo":"RSA"}
+结果: 中间CA证书生成成功！\r\n
+
+时间: 2026/09/11 23:39:33
+时间戳: 1789141173711
+操作: ADMIN signCERT
+命令: signCERT "CN=www.test.com,O=My Org,C=CN" 2048 sha256 1 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,32,33,34,35,36,37,39,40,41,42,43,44,45 1 1 null null 13fbe86586d1bca RSA
+结果: 签发证书 CN=www.test.com,O=My Org,C=CN 算法=RSA 颁发者=13fbe86586d1bca
+
+时间: 2026/09/11 23:39:33
+时间戳: 1789141173712
+操作: WebAdmin /api/signcert
+命令: POST /api/signcert 提交数据={"dn":"CN=www.test.com,O=My Org,C=CN","bits":"2048","hash":"sha256","keyusage":"1","exusage":"1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,32,33,34,35,36,37,39,40,41,42,43,44,45","isca":"1","days":"1","dns":"null","ips":"null","issuer":"13fbe86586d1bca","algo":"RSA"}
+结果: 中间CA证书生成成功！\r\n
+
+时间: 2026/09/11 23:51:02
+时间戳: 1789141862142
+操作: ADMIN signCERT
+命令: signCERT "CN=TEST" 2048 sha256 1 1.3.6.1.5.5.7.3.1,1.3.6.1.5.5.7.3.2,1.3.6.1.5.5.7.3.3,1.3.6.1.5.5.7.3.4,1.3.6.1.4.1.311.61.1.1,1.3.6.1.4.1.311.10.3.5,1.3.6.1.4.1.311.10.3.6,1.3.6.1.4.1.311.10.3.7,1.3.6.1.4.1.311.10.3.8,1.3.6.1.5.5.7.3.36,1.3.6.1.4.1.311.10.3.12,1.3.6.1.4.1.311.10.3.4,1 0 1 null null 13fbe86586d1bca RSA
+结果: 签发证书 CN=TEST 算法=RSA 颁发者=13fbe86586d1bca
+
+时间: 2026/09/11 23:51:02
+时间戳: 1789141862144
+操作: WebAdmin /api/signcert
+命令: POST /api/signcert 提交数据={"dn":"CN=TEST","bits":"2048","hash":"sha256","keyusage":"1","exusage":"1.3.6.1.5.5.7.3.1,1.3.6.1.5.5.7.3.2,1.3.6.1.5.5.7.3.3,1.3.6.1.5.5.7.3.4,1.3.6.1.4.1.311.61.1.1,1.3.6.1.4.1.311.10.3.5,1.3.6.1.4.1.311.10.3.6,1.3.6.1.4.1.311.10.3.7,1.3.6.1.4.1.311.10.3.8,1.3.6.1.5.5.7.3.36,1.3.6.1.4.1.311.10.3.12,1.3.6.1.4.1.311.10.3.4,1","isca":"0","days":"1","dns":"null","ips":"null","issuer":"13fbe86586d1bca","algo":"RSA"}
+结果: 用户证书生成成功！\r\n
+
+时间: 2026/09/11 23:51:52
+时间戳: 1789141912474
+操作: ADMIN signCERT
+命令: signCERT "CN=TEST" 2048 sha256 1 1.3.6.1.5.5.7.3.1,1.3.6.1.5.5.7.3.2,1.3.6.1.5.5.7.3.3,1.3.6.1.5.5.7.3.4,1.3.6.1.4.1.311.61.1.1,1.3.6.1.4.1.311.10.3.5,1.3.6.1.4.1.311.10.3.6,1.3.6.1.4.1.311.10.3.7,1.3.6.1.4.1.311.10.3.8,1.3.6.1.5.5.7.3.36,1.3.6.1.4.1.311.10.3.12,1.3.6.1.4.1.311.10.3.4,1 0 1 null null 13fbe86586d1bca RSA
+结果: 签发证书 CN=TEST 算法=RSA 颁发者=13fbe86586d1bca
+
+时间: 2026/09/11 23:51:52
+时间戳: 1789141912476
+操作: WebAdmin /api/signcert
+命令: POST /api/signcert 提交数据={"dn":"CN=TEST","bits":"2048","hash":"sha256","keyusage":"1","exusage":"1.3.6.1.5.5.7.3.1,1.3.6.1.5.5.7.3.2,1.3.6.1.5.5.7.3.3,1.3.6.1.5.5.7.3.4,1.3.6.1.4.1.311.61.1.1,1.3.6.1.4.1.311.10.3.5,1.3.6.1.4.1.311.10.3.6,1.3.6.1.4.1.311.10.3.7,1.3.6.1.4.1.311.10.3.8,1.3.6.1.5.5.7.3.36,1.3.6.1.4.1.311.10.3.12,1.3.6.1.4.1.311.10.3.4,1","isca":"0","days":"1","dns":"null","ips":"null","issuer":"13fbe86586d1bca","algo":"RSA"}
+结果: 用户证书生成成功！\r\n
+
+时间: 2026/09/11 23:59:29
+时间戳: 1789142369622
+操作: ADMIN signCERT
+命令: signCERT "CN=www.test.com,O=My Org,C=CN" 2048 sha256 1 1.3.6.1.5.5.7.3.1,1.3.6.1.5.5.7.3.2,1.3.6.1.5.5.7.3.4 0 1 null null 13fbe86586d1bca RSA
+结果: 签发证书 CN=www.test.com,O=My Org,C=CN 算法=RSA 颁发者=13fbe86586d1bca
+
+时间: 2026/09/11 23:59:29
+时间戳: 1789142369624
+操作: WebAdmin /api/signcert
+命令: POST /api/signcert 提交数据={"dn":"CN=www.test.com,O=My Org,C=CN","bits":"2048","hash":"sha256","keyusage":"1","exusage":"1.3.6.1.5.5.7.3.1,1.3.6.1.5.5.7.3.2,1.3.6.1.5.5.7.3.4","isca":"0","days":"1","dns":"null","ips":"null","issuer":"13fbe86586d1bca","algo":"RSA"}
+结果: 用户证书生成成功！\r\n
+
+时间: 2026/09/12 00:00:29
+时间戳: 1789142429302
+操作: ADMIN signCERT
+命令: signCERT "CN=www.test.com,O=My Org,C=CN" 2048 sha256 2 1.3.6.1.5.5.7.3.1,1.3.6.1.5.5.7.3.2,1.3.6.1.5.5.7.3.4 0 1 null null 13fbe86586d1bca RSA
+结果: 签发证书 CN=www.test.com,O=My Org,C=CN 算法=RSA 颁发者=13fbe86586d1bca
+
+时间: 2026/09/12 00:00:29
+时间戳: 1789142429305
+操作: WebAdmin /api/signcert
+命令: POST /api/signcert 提交数据={"dn":"CN=www.test.com,O=My Org,C=CN","bits":"2048","hash":"sha256","keyusage":"2","exusage":"1.3.6.1.5.5.7.3.1,1.3.6.1.5.5.7.3.2,1.3.6.1.5.5.7.3.4","isca":"0","days":"1","dns":"null","ips":"null","issuer":"13fbe86586d1bca","algo":"RSA"}
+结果: 用户证书生成成功！\r\n
+
+时间: 2026/09/12 00:01:15
+时间戳: 1789142475163
+操作: ADMIN signCERT
+命令: signCERT "CN=www.test.com,O=My Org,C=CN" 2048 sha256 3 1.3.6.1.5.5.7.3.1,1.3.6.1.5.5.7.3.2,1.3.6.1.5.5.7.3.4 0 1 null null 13fbe86586d1bca RSA
+结果: 签发证书 CN=www.test.com,O=My Org,C=CN 算法=RSA 颁发者=13fbe86586d1bca
+
+时间: 2026/09/12 00:01:15
+时间戳: 1789142475165
+操作: WebAdmin /api/signcert
+命令: POST /api/signcert 提交数据={"dn":"CN=www.test.com,O=My Org,C=CN","bits":"2048","hash":"sha256","keyusage":"3","exusage":"1.3.6.1.5.5.7.3.1,1.3.6.1.5.5.7.3.2,1.3.6.1.5.5.7.3.4","isca":"0","days":"1","dns":"null","ips":"null","issuer":"13fbe86586d1bca","algo":"RSA"}
+结果: 用户证书生成成功！\r\n
+
+时间: 2026/09/12 00:14:06
+时间戳: 1789143246615
+操作: ADMIN signCERT
+命令: signCERT "CN=www.test.com,O=My Org,C=CN" 2048 sha256 20 1 0 1 null null 13fbe86586d1bca RSA
+结果: 签发证书 CN=www.test.com,O=My Org,C=CN 算法=RSA 颁发者=13fbe86586d1bca
+
+时间: 2026/09/12 00:14:06
+时间戳: 1789143246616
+操作: WebAdmin /api/signcert
+命令: POST /api/signcert 提交数据={"dn":"CN=www.test.com,O=My Org,C=CN","bits":"2048","hash":"sha256","keyusage":"20","exusage":"1","isca":"0","days":"1","dns":"null","ips":"null","issuer":"13fbe86586d1bca","algo":"RSA"}
+结果: 用户证书生成成功！\r\n
+
+时间: 2026/09/12 00:14:32
+时间戳: 1789143272679
+操作: ADMIN signCERT
+命令: signCERT "CN=www.test.com,O=My Org,C=CN" 2048 sha256 2 1 0 1 null null 13fbe86586d1bca RSA
+结果: 签发证书 CN=www.test.com,O=My Org,C=CN 算法=RSA 颁发者=13fbe86586d1bca
+
+时间: 2026/09/12 00:14:32
+时间戳: 1789143272680
+操作: WebAdmin /api/signcert
+命令: POST /api/signcert 提交数据={"dn":"CN=www.test.com,O=My Org,C=CN","bits":"2048","hash":"sha256","keyusage":"2","exusage":"1","isca":"0","days":"1","dns":"null","ips":"null","issuer":"13fbe86586d1bca","algo":"RSA"}
+结果: 用户证书生成成功！\r\n
+
+时间: 2026/09/12 00:14:45
+时间戳: 1789143285019
+操作: ADMIN signCERT
+命令: signCERT "CN=www.test.com,O=My Org,C=CN" 2048 sha256 3 1 0 1 null null 13fbe86586d1bca RSA
+结果: 签发证书 CN=www.test.com,O=My Org,C=CN 算法=RSA 颁发者=13fbe86586d1bca
+
+时间: 2026/09/12 00:14:45
+时间戳: 1789143285020
+操作: WebAdmin /api/signcert
+命令: POST /api/signcert 提交数据={"dn":"CN=www.test.com,O=My Org,C=CN","bits":"2048","hash":"sha256","keyusage":"3","exusage":"1","isca":"0","days":"1","dns":"null","ips":"null","issuer":"13fbe86586d1bca","algo":"RSA"}
+结果: 用户证书生成成功！\r\n
+
+时间: 2026/09/12 00:15:00
+时间戳: 1789143300289
+操作: ADMIN signCERT
+命令: signCERT "CN=www.test.com,O=My Org,C=CN" 2048 sha256 4 1 0 1 null null 13fbe86586d1bca RSA
+结果: 签发证书 CN=www.test.com,O=My Org,C=CN 算法=RSA 颁发者=13fbe86586d1bca
+
+时间: 2026/09/12 00:15:00
+时间戳: 1789143300290
+操作: WebAdmin /api/signcert
+命令: POST /api/signcert 提交数据={"dn":"CN=www.test.com,O=My Org,C=CN","bits":"2048","hash":"sha256","keyusage":"4","exusage":"1","isca":"0","days":"1","dns":"null","ips":"null","issuer":"13fbe86586d1bca","algo":"RSA"}
+结果: 用户证书生成成功！\r\n
+
+时间: 2026/09/12 00:15:14
+时间戳: 1789143314030
+操作: ADMIN signCERT
+命令: signCERT "CN=www.test.com,O=My Org,C=CN" 2048 sha256 5 1 0 1 null null 13fbe86586d1bca RSA
+结果: 签发证书 CN=www.test.com,O=My Org,C=CN 算法=RSA 颁发者=13fbe86586d1bca
+
+时间: 2026/09/12 00:15:14
+时间戳: 1789143314031
+操作: WebAdmin /api/signcert
+命令: POST /api/signcert 提交数据={"dn":"CN=www.test.com,O=My Org,C=CN","bits":"2048","hash":"sha256","keyusage":"5","exusage":"1","isca":"0","days":"1","dns":"null","ips":"null","issuer":"13fbe86586d1bca","algo":"RSA"}
+结果: 用户证书生成成功！\r\n
+
+时间: 2026/09/12 00:15:52
+时间戳: 1789143352263
+操作: ADMIN signCERT
+命令: signCERT "CN=www.test.com,O=My Org,C=CN" 2048 sha256 28 1 0 1 null null 13fbe86586d1bca RSA
+结果: 签发证书 CN=www.test.com,O=My Org,C=CN 算法=RSA 颁发者=13fbe86586d1bca
+
+时间: 2026/09/12 00:15:52
+时间戳: 1789143352264
+操作: WebAdmin /api/signcert
+命令: POST /api/signcert 提交数据={"dn":"CN=www.test.com,O=My Org,C=CN","bits":"2048","hash":"sha256","keyusage":"28","exusage":"1","isca":"0","days":"1","dns":"null","ips":"null","issuer":"13fbe86586d1bca","algo":"RSA"}
+结果: 用户证书生成成功！\r\n
+
+时间: 2026/09/12 00:16:36
+时间戳: 1789143396674
+操作: ADMIN signCERT
+命令: signCERT "CN=www.test.com,O=My Org,C=CN" 2048 sha256 284 1 0 1 null null 13fbe86586d1bca RSA
+结果: 签发证书 CN=www.test.com,O=My Org,C=CN 算法=RSA 颁发者=13fbe86586d1bca
+
+时间: 2026/09/12 00:16:36
+时间戳: 1789143396674
+操作: WebAdmin /api/signcert
+命令: POST /api/signcert 提交数据={"dn":"CN=www.test.com,O=My Org,C=CN","bits":"2048","hash":"sha256","keyusage":"284","exusage":"1","isca":"0","days":"1","dns":"null","ips":"null","issuer":"13fbe86586d1bca","algo":"RSA"}
+结果: 用户证书生成成功！\r\n
+
+时间: 2026/09/12 00:22:53
+时间戳: 1789143773131
+操作: ADMIN signCERT
+命令: signCERT "CN=www.test.com,O=My Org,C=CN" 2048 sha256 C28 1 0 1 null null 13fbe86586d1bca RSA
+结果: 签发证书 CN=www.test.com,O=My Org,C=CN 算法=RSA 颁发者=13fbe86586d1bca
+
+时间: 2026/09/12 00:22:53
+时间戳: 1789143773133
+操作: WebAdmin /api/signcert
+命令: POST /api/signcert 提交数据={"dn":"CN=www.test.com,O=My Org,C=CN","bits":"2048","hash":"sha256","keyusage":"C28","exusage":"1","isca":"0","days":"1","dns":"null","ips":"null","issuer":"13fbe86586d1bca","algo":"RSA"}
+结果: 用户证书生成成功！\r\n
+
+时间: 2026/09/12 00:23:17
+时间戳: 1789143797630
+操作: ADMIN signCERT
+命令: signCERT "CN=www.test.com,O=My Org,C=CN" 2048 sha256 C20 1 0 1 null null 13fbe86586d1bca RSA
+结果: 签发证书 CN=www.test.com,O=My Org,C=CN 算法=RSA 颁发者=13fbe86586d1bca
+
+时间: 2026/09/12 00:23:17
+时间戳: 1789143797633
+操作: WebAdmin /api/signcert
+命令: POST /api/signcert 提交数据={"dn":"CN=www.test.com,O=My Org,C=CN","bits":"2048","hash":"sha256","keyusage":"C20","exusage":"1","isca":"0","days":"1","dns":"null","ips":"null","issuer":"13fbe86586d1bca","algo":"RSA"}
+结果: 用户证书生成成功！\r\n
+
+时间: 2026/09/12 00:34:35
+时间戳: 1789144475324
+操作: ADMIN signCERT
+命令: signCERT "CN=www.test.com,O=My Org,C=CN" 2048 sha256 1 1 0 1990/02/12-15:37:50T2026/09/12-03:38:23 null null 13fbe86586d1bca RSA
+结果: 签发证书 CN=www.test.com,O=My Org,C=CN 算法=RSA 颁发者=13fbe86586d1bca
+
+时间: 2026/09/12 00:34:35
+时间戳: 1789144475328
+操作: WebAdmin /api/signcert
+命令: POST /api/signcert 提交数据={"dn":"CN=www.test.com,O=My Org,C=CN","bits":"2048","hash":"sha256","keyusage":"1","exusage":"1","isca":"0","days":"1990/02/12-15:37:50T2026/09/12-03:38:23","dns":"null","ips":"null","issuer":"13fbe86586d1bca","algo":"RSA"}
+结果: 用户证书生成成功！\r\n
+
+时间: 2026/09/12 00:40:30
+时间戳: 1789144830951
+操作: ADMIN initTIMSTAMP
+命令: initTIMSTAMP SHA1 RSA 13fbe86586d1bca
+结果: TSA 证书 RSA_sha1 根=13fbe86586d1bca
+
+时间: 2026/09/12 00:40:31
+时间戳: 1789144831742
+操作: ADMIN initTIMSTAMP
+命令: initTIMSTAMP SHA256 RSA 13fbe86586d1bca
+结果: TSA 证书 RSA_sha256 根=13fbe86586d1bca
+
+时间: 2026/09/12 00:40:31
+时间戳: 1789144831743
+操作: WebAdmin /api/inittimestamp
+命令: POST /api/inittimestamp 提交数据={}
+结果: initTIMSTAMP 完成，共 1 张\n
+
+时间: 2026/09/12 00:40:32
+时间戳: 1789144832620
+操作: ADMIN initOCSP
+命令: initOCSP RSA 13fbe86586d1bca
+结果: OCSP 签名证书 13fbe86586d1bca 算法=RSA
+
+时间: 2026/09/12 00:40:32
+时间戳: 1789144832871
+操作: ADMIN initOCSP
+命令: initOCSP RSA 1cdd332012bdc
+结果: OCSP 签名证书 1cdd332012bdc 算法=RSA
+
+时间: 2026/09/12 00:40:33
+时间戳: 1789144833728
+操作: ADMIN initOCSP
+命令: initOCSP RSA 1cdd332012e83
+结果: OCSP 签名证书 1cdd332012e83 算法=RSA
+
+时间: 2026/09/12 00:40:34
+时间戳: 1789144834215
+操作: ADMIN initOCSP
+命令: initOCSP RSA 1cdd332012fe6
+结果: OCSP 签名证书 1cdd332012fe6 算法=RSA
+
+时间: 2026/09/12 00:40:34
+时间戳: 1789144834707
+操作: ADMIN initOCSP
+命令: initOCSP RSA 1cdd332012fa2
+结果: OCSP 签名证书 1cdd332012fa2 算法=RSA
+
+时间: 2026/09/12 00:40:35
+时间戳: 1789144835194
+操作: ADMIN initOCSP
+命令: initOCSP RSA 1cdd332012deb
+结果: OCSP 签名证书 1cdd332012deb 算法=RSA
+
+时间: 2026/09/12 00:40:35
+时间戳: 1789144835374
+操作: ADMIN initOCSP
+命令: initOCSP RSA 1cdd332012dbf
+结果: OCSP 签名证书 1cdd332012dbf 算法=RSA
+
+时间: 2026/09/12 00:40:36
+时间戳: 1789144836120
+操作: ADMIN initOCSP
+命令: initOCSP RSA 1cdd33201302f
+结果: OCSP 签名证书 1cdd33201302f 算法=RSA
+
+时间: 2026/09/12 00:40:36
+时间戳: 1789144836121
+操作: WebAdmin /api/initocsp
+命令: POST /api/initocsp 提交数据={}
+结果: OCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/13fbe86586d1bca_ocsp.crt\r\nOCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/1cdd332012bdc_ocsp.crt\r\nOCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/1cdd332012e83_ocsp.crt\r\nOCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/1cdd332012fe6_ocsp.crt\r\nOCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/1cdd332012fa2_ocsp.crt\r\nOCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/1cdd332012deb_ocsp.crt\r\nOCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/1cdd332012dbf_ocsp.crt\r\nOCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/1cdd33201302f_ocsp.crt\r\ninitOCSP 完成，共 8 张\n
+
+时间: 2026/09/12 00:41:35
+时间戳: 1789144895763
+操作: ADMIN RevokeCERT
+命令: revokecert 1135218a4 5
+结果: 吊销证书 1135218a4 原因=5
+
+时间: 2026/09/12 00:41:35
+时间戳: 1789144895765
+操作: WebAdmin /api/revoke
+命令: POST /api/revoke 提交数据={"serial":"1135218a4","reason":"5"}
+结果: 已吊销证书 1135218a4（原因=5），CRL 已刷新。\nCRL 已生成: 13fbe86586d1bca (算法 RSA/sha512, 吊销 1 条)\r\nCRL 已生成: 1cdd332012bdc (算法 RSA/sha256, 吊销 1 条)\r\nCRL 已生成: 1cdd332012e83 (算法 RSA/sha256, 吊销 1 条)\r\nCRL 已生成: 1cdd332012fe6 (算法 RSA/sha256, 吊销 1 条)\r\nCRL 已生成: 1cdd332012fa2 (算法 RSA/sha256, 吊销 1 条)\r\nCRL 已生成: 1cdd332012deb (算法 RSA/sha256, 吊销 1 条)\r\nCRL 已生成: 1cdd332012dbf (算法 RSA/sha256, 吊销 1 条)\r\nCRL 已生成: 1cdd33201302f (算法 RSA/sha256, 吊销 1 条)\r\nCRL 生成完成，共处理颁发者 8 个\r\n
+
+时间: 2026/09/12 00:42:09
+时间戳: 1789144929454
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRT/1cdd33201302f.crt
+
+时间: 2026/09/12 00:42:09
+时间戳: 1789144929458
+操作: 文件响应
+命令: 
+结果: 文件=1cdd33201302f.crt 大小=2482字节 类型=crt
+
+时间: 2026/09/12 00:42:09
+时间戳: 1789144929483
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRL/1cdd33201302f.crl
+
+时间: 2026/09/12 00:42:09
+时间戳: 1789144929484
+操作: 文件响应
+命令: 
+结果: 文件=1cdd33201302f.crl 大小=636字节 类型=crl
+
+时间: 2026/09/12 00:42:09
+时间戳: 1789144929507
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRL/1cdd33201302f.der.crl
+
+时间: 2026/09/12 00:42:09
+时间戳: 1789144929510
+操作: 文件响应
+命令: 
+结果: 文件=1cdd33201302f.der.crl 大小=426字节 类型=crl
+
+时间: 2026/09/12 00:42:10
+时间戳: 1789144930437
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRL/1cdd33201302f.crl
+
+时间: 2026/09/12 00:42:10
+时间戳: 1789144930438
+操作: 文件响应
+命令: 
+结果: 文件=1cdd33201302f.crl 大小=636字节 类型=crl
+
+时间: 2026/09/12 00:42:10
+时间戳: 1789144930460
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRL/1cdd33201302f.der.crl
+
+时间: 2026/09/12 00:42:10
+时间戳: 1789144930463
+操作: 文件响应
+命令: 
+结果: 文件=1cdd33201302f.der.crl 大小=426字节 类型=crl
+
+时间: 2026/09/12 00:42:10
+时间戳: 1789144930905
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRL/1cdd33201302f.crl
+
+时间: 2026/09/12 00:42:10
+时间戳: 1789144930910
+操作: 文件响应
+命令: 
+结果: 文件=1cdd33201302f.crl 大小=636字节 类型=crl
+
+时间: 2026/09/12 00:42:10
+时间戳: 1789144930929
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRL/1cdd33201302f.der.crl
+
+时间: 2026/09/12 00:42:10
+时间戳: 1789144930930
+操作: 文件响应
+命令: 
+结果: 文件=1cdd33201302f.der.crl 大小=426字节 类型=crl
+
+时间: 2026/09/12 00:42:11
+时间戳: 1789144931161
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRL/1cdd33201302f.crl
+
+时间: 2026/09/12 00:42:11
+时间戳: 1789144931163
+操作: 文件响应
+命令: 
+结果: 文件=1cdd33201302f.crl 大小=636字节 类型=crl
+
+时间: 2026/09/12 00:42:11
+时间戳: 1789144931181
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRL/1cdd33201302f.der.crl
+
+时间: 2026/09/12 00:42:11
+时间戳: 1789144931183
+操作: 文件响应
+命令: 
+结果: 文件=1cdd33201302f.der.crl 大小=426字节 类型=crl
+
+时间: 2026/09/12 00:42:11
+时间戳: 1789144931606
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRL/1cdd33201302f.crl
+
+时间: 2026/09/12 00:42:11
+时间戳: 1789144931608
+操作: 文件响应
+命令: 
+结果: 文件=1cdd33201302f.crl 大小=636字节 类型=crl
+
+时间: 2026/09/12 00:42:11
+时间戳: 1789144931626
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRL/1cdd33201302f.der.crl
+
+时间: 2026/09/12 00:42:11
+时间戳: 1789144931628
+操作: 文件响应
+命令: 
+结果: 文件=1cdd33201302f.der.crl 大小=426字节 类型=crl
+
+时间: 2026/09/12 00:42:12
+时间戳: 1789144932964
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRT/1cdd33201302f.crt
+
+时间: 2026/09/12 00:42:12
+时间戳: 1789144932965
+操作: 文件响应
+命令: 
+结果: 文件=1cdd33201302f.crt 大小=2482字节 类型=crt
+
+时间: 2026/09/12 00:42:13
+时间戳: 1789144933705
+操作: 收到OCSP请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/ocsp 长度=74字节
+
+时间: 2026/09/12 00:42:13
+时间戳: 1789144933713
+操作: OCSP请求解析
+命令: 
+结果: 序列号=1cdd33201302f 哈希=1.3.14.3.2.26 Nonce=无
+
+时间: 2026/09/12 00:42:13
+时间戳: 1789144933737
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=My Root CA By OCSP, OU=Only OCSP Signing, C=CN, O=My Org, OID.1.2.3.4.5.6.7.8.9=AAAAAAA 请求序列号=1cdd33201302f
+
+时间: 2026/09/12 00:42:13
+时间戳: 1789144933741
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1880字节
+
+时间: 2026/09/12 00:42:15
+时间戳: 1789144935170
+操作: 收到OCSP请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/ocsp 长度=72字节
+
+时间: 2026/09/12 00:42:15
+时间戳: 1789144935172
+操作: OCSP请求解析
+命令: 
+结果: 序列号=1135218a4 哈希=1.3.14.3.2.26 Nonce=无
+
+时间: 2026/09/12 00:42:15
+时间戳: 1789144935175
+操作: OCSP响应
+命令: 
+结果: 状态=unauthorized(未知序列号) 长度=5字节
+
+时间: 2026/09/12 00:42:16
+时间戳: 1789144936035
+操作: 收到OCSP请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/ocsp 长度=72字节
+
+时间: 2026/09/12 00:42:16
+时间戳: 1789144936036
+操作: OCSP请求解析
+命令: 
+结果: 序列号=1135218a4 哈希=1.3.14.3.2.26 Nonce=无
+
+时间: 2026/09/12 00:42:16
+时间戳: 1789144936038
+操作: OCSP响应
+命令: 
+结果: 状态=unauthorized(未知序列号) 长度=5字节
+
+时间: 2026/09/12 00:42:16
+时间戳: 1789144936477
+操作: 收到OCSP请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/ocsp 长度=72字节
+
+时间: 2026/09/12 00:42:16
+时间戳: 1789144936479
+操作: OCSP请求解析
+命令: 
+结果: 序列号=1135218a4 哈希=1.3.14.3.2.26 Nonce=无
+
+时间: 2026/09/12 00:42:16
+时间戳: 1789144936480
+操作: OCSP响应
+命令: 
+结果: 状态=unauthorized(未知序列号) 长度=5字节
+
+时间: 2026/09/12 00:42:59
+时间戳: 1789144979188
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRT/1cdd33201302f.crt
+
+时间: 2026/09/12 00:42:59
+时间戳: 1789144979190
+操作: 文件响应
+命令: 
+结果: 文件=1cdd33201302f.crt 大小=2482字节 类型=crt
+
+时间: 2026/09/12 00:43:00
+时间戳: 1789144980779
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRL/1cdd33201302f.crl
+
+时间: 2026/09/12 00:43:00
+时间戳: 1789144980781
+操作: 文件响应
+命令: 
+结果: 文件=1cdd33201302f.crl 大小=636字节 类型=crl
+
+时间: 2026/09/12 00:43:00
+时间戳: 1789144980800
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRL/1cdd33201302f.der.crl
+
+时间: 2026/09/12 00:43:00
+时间戳: 1789144980802
+操作: 文件响应
+命令: 
+结果: 文件=1cdd33201302f.der.crl 大小=426字节 类型=crl
+
+时间: 2026/09/12 00:43:01
+时间戳: 1789144981686
+操作: 收到OCSP请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/ocsp 长度=72字节
+
+时间: 2026/09/12 00:43:01
+时间戳: 1789144981687
+操作: OCSP请求解析
+命令: 
+结果: 序列号=1135218a4 哈希=1.3.14.3.2.26 Nonce=无
+
+时间: 2026/09/12 00:43:01
+时间戳: 1789144981689
+操作: OCSP响应
+命令: 
+结果: 状态=unauthorized(未知序列号) 长度=5字节
+
+时间: 2026/09/12 00:52:29
+时间戳: 1789145549427
+操作: ADMIN signCERT
+命令: signCERT "CN=www.test.com,O=My Org,C=CN" 2048 sha256 1 1.3.6.1.5.5.7.3.5,1.3.6.1.5.5.7.3.1,1.3.6.1.5.5.7.3.3,1.3.6.1.5.5.7.3.6,1.3.6.1.4.1.311.61.1.1 0 2026/09/12-01:52:21T2026/09/12-06:52:24 null null 1cdd332012fa2 RSA
+结果: 签发证书 CN=www.test.com,O=My Org,C=CN 算法=RSA 颁发者=1cdd332012fa2
+
+时间: 2026/09/12 00:52:29
+时间戳: 1789145549429
+操作: WebAdmin /api/signcert
+命令: POST /api/signcert 提交数据={"dn":"CN=www.test.com,O=My Org,C=CN","bits":"2048","hash":"sha256","keyusage":"1","exusage":"1.3.6.1.5.5.7.3.5,1.3.6.1.5.5.7.3.1,1.3.6.1.5.5.7.3.3,1.3.6.1.5.5.7.3.6,1.3.6.1.4.1.311.61.1.1","isca":"0","days":"2026/09/12-01:52:21T2026/09/12-06:52:24","dns":"null","ips":"null","issuer":"1cdd332012fa2","algo":"RSA"}
+结果: 用户证书生成成功！\r\n
+
+时间: 2026/09/12 00:52:43
+时间戳: 1789145563395
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRT/1cdd332012fa2.crt
+
+时间: 2026/09/12 00:52:43
+时间戳: 1789145563402
+操作: 文件响应
+命令: 
+结果: 文件=1cdd332012fa2.crt 大小=2372字节 类型=crt
+
+时间: 2026/09/12 00:53:07
+时间戳: 1789145587757
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRL/1cdd332012fa2.crl
+
+时间: 2026/09/12 00:53:07
+时间戳: 1789145587759
+操作: 文件响应
+命令: 
+结果: 文件=1cdd332012fa2.crl 大小=636字节 类型=crl
+
+时间: 2026/09/12 00:53:07
+时间戳: 1789145587780
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRL/1cdd332012fa2.der.crl
+
+时间: 2026/09/12 00:53:07
+时间戳: 1789145587783
+操作: 文件响应
+命令: 
+结果: 文件=1cdd332012fa2.der.crl 大小=426字节 类型=crl
+
+时间: 2026/09/12 00:53:09
+时间戳: 1789145589102
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRT/1cdd332012fa2.crt
+
+时间: 2026/09/12 00:53:09
+时间戳: 1789145589104
+操作: 文件响应
+命令: 
+结果: 文件=1cdd332012fa2.crt 大小=2372字节 类型=crt
+
+时间: 2026/09/12 00:53:09
+时间戳: 1789145589176
+操作: 收到OCSP请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/ocsp 长度=74字节
+
+时间: 2026/09/12 00:53:09
+时间戳: 1789145589184
+操作: OCSP请求解析
+命令: 
+结果: 序列号=1cdd332012fa2 哈希=1.3.14.3.2.26 Nonce=无
+
+时间: 2026/09/12 00:53:09
+时间戳: 1789145589222
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=My Root CA By OCSP, OU=Only OCSP Signing, C=CN, O=My Org, OID.1.2.3.4.5.6.7.8.9=AAAAAAA 请求序列号=1cdd332012fa2
+
+时间: 2026/09/12 00:53:09
+时间戳: 1789145589234
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1880字节
+
+时间: 2026/09/12 00:53:10
+时间戳: 1789145590213
+操作: 收到OCSP请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/ocsp 长度=72字节
+
+时间: 2026/09/12 00:53:10
+时间戳: 1789145590214
+操作: OCSP请求解析
+命令: 
+结果: 序列号=113521bfd 哈希=1.3.14.3.2.26 Nonce=无
+
+时间: 2026/09/12 00:53:10
+时间戳: 1789145590218
+操作: OCSP响应
+命令: 
+结果: 状态=unauthorized(未知序列号) 长度=5字节
+
+时间: 2026/09/12 00:53:11
+时间戳: 1789145591060
+操作: 收到OCSP请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/ocsp 长度=72字节
+
+时间: 2026/09/12 00:53:11
+时间戳: 1789145591063
+操作: OCSP请求解析
+命令: 
+结果: 序列号=113521bfd 哈希=1.3.14.3.2.26 Nonce=无
+
+时间: 2026/09/12 00:53:11
+时间戳: 1789145591066
+操作: OCSP响应
+命令: 
+结果: 状态=unauthorized(未知序列号) 长度=5字节
+
+时间: 2026/09/12 00:53:11
+时间戳: 1789145591733
+操作: 收到OCSP请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/ocsp 长度=72字节
+
+时间: 2026/09/12 00:53:11
+时间戳: 1789145591735
+操作: OCSP请求解析
+命令: 
+结果: 序列号=113521bfd 哈希=1.3.14.3.2.26 Nonce=无
+
+时间: 2026/09/12 00:53:11
+时间戳: 1789145591737
+操作: OCSP响应
+命令: 
+结果: 状态=unauthorized(未知序列号) 长度=5字节
+
+时间: 2026/09/12 00:53:21
+时间戳: 1789145601010
+操作: ADMIN RevokeCERT
+命令: revokecert 113521bfd 0
+结果: 吊销证书 113521bfd 原因=0
+
+时间: 2026/09/12 00:53:21
+时间戳: 1789145601012
+操作: WebAdmin /api/revoke
+命令: POST /api/revoke 提交数据={"serial":"113521bfd","reason":"0"}
+结果: 已吊销证书 113521bfd（原因=0），CRL 已刷新。\nCRL 已生成: 13fbe86586d1bca (算法 RSA/sha512, 吊销 2 条)\r\nCRL 已生成: 1cdd332012bdc (算法 RSA/sha256, 吊销 2 条)\r\nCRL 已生成: 1cdd332012e83 (算法 RSA/sha256, 吊销 2 条)\r\nCRL 已生成: 1cdd332012fe6 (算法 RSA/sha256, 吊销 2 条)\r\nCRL 已生成: 1cdd332012fa2 (算法 RSA/sha256, 吊销 2 条)\r\nCRL 已生成: 1cdd332012deb (算法 RSA/sha256, 吊销 2 条)\r\nCRL 已生成: 1cdd332012dbf (算法 RSA/sha256, 吊销 2 条)\r\nCRL 已生成: 1cdd33201302f (算法 RSA/sha256, 吊销 2 条)\r\nCRL 生成完成，共处理颁发者 8 个\r\n
+
+时间: 2026/09/12 00:53:25
+时间戳: 1789145605171
+操作: ADMIN RevokeCERT
+命令: revokecert 113521bfd 5
+结果: 吊销证书 113521bfd 原因=5
+
+时间: 2026/09/12 00:53:25
+时间戳: 1789145605172
+操作: WebAdmin /api/revoke
+命令: POST /api/revoke 提交数据={"serial":"113521bfd","reason":"5"}
+结果: 已吊销证书 113521bfd（原因=5），CRL 已刷新。\nCRL 已生成: 13fbe86586d1bca (算法 RSA/sha512, 吊销 2 条)\r\nCRL 已生成: 1cdd332012bdc (算法 RSA/sha256, 吊销 2 条)\r\nCRL 已生成: 1cdd332012e83 (算法 RSA/sha256, 吊销 2 条)\r\nCRL 已生成: 1cdd332012fe6 (算法 RSA/sha256, 吊销 2 条)\r\nCRL 已生成: 1cdd332012fa2 (算法 RSA/sha256, 吊销 2 条)\r\nCRL 已生成: 1cdd332012deb (算法 RSA/sha256, 吊销 2 条)\r\nCRL 已生成: 1cdd332012dbf (算法 RSA/sha256, 吊销 2 条)\r\nCRL 已生成: 1cdd33201302f (算法 RSA/sha256, 吊销 2 条)\r\nCRL 生成完成，共处理颁发者 8 个\r\n
+
+时间: 2026/09/12 00:53:28
+时间戳: 1789145608431
+操作: ADMIN signCRL
+命令: signCRL
+结果: CRL 已刷新
+
+时间: 2026/09/12 00:53:28
+时间戳: 1789145608432
+操作: WebAdmin /api/crl
+命令: POST /api/crl 提交数据={}
+结果: CRL 已生成: 13fbe86586d1bca (算法 RSA/sha512, 吊销 2 条)\r\nCRL 已生成: 1cdd332012bdc (算法 RSA/sha256, 吊销 2 条)\r\nCRL 已生成: 1cdd332012e83 (算法 RSA/sha256, 吊销 2 条)\r\nCRL 已生成: 1cdd332012fe6 (算法 RSA/sha256, 吊销 2 条)\r\nCRL 已生成: 1cdd332012fa2 (算法 RSA/sha256, 吊销 2 条)\r\nCRL 已生成: 1cdd332012deb (算法 RSA/sha256, 吊销 2 条)\r\nCRL 已生成: 1cdd332012dbf (算法 RSA/sha256, 吊销 2 条)\r\nCRL 已生成: 1cdd33201302f (算法 RSA/sha256, 吊销 2 条)\r\nCRL 生成完成，共处理颁发者 8 个\r\n
+
+时间: 2026/09/12 00:53:28
+时间戳: 1789145608886
+操作: ADMIN initOCSP
+命令: initOCSP RSA 13fbe86586d1bca
+结果: OCSP 签名证书 13fbe86586d1bca 算法=RSA
+
+时间: 2026/09/12 00:53:29
+时间戳: 1789145609446
+操作: ADMIN initOCSP
+命令: initOCSP RSA 1cdd332012bdc
+结果: OCSP 签名证书 1cdd332012bdc 算法=RSA
+
+时间: 2026/09/12 00:53:29
+时间戳: 1789145609893
+操作: ADMIN initOCSP
+命令: initOCSP RSA 1cdd332012e83
+结果: OCSP 签名证书 1cdd332012e83 算法=RSA
+
+时间: 2026/09/12 00:53:30
+时间戳: 1789145610732
+操作: ADMIN initOCSP
+命令: initOCSP RSA 1cdd332012fe6
+结果: OCSP 签名证书 1cdd332012fe6 算法=RSA
+
+时间: 2026/09/12 00:53:31
+时间戳: 1789145611064
+操作: ADMIN initOCSP
+命令: initOCSP RSA 1cdd332012fa2
+结果: OCSP 签名证书 1cdd332012fa2 算法=RSA
+
+时间: 2026/09/12 00:53:31
+时间戳: 1789145611266
+操作: ADMIN initOCSP
+命令: initOCSP RSA 1cdd332012deb
+结果: OCSP 签名证书 1cdd332012deb 算法=RSA
+
+时间: 2026/09/12 00:53:31
+时间戳: 1789145611435
+操作: ADMIN initOCSP
+命令: initOCSP RSA 1cdd332012dbf
+结果: OCSP 签名证书 1cdd332012dbf 算法=RSA
+
+时间: 2026/09/12 00:53:31
+时间戳: 1789145611595
+操作: ADMIN initOCSP
+命令: initOCSP RSA 1cdd33201302f
+结果: OCSP 签名证书 1cdd33201302f 算法=RSA
+
+时间: 2026/09/12 00:53:31
+时间戳: 1789145611596
+操作: WebAdmin /api/initocsp
+命令: POST /api/initocsp 提交数据={}
+结果: OCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/13fbe86586d1bca_ocsp.crt\r\nOCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/1cdd332012bdc_ocsp.crt\r\nOCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/1cdd332012e83_ocsp.crt\r\nOCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/1cdd332012fe6_ocsp.crt\r\nOCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/1cdd332012fa2_ocsp.crt\r\nOCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/1cdd332012deb_ocsp.crt\r\nOCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/1cdd332012dbf_ocsp.crt\r\nOCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/1cdd33201302f_ocsp.crt\r\ninitOCSP 完成，共 8 张\n
+
+时间: 2026/09/12 00:53:31
+时间戳: 1789145611957
+操作: ADMIN initTIMSTAMP
+命令: initTIMSTAMP SHA1 RSA 13fbe86586d1bca
+结果: TSA 证书 RSA_sha1 根=13fbe86586d1bca
+
+时间: 2026/09/12 00:53:32
+时间戳: 1789145612137
+操作: ADMIN initTIMSTAMP
+命令: initTIMSTAMP SHA256 RSA 13fbe86586d1bca
+结果: TSA 证书 RSA_sha256 根=13fbe86586d1bca
+
+时间: 2026/09/12 00:53:32
+时间戳: 1789145612139
+操作: WebAdmin /api/inittimestamp
+命令: POST /api/inittimestamp 提交数据={}
+结果: initTIMSTAMP 完成，共 1 张\n
+
+时间: 2026/09/12 00:53:33
+时间戳: 1789145613182
+操作: ADMIN initOCSP
+命令: initOCSP RSA 13fbe86586d1bca
+结果: OCSP 签名证书 13fbe86586d1bca 算法=RSA
+
+时间: 2026/09/12 00:53:33
+时间戳: 1789145613362
+操作: ADMIN initOCSP
+命令: initOCSP RSA 1cdd332012bdc
+结果: OCSP 签名证书 1cdd332012bdc 算法=RSA
+
+时间: 2026/09/12 00:53:33
+时间戳: 1789145613865
+操作: ADMIN initOCSP
+命令: initOCSP RSA 1cdd332012e83
+结果: OCSP 签名证书 1cdd332012e83 算法=RSA
+
+时间: 2026/09/12 00:53:34
+时间戳: 1789145614025
+操作: ADMIN initOCSP
+命令: initOCSP RSA 1cdd332012fe6
+结果: OCSP 签名证书 1cdd332012fe6 算法=RSA
+
+时间: 2026/09/12 00:53:34
+时间戳: 1789145614168
+操作: ADMIN initOCSP
+命令: initOCSP RSA 1cdd332012fa2
+结果: OCSP 签名证书 1cdd332012fa2 算法=RSA
+
+时间: 2026/09/12 00:53:34
+时间戳: 1789145614320
+操作: ADMIN initOCSP
+命令: initOCSP RSA 1cdd332012deb
+结果: OCSP 签名证书 1cdd332012deb 算法=RSA
+
+时间: 2026/09/12 00:53:34
+时间戳: 1789145614853
+操作: ADMIN initOCSP
+命令: initOCSP RSA 1cdd332012dbf
+结果: OCSP 签名证书 1cdd332012dbf 算法=RSA
+
+时间: 2026/09/12 00:53:35
+时间戳: 1789145615314
+操作: ADMIN initOCSP
+命令: initOCSP RSA 1cdd33201302f
+结果: OCSP 签名证书 1cdd33201302f 算法=RSA
+
+时间: 2026/09/12 00:53:35
+时间戳: 1789145615315
+操作: WebAdmin /api/initocsp
+命令: POST /api/initocsp 提交数据={}
+结果: OCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/13fbe86586d1bca_ocsp.crt\r\nOCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/1cdd332012bdc_ocsp.crt\r\nOCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/1cdd332012e83_ocsp.crt\r\nOCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/1cdd332012fe6_ocsp.crt\r\nOCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/1cdd332012fa2_ocsp.crt\r\nOCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/1cdd332012deb_ocsp.crt\r\nOCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/1cdd332012dbf_ocsp.crt\r\nOCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/1cdd33201302f_ocsp.crt\r\ninitOCSP 完成，共 8 张\n
+
+时间: 2026/09/12 00:54:53
+时间戳: 1789145693459
+操作: 收到OCSP请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/ocsp 长度=72字节
+
+时间: 2026/09/12 00:54:53
+时间戳: 1789145693460
+操作: OCSP请求解析
+命令: 
+结果: 序列号=113521bfd 哈希=1.3.14.3.2.26 Nonce=无
+
+时间: 2026/09/12 00:54:53
+时间戳: 1789145693462
+操作: OCSP响应
+命令: 
+结果: 状态=unauthorized(未知序列号) 长度=5字节
+
+时间: 2026/09/12 00:54:55
+时间戳: 1789145695577
+操作: 收到OCSP请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/ocsp 长度=72字节
+
+时间: 2026/09/12 00:54:55
+时间戳: 1789145695579
+操作: OCSP请求解析
+命令: 
+结果: 序列号=113521bfd 哈希=1.3.14.3.2.26 Nonce=无
+
+时间: 2026/09/12 00:54:55
+时间戳: 1789145695580
+操作: OCSP响应
+命令: 
+结果: 状态=unauthorized(未知序列号) 长度=5字节
+
+时间: 2026/09/12 00:54:55
+时间戳: 1789145695750
+操作: 收到OCSP请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/ocsp 长度=72字节
+
+时间: 2026/09/12 00:54:55
+时间戳: 1789145695752
+操作: OCSP请求解析
+命令: 
+结果: 序列号=113521bfd 哈希=1.3.14.3.2.26 Nonce=无
+
+时间: 2026/09/12 00:54:55
+时间戳: 1789145695755
+操作: OCSP响应
+命令: 
+结果: 状态=unauthorized(未知序列号) 长度=5字节
+
+时间: 2026/09/12 00:54:55
+时间戳: 1789145695936
+操作: 收到OCSP请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/ocsp 长度=72字节
+
+时间: 2026/09/12 00:54:55
+时间戳: 1789145695938
+操作: OCSP请求解析
+命令: 
+结果: 序列号=113521bfd 哈希=1.3.14.3.2.26 Nonce=无
+
+时间: 2026/09/12 00:54:55
+时间戳: 1789145695939
+操作: OCSP响应
+命令: 
+结果: 状态=unauthorized(未知序列号) 长度=5字节
+
+时间: 2026/09/12 00:58:37
+时间戳: 1789145917904
+操作: 收到OCSP请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/OCSP 长度=109字节
+
+时间: 2026/09/12 00:58:37
+时间戳: 1789145917920
+操作: OCSP请求解析
+命令: 
+结果: 序列号=113521bfd 哈希=1.3.14.3.2.26 Nonce=041006809a6a9ab6d5ed57d5b2c6120e413a
+
+时间: 2026/09/12 00:58:38
+时间戳: 1789145918036
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=www.test.com By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=113521bfd
+
+时间: 2026/09/12 00:58:38
+时间戳: 1789145918134
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1869字节
+
+时间: 2026/09/12 00:59:19
+时间戳: 1789145959795
+操作: 收到OCSP请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/OCSP 长度=109字节
+
+时间: 2026/09/12 00:59:19
+时间戳: 1789145959800
+操作: OCSP请求解析
+命令: 
+结果: 序列号=11352074e 哈希=1.3.14.3.2.26 Nonce=0410635bb2301a881808c06e60dbb15595bc
+
+时间: 2026/09/12 00:59:19
+时间戳: 1789145959835
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=My Root CA By OCSP, OU=Only OCSP Signing, C=CN, O=My Org, OID.1.2.3.4.5.6.7.8.9=AAAAAAA 请求序列号=11352074e
+
+时间: 2026/09/12 00:59:19
+时间戳: 1789145959837
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1916字节
+
+时间: 2026/09/12 01:00:29
+时间戳: 1789146029215
+操作: 收到OCSP请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/ocsp 长度=72字节
+
+时间: 2026/09/12 01:00:29
+时间戳: 1789146029225
+操作: OCSP请求解析
+命令: 
+结果: 序列号=113521bfd 哈希=1.3.14.3.2.26 Nonce=无
+
+时间: 2026/09/12 01:00:29
+时间戳: 1789146029283
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=www.test.com By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=113521bfd
+
+时间: 2026/09/12 01:00:29
+时间戳: 1789146029287
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1831字节
+
+时间: 2026/09/12 01:00:32
+时间戳: 1789146032681
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRL/1cdd332012fa2.crl
+
+时间: 2026/09/12 01:00:32
+时间戳: 1789146032688
+操作: 文件响应
+命令: 
+结果: 文件=1cdd332012fa2.crl 大小=636字节 类型=crl
+
+时间: 2026/09/12 01:00:32
+时间戳: 1789146032705
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRL/1cdd332012fa2.der.crl
+
+时间: 2026/09/12 01:00:32
+时间戳: 1789146032706
+操作: 文件响应
+命令: 
+结果: 文件=1cdd332012fa2.der.crl 大小=426字节 类型=crl
+
+时间: 2026/09/12 01:00:34
+时间戳: 1789146034647
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRT/1cdd332012fa2.crt
+
+时间: 2026/09/12 01:00:34
+时间戳: 1789146034651
+操作: 文件响应
+命令: 
+结果: 文件=1cdd332012fa2.crt 大小=2372字节 类型=crt
+
+时间: 2026/09/12 01:00:36
+时间戳: 1789146036101
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRL/1cdd332012fa2.crl
+
+时间: 2026/09/12 01:00:36
+时间戳: 1789146036103
+操作: 文件响应
+命令: 
+结果: 文件=1cdd332012fa2.crl 大小=636字节 类型=crl
+
+时间: 2026/09/12 01:00:36
+时间戳: 1789146036122
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRL/1cdd332012fa2.der.crl
+
+时间: 2026/09/12 01:00:36
+时间戳: 1789146036125
+操作: 文件响应
+命令: 
+结果: 文件=1cdd332012fa2.der.crl 大小=426字节 类型=crl
+
+时间: 2026/09/12 01:00:36
+时间戳: 1789146036883
+操作: 收到OCSP请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/ocsp 长度=72字节
+
+时间: 2026/09/12 01:00:36
+时间戳: 1789146036885
+操作: OCSP请求解析
+命令: 
+结果: 序列号=113521bfd 哈希=1.3.14.3.2.26 Nonce=无
+
+时间: 2026/09/12 01:00:36
+时间戳: 1789146036900
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=www.test.com By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=113521bfd
+
+时间: 2026/09/12 01:00:36
+时间戳: 1789146036902
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1831字节
+
+时间: 2026/09/12 01:01:33
+时间戳: 1789146093880
+操作: ADMIN signCERT
+命令: signCERT "CN=www.test.com,O=My Org,C=CN" 2048 sha256 2 1.3.6.1.5.5.7.3.1,1.3.6.1.5.5.7.3.2 0 1 null null 1cdd33201302f RSA
+结果: 签发证书 CN=www.test.com,O=My Org,C=CN 算法=RSA 颁发者=1cdd33201302f
+
+时间: 2026/09/12 01:01:33
+时间戳: 1789146093882
+操作: WebAdmin /api/signcert
+命令: POST /api/signcert 提交数据={"dn":"CN=www.test.com,O=My Org,C=CN","bits":"2048","hash":"sha256","keyusage":"2","exusage":"1.3.6.1.5.5.7.3.1,1.3.6.1.5.5.7.3.2","isca":"0","days":"1","dns":"null","ips":"null","issuer":"1cdd33201302f","algo":"RSA"}
+结果: 用户证书生成成功！\r\n
+
+时间: 2026/09/12 01:02:24
+时间戳: 1789146144839
+操作: 收到时间戳请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/timestamp
+
+时间: 2026/09/12 01:02:24
+时间戳: 1789146144840
+操作: 收到时间戳请求(RFC3161)
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/timestamp
+
+时间: 2026/09/12 01:02:24
+时间戳: 1789146144847
+操作: 时间戳请求解析(RFC3161)
+命令: 
+结果: 摘要算法=2.16.840.1.101.3.4.2.1 消息摘要=f3e2de69d7bbda589f6cb059d6bb374c13ec8431c1550bac95a9de0b315e28e3 Nonce=null
+
+时间: 2026/09/12 01:02:24
+时间戳: 1789146144914
+操作: 时间戳签名(RFC3161)
+命令: 
+结果: 算法=sha256 TSA证书=CN=My Root CA By Timstamp SHA256, OU=Only TSA SHA256 Signing, C=CN, O=My Org, OID.1.2.3.4.5.6.7.8.9=AAAAAAA 摘要=f9fb59647cde4bcba95da7ccfe852c5d3b6fc336
+
+时间: 2026/09/12 01:02:24
+时间戳: 1789146144921
+操作: 时间戳响应(RFC3161)
+命令: 
+结果: 长度=3400字节
+
+时间: 2026/09/12 01:02:49
+时间戳: 1789146169517
+操作: 收到时间戳请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/timestamp
+
+时间: 2026/09/12 01:02:49
+时间戳: 1789146169518
+操作: 时间戳处理异常
+命令: 
+结果: 错误=java.lang.IllegalArgumentException: Illegal base64 character d
+
+时间: 2026/09/12 01:02:58
+时间戳: 1789146178644
+操作: 收到时间戳请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/timestamp
+
+时间: 2026/09/12 01:02:58
+时间戳: 1789146178645
+操作: 时间戳处理异常
+命令: 
+结果: 错误=java.lang.IllegalArgumentException: Illegal base64 character d
+
+时间: 2026/09/12 01:03:05
+时间戳: 1789146185316
+操作: 收到时间戳请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/timestamp
+
+时间: 2026/09/12 01:03:05
+时间戳: 1789146185317
+操作: 收到时间戳请求(RFC3161)
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/timestamp
+
+时间: 2026/09/12 01:03:05
+时间戳: 1789146185318
+操作: 时间戳请求解析(RFC3161)
+命令: 
+结果: 摘要算法=2.16.840.1.101.3.4.2.1 消息摘要=f3e2de69d7bbda589f6cb059d6bb374c13ec8431c1550bac95a9de0b315e28e3 Nonce=null
+
+时间: 2026/09/12 01:03:05
+时间戳: 1789146185336
+操作: 时间戳签名(RFC3161)
+命令: 
+结果: 算法=sha256 TSA证书=CN=My Root CA By Timstamp SHA256, OU=Only TSA SHA256 Signing, C=CN, O=My Org, OID.1.2.3.4.5.6.7.8.9=AAAAAAA 摘要=f9fb59647cde4bcba95da7ccfe852c5d3b6fc336
+
+时间: 2026/09/12 01:03:05
+时间戳: 1789146185340
+操作: 时间戳响应(RFC3161)
+命令: 
+结果: 长度=3400字节
+
+时间: 2026/09/12 01:03:10
+时间戳: 1789146190758
+操作: 收到时间戳请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/timestamp
+
+时间: 2026/09/12 01:03:10
+时间戳: 1789146190759
+操作: 时间戳处理异常
+命令: 
+结果: 错误=java.lang.IllegalArgumentException: Illegal base64 character d
+
+时间: 2026/09/12 01:05:18
+时间戳: 1789146318363
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"113521bfd"}
+结果: 文件 113521bfd 不存在\r\n
+
+时间: 2026/09/12 01:05:19
+时间戳: 1789146319639
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"113521bfd"}
+结果: 文件 113521bfd 不存在\r\n
+
+时间: 2026/09/12 01:05:19
+时间戳: 1789146319996
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"113521bfd"}
+结果: 文件 113521bfd 不存在\r\n
+
+时间: 2026/09/12 01:05:20
+时间戳: 1789146320197
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"113521bfd"}
+结果: 文件 113521bfd 不存在\r\n
+
+时间: 2026/09/12 01:05:29
+时间戳: 1789146329111
+操作: WebAdmin /api/verify 异常
+命令: POST /api/verify 提交数据={"target":"序列号\t类型\t状态\t原因\t时间\t颁发者ID\t算法\t操作 13fbe86586d1bca"}
+结果: 
+错误: java.nio.file.InvalidPathException: Illegal char <	> at index 3: 序列号	类型	状态	原因	时间	颁发者ID	算法	操作 13fbe86586d1bca
+
+时间: 2026/09/12 01:05:42
+时间戳: 1789146342246
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"13fbe86586d1bca"}
+结果: 文件 13fbe86586d1bca 不存在\r\n
+
+时间: 2026/09/12 01:05:43
+时间戳: 1789146343024
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"13fbe86586d1bca"}
+结果: 文件 13fbe86586d1bca 不存在\r\n
+
+时间: 2026/09/12 01:05:43
+时间戳: 1789146343270
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"13fbe86586d1bca"}
+结果: 文件 13fbe86586d1bca 不存在\r\n
+
+时间: 2026/09/12 01:05:43
+时间戳: 1789146343516
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"13fbe86586d1bca"}
+结果: 文件 13fbe86586d1bca 不存在\r\n
+
+时间: 2026/09/12 01:05:43
+时间戳: 1789146343714
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"13fbe86586d1bca"}
+结果: 文件 13fbe86586d1bca 不存在\r\n
+
+时间: 2026/09/12 01:06:11
+时间戳: 1789146371729
+操作: 收到时间戳请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/timestamp
+
+时间: 2026/09/12 01:06:11
+时间戳: 1789146371730
+操作: 时间戳处理异常
+命令: 
+结果: 错误=java.lang.IllegalArgumentException: Illegal base64 character d
+
+时间: 2026/09/12 01:17:42
+时间戳: 1789147062716
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"113521bfd"}
+结果:         版本： 3\r\n      序列号： 0113521bfd\r\n    签名算法： SHA256WITHRSA (1.2.840.113549.1.1.11)\r\n签名哈希算法： SHA256\n\r\n颁发者： CN=www.test.com, O=My Org, C=CN\r\n有效期从： Sat Sep 12 01:52:21 CST 2026\r\n有效期到： Sat Sep 12 06:52:24 CST 2026\n\r\n使用者： CN=www.test.com, O=My Org, C=CN\r\n    公钥： RSA 2048\r\n授权密钥标识符  ： 30168014867a99c2c2f9a70ead0a7cd9797e34deac43c2f3\r\n使用者密钥标识符： 041434d76ec0b8e35227cece2953cb0b08488f981821\n\r\n增强型密钥用法：\n\r\n              1.3.6.1.5.5.7.3.5 (1.3.6.1.5.5.7.3.5)\r\n              服务器身份验证 (1.3.6.1.5.5.7.3.1)\r\n              代码签名 (1.3.6.1.5.5.7.3.3)\r\n              1.3.6.1.5.5.7.3.6 (1.3.6.1.5.5.7.3.6)\r\n              内核模式代码签名 (1.3.6.1.4.1.311.61.1.1)\r\n授权信息访问：\r\n              OCSP   URL=http://localhost:80/ocsp\r\n              颁发者 URL=http://localhost:80/CRT/1cdd332012fa2.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost:80/CRL/1cdd332012fa2.crl\r\n              CRL分发点 = http://localhost:80/CRL/1cdd332012fa2.der.crl\r\ndigitalSignature, nonRepudiation, keyEncipherment, dataEncipherment, keyAgreement\r\n证书策略：\r\n               OID = 1.3.6.1.4.1.4146.1.95\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\n1.3.6.1.5.5.7.1.1:\n        305d302406082b060105050730018618687474703a2f2f6c6f63616c686f73743a38302f6f637370303506082b060105050730028629687474703a2f2f6c6f63616c686f73743a38302f4352542f316364643333323031326661322e637274\n\r\n2.5.29.31:\n        3066302fa02da02b8629687474703a2f2f6c6f63616c686f73743a38302f43524c2f316364643333323031326661322e63726c3033a031a02f862d687474703a2f2f6c6f63616c686f73743a38302f43524c2f316364643333323031326661322e6465722e63726c\n\r\n2.5.29.32:\n        3074306006092b06010401a032015f3053303006082b06010505070201162468747470733a2f2f67697465652e636f6d2f7778677368756a752f6d6f64706b6963612f301f06082b0601050507020230130c11574f41494e490a6e696169776f0a3532313007060567810c01013007060567810c0103\n\r\n2.5.29.35:\n        30168014867a99c2c2f9a70ead0a7cd9797e34deac43c2f3\n\r\n2.5.29.14:\n        041434d76ec0b8e35227cece2953cb0b08488f981821\n\r\n2.5.29.37:\n        303406082b0601050507030506082b0601050507030106082b0601050507030306082b06010505070306060a2b0601040182373d0101\n\r\n\n\n\r\n证书签名：\n        c83de700bb32217b2c82d6d4a97849ff3d0bd0f317bce091ca5af32934a8120936c24bbe6923bcc16a3bdecc63bce9a3b623a5ea909fbfe2bc813fe44b03aee5b7a468005d55543e01f79c8a6fbf66b29217ac1aca2926fbdf49d18060b594411b9190d81497fbb69a94675fbac759e90e49c1f59eed146b9a4c64b7f20cd031988b7fcadd81cf2acc4bb5603595ce17f2fb42c5da6d528a02c07d76db04f0e0bcff89ffcf711cb5a87a9056c1a00a8462837bc0d9809305f6e00c1d435c86be32aec551c8a64d7cb40bd076e81b68e6ddbf16605e158e8fe021c72ace911eb47d138ee5a4fa7ca04a69cebac8b573f2f8c13123660515bf5bc37d8cbdcb1d2c\n\r\n证书类别： 根证书\n\r\n验证签名： 失败\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n证书状态：该证书尚未生效。\r\n\r\n密钥 Id 哈希(SHA1)          ： 7e100325d8a581e34798244fb041b9fce94d14e6\r\n密钥 Id 哈希(RFC-SHA1)      ： 34d76ec0b8e35227cece2953cb0b08488f981821\r\n密钥 Id 哈希(Pin-SHA256)    ： Ni74hMP5U5c/EeREKUkSBCe0SKmH7+yUME3zg25WlRA=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 362ef884c3f953973f11e4442949120427b448a987efec94304df3836e569510\r\n\n\r\n证书哈希(SHA1)              ： 84e1f8ba515e66d68de99311dbc4e24330b53eb7\r\n证书哈希(SHA256)            ： ecbd4a701e2c822eae19b6a48d44f811fd7c481977d85c129798a2df9f2b3bbd\r\n签名哈希                    ： f02bce8b7cf7dc0824110c11f7f9bed61b10e1cd9c4bac514df65220d676133d\r\n
+
+时间: 2026/09/12 01:18:11
+时间戳: 1789147091019
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"113521bfd"}
+结果:         版本： 3\r\n      序列号： 0113521bfd\r\n    签名算法： SHA256WITHRSA (1.2.840.113549.1.1.11)\r\n签名哈希算法： SHA256\n\r\n颁发者： CN=www.test.com, O=My Org, C=CN\r\n有效期从： Sat Sep 12 01:52:21 CST 2026\r\n有效期到： Sat Sep 12 06:52:24 CST 2026\n\r\n使用者： CN=www.test.com, O=My Org, C=CN\r\n    公钥： RSA 2048\r\n授权密钥标识符  ： 30168014867a99c2c2f9a70ead0a7cd9797e34deac43c2f3\r\n使用者密钥标识符： 041434d76ec0b8e35227cece2953cb0b08488f981821\n\r\n增强型密钥用法：\n\r\n              1.3.6.1.5.5.7.3.5 (1.3.6.1.5.5.7.3.5)\r\n              服务器身份验证 (1.3.6.1.5.5.7.3.1)\r\n              代码签名 (1.3.6.1.5.5.7.3.3)\r\n              1.3.6.1.5.5.7.3.6 (1.3.6.1.5.5.7.3.6)\r\n              内核模式代码签名 (1.3.6.1.4.1.311.61.1.1)\r\n授权信息访问：\r\n              OCSP   URL=http://localhost:80/ocsp\r\n              颁发者 URL=http://localhost:80/CRT/1cdd332012fa2.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost:80/CRL/1cdd332012fa2.crl\r\n              CRL分发点 = http://localhost:80/CRL/1cdd332012fa2.der.crl\r\ndigitalSignature, nonRepudiation, keyEncipherment, dataEncipherment, keyAgreement\r\n证书策略：\r\n               OID = 1.3.6.1.4.1.4146.1.95\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\n1.3.6.1.5.5.7.1.1:\n        305d302406082b060105050730018618687474703a2f2f6c6f63616c686f73743a38302f6f637370303506082b060105050730028629687474703a2f2f6c6f63616c686f73743a38302f4352542f316364643333323031326661322e637274\n\r\n2.5.29.31:\n        3066302fa02da02b8629687474703a2f2f6c6f63616c686f73743a38302f43524c2f316364643333323031326661322e63726c3033a031a02f862d687474703a2f2f6c6f63616c686f73743a38302f43524c2f316364643333323031326661322e6465722e63726c\n\r\n2.5.29.32:\n        3074306006092b06010401a032015f3053303006082b06010505070201162468747470733a2f2f67697465652e636f6d2f7778677368756a752f6d6f64706b6963612f301f06082b0601050507020230130c11574f41494e490a6e696169776f0a3532313007060567810c01013007060567810c0103\n\r\n2.5.29.35:\n        30168014867a99c2c2f9a70ead0a7cd9797e34deac43c2f3\n\r\n2.5.29.14:\n        041434d76ec0b8e35227cece2953cb0b08488f981821\n\r\n2.5.29.37:\n        303406082b0601050507030506082b0601050507030106082b0601050507030306082b06010505070306060a2b0601040182373d0101\n\r\n\n\n\r\n证书签名：\n        c83de700bb32217b2c82d6d4a97849ff3d0bd0f317bce091ca5af32934a8120936c24bbe6923bcc16a3bdecc63bce9a3b623a5ea909fbfe2bc813fe44b03aee5b7a468005d55543e01f79c8a6fbf66b29217ac1aca2926fbdf49d18060b594411b9190d81497fbb69a94675fbac759e90e49c1f59eed146b9a4c64b7f20cd031988b7fcadd81cf2acc4bb5603595ce17f2fb42c5da6d528a02c07d76db04f0e0bcff89ffcf711cb5a87a9056c1a00a8462837bc0d9809305f6e00c1d435c86be32aec551c8a64d7cb40bd076e81b68e6ddbf16605e158e8fe021c72ace911eb47d138ee5a4fa7ca04a69cebac8b573f2f8c13123660515bf5bc37d8cbdcb1d2c\n\r\n证书类别： 根证书\n\r\n验证签名： 失败\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n证书状态：该证书尚未生效。\r\n\r\n密钥 Id 哈希(SHA1)          ： 7e100325d8a581e34798244fb041b9fce94d14e6\r\n密钥 Id 哈希(RFC-SHA1)      ： 34d76ec0b8e35227cece2953cb0b08488f981821\r\n密钥 Id 哈希(Pin-SHA256)    ： Ni74hMP5U5c/EeREKUkSBCe0SKmH7+yUME3zg25WlRA=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 362ef884c3f953973f11e4442949120427b448a987efec94304df3836e569510\r\n\n\r\n证书哈希(SHA1)              ： 84e1f8ba515e66d68de99311dbc4e24330b53eb7\r\n证书哈希(SHA256)            ： ecbd4a701e2c822eae19b6a48d44f811fd7c481977d85c129798a2df9f2b3bbd\r\n签名哈希                    ： f02bce8b7cf7dc0824110c11f7f9bed61b10e1cd9c4bac514df65220d676133d\r\n
+
+时间: 2026/09/12 01:18:15
+时间戳: 1789147095118
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"113521bfd"}
+结果:         版本： 3\r\n      序列号： 0113521bfd\r\n    签名算法： SHA256WITHRSA (1.2.840.113549.1.1.11)\r\n签名哈希算法： SHA256\n\r\n颁发者： CN=www.test.com, O=My Org, C=CN\r\n有效期从： Sat Sep 12 01:52:21 CST 2026\r\n有效期到： Sat Sep 12 06:52:24 CST 2026\n\r\n使用者： CN=www.test.com, O=My Org, C=CN\r\n    公钥： RSA 2048\r\n授权密钥标识符  ： 30168014867a99c2c2f9a70ead0a7cd9797e34deac43c2f3\r\n使用者密钥标识符： 041434d76ec0b8e35227cece2953cb0b08488f981821\n\r\n增强型密钥用法：\n\r\n              1.3.6.1.5.5.7.3.5 (1.3.6.1.5.5.7.3.5)\r\n              服务器身份验证 (1.3.6.1.5.5.7.3.1)\r\n              代码签名 (1.3.6.1.5.5.7.3.3)\r\n              1.3.6.1.5.5.7.3.6 (1.3.6.1.5.5.7.3.6)\r\n              内核模式代码签名 (1.3.6.1.4.1.311.61.1.1)\r\n授权信息访问：\r\n              OCSP   URL=http://localhost:80/ocsp\r\n              颁发者 URL=http://localhost:80/CRT/1cdd332012fa2.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost:80/CRL/1cdd332012fa2.crl\r\n              CRL分发点 = http://localhost:80/CRL/1cdd332012fa2.der.crl\r\ndigitalSignature, nonRepudiation, keyEncipherment, dataEncipherment, keyAgreement\r\n证书策略：\r\n               OID = 1.3.6.1.4.1.4146.1.95\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\n1.3.6.1.5.5.7.1.1:\n        305d302406082b060105050730018618687474703a2f2f6c6f63616c686f73743a38302f6f637370303506082b060105050730028629687474703a2f2f6c6f63616c686f73743a38302f4352542f316364643333323031326661322e637274\n\r\n2.5.29.31:\n        3066302fa02da02b8629687474703a2f2f6c6f63616c686f73743a38302f43524c2f316364643333323031326661322e63726c3033a031a02f862d687474703a2f2f6c6f63616c686f73743a38302f43524c2f316364643333323031326661322e6465722e63726c\n\r\n2.5.29.32:\n        3074306006092b06010401a032015f3053303006082b06010505070201162468747470733a2f2f67697465652e636f6d2f7778677368756a752f6d6f64706b6963612f301f06082b0601050507020230130c11574f41494e490a6e696169776f0a3532313007060567810c01013007060567810c0103\n\r\n2.5.29.35:\n        30168014867a99c2c2f9a70ead0a7cd9797e34deac43c2f3\n\r\n2.5.29.14:\n        041434d76ec0b8e35227cece2953cb0b08488f981821\n\r\n2.5.29.37:\n        303406082b0601050507030506082b0601050507030106082b0601050507030306082b06010505070306060a2b0601040182373d0101\n\r\n\n\n\r\n证书签名：\n        c83de700bb32217b2c82d6d4a97849ff3d0bd0f317bce091ca5af32934a8120936c24bbe6923bcc16a3bdecc63bce9a3b623a5ea909fbfe2bc813fe44b03aee5b7a468005d55543e01f79c8a6fbf66b29217ac1aca2926fbdf49d18060b594411b9190d81497fbb69a94675fbac759e90e49c1f59eed146b9a4c64b7f20cd031988b7fcadd81cf2acc4bb5603595ce17f2fb42c5da6d528a02c07d76db04f0e0bcff89ffcf711cb5a87a9056c1a00a8462837bc0d9809305f6e00c1d435c86be32aec551c8a64d7cb40bd076e81b68e6ddbf16605e158e8fe021c72ace911eb47d138ee5a4fa7ca04a69cebac8b573f2f8c13123660515bf5bc37d8cbdcb1d2c\n\r\n证书类别： 根证书\n\r\n验证签名： 失败\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n证书状态：该证书尚未生效。\r\n\r\n密钥 Id 哈希(SHA1)          ： 7e100325d8a581e34798244fb041b9fce94d14e6\r\n密钥 Id 哈希(RFC-SHA1)      ： 34d76ec0b8e35227cece2953cb0b08488f981821\r\n密钥 Id 哈希(Pin-SHA256)    ： Ni74hMP5U5c/EeREKUkSBCe0SKmH7+yUME3zg25WlRA=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 362ef884c3f953973f11e4442949120427b448a987efec94304df3836e569510\r\n\n\r\n证书哈希(SHA1)              ： 84e1f8ba515e66d68de99311dbc4e24330b53eb7\r\n证书哈希(SHA256)            ： ecbd4a701e2c822eae19b6a48d44f811fd7c481977d85c129798a2df9f2b3bbd\r\n签名哈希                    ： f02bce8b7cf7dc0824110c11f7f9bed61b10e1cd9c4bac514df65220d676133d\r\n
+
+时间: 2026/09/12 01:18:22
+时间戳: 1789147102711
+操作: 收到时间戳请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/timestamp
+
+时间: 2026/09/12 01:18:22
+时间戳: 1789147102714
+操作: 时间戳处理异常
+命令: 
+结果: 错误=java.lang.IllegalArgumentException: Input byte array has incorrect ending byte at 396 请求体前256字节HEX=4d4949424977594b4b775942424147434e774d434154434341524d474353714753496233445145484161434341515145676745414455493970725768567965670d0a5a2b4d41334e37492f6d7053464c66456274585253486257327a704d384347632f4331546843454d6c4e6878646b77433743454a6e336341636e5a4d4d4251420d0a2f437358476d435441664e33304a6e654f38622f42673874483469584f54667762597a5242572f345a672b66774b3838494c61365a6a4e3266782f4e50302f520d0a493047504735446f5174394c745a464b366b594d55395232627a4a47455946316c6774766730376a494e39532b6b783652524c34386b63434472
+
+时间: 2026/09/12 01:18:33
+时间戳: 1789147113870
+操作: 收到时间戳请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/timestamp
+
+时间: 2026/09/12 01:18:33
+时间戳: 1789147113872
+操作: 时间戳处理异常
+命令: 
+结果: 错误=java.lang.IllegalArgumentException: Input byte array has incorrect ending byte at 396 请求体前256字节HEX=4d4949424977594b4b775942424147434e774d434154434341524d474353714753496233445145484161434341515145676745414455493970725768567965670d0a5a2b4d41334e37492f6d7053464c66456274585253486257327a704d384347632f4331546843454d6c4e6878646b77433743454a6e336341636e5a4d4d4251420d0a2f437358476d435441664e33304a6e654f38622f42673874483469584f54667762597a5242572f345a672b66774b3838494c61365a6a4e3266782f4e50302f520d0a493047504735446f5174394c745a464b366b594d55395232627a4a47455946316c6774766730376a494e39532b6b783652524c34386b63434472
+
+时间: 2026/09/12 01:18:37
+时间戳: 1789147117461
+操作: 收到时间戳请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/timestamp
+
+时间: 2026/09/12 01:18:37
+时间戳: 1789147117462
+操作: 收到时间戳请求(RFC3161)
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/timestamp
+
+时间: 2026/09/12 01:18:37
+时间戳: 1789147117468
+操作: 时间戳请求解析(RFC3161)
+命令: 
+结果: 摘要算法=2.16.840.1.101.3.4.2.1 消息摘要=f3e2de69d7bbda589f6cb059d6bb374c13ec8431c1550bac95a9de0b315e28e3 Nonce=null
+
+时间: 2026/09/12 01:18:37
+时间戳: 1789147117551
+操作: 时间戳签名(RFC3161)
+命令: 
+结果: 算法=sha256 TSA证书=CN=My Root CA By Timstamp SHA256, OU=Only TSA SHA256 Signing, C=CN, O=My Org, OID.1.2.3.4.5.6.7.8.9=AAAAAAA 摘要=f9fb59647cde4bcba95da7ccfe852c5d3b6fc336
+
+时间: 2026/09/12 01:18:37
+时间戳: 1789147117559
+操作: 时间戳响应(RFC3161)
+命令: 
+结果: 长度=3400字节
+
+时间: 2026/09/12 01:18:41
+时间戳: 1789147121962
+操作: 收到时间戳请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/timestamp
+
+时间: 2026/09/12 01:18:41
+时间戳: 1789147121964
+操作: 时间戳处理异常
+命令: 
+结果: 错误=java.lang.IllegalArgumentException: Input byte array has incorrect ending byte at 396 请求体前256字节HEX=4d4949424977594b4b775942424147434e774d434154434341524d474353714753496233445145484161434341515145676745414455493970725768567965670d0a5a2b4d41334e37492f6d7053464c66456274585253486257327a704d384347632f4331546843454d6c4e6878646b77433743454a6e336341636e5a4d4d4251420d0a2f437358476d435441664e33304a6e654f38622f42673874483469584f54667762597a5242572f345a672b66774b3838494c61365a6a4e3266782f4e50302f520d0a493047504735446f5174394c745a464b366b594d55395232627a4a47455946316c6774766730376a494e39532b6b783652524c34386b63434472
+
+时间: 2026/09/12 01:20:00
+时间戳: 1789147200094
+操作: 收到时间戳请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/timestamp
+
+时间: 2026/09/12 01:20:00
+时间戳: 1789147200183
+操作: 时间戳签名
+命令: 
+结果: 算法=Authenticode-SHA256 证书=CN=My Root CA By Timstamp SHA256, OU=Only TSA SHA256 Signing, C=CN, O=My Org, OID.1.2.3.4.5.6.7.8.9=AAAAAAA 摘要=b2aceedac1508f375f9c2748a2f0f8035205a1dc
+
+时间: 2026/09/12 01:20:00
+时间戳: 1789147200248
+操作: 时间戳响应
+命令: 
+结果: 长度=2428字节
+
+时间: 2026/09/12 01:20:53
+时间戳: 1789147253228
+操作: 收到时间戳请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/timestamp
+
+时间: 2026/09/12 01:20:53
+时间戳: 1789147253242
+操作: 时间戳签名
+命令: 
+结果: 算法=Authenticode-SHA256 证书=CN=My Root CA By Timstamp SHA256, OU=Only TSA SHA256 Signing, C=CN, O=My Org, OID.1.2.3.4.5.6.7.8.9=AAAAAAA 摘要=b2aceedac1508f375f9c2748a2f0f8035205a1dc
+
+时间: 2026/09/12 01:20:53
+时间戳: 1789147253246
+操作: 时间戳响应
+命令: 
+结果: 长度=2428字节
+
+时间: 2026/09/12 01:20:58
+时间戳: 1789147258921
+操作: 收到时间戳请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/timestamp
+
+时间: 2026/09/12 01:20:58
+时间戳: 1789147258930
+操作: 时间戳签名
+命令: 
+结果: 算法=Authenticode-SHA256 证书=CN=My Root CA By Timstamp SHA256, OU=Only TSA SHA256 Signing, C=CN, O=My Org, OID.1.2.3.4.5.6.7.8.9=AAAAAAA 摘要=b2aceedac1508f375f9c2748a2f0f8035205a1dc
+
+时间: 2026/09/12 01:20:58
+时间戳: 1789147258933
+操作: 时间戳响应
+命令: 
+结果: 长度=2428字节
+
+时间: 2026/09/12 01:22:57
+时间戳: 1789147377649
+操作: 收到时间戳请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/timestamp
+
+时间: 2026/09/12 01:22:57
+时间戳: 1789147377703
+操作: 时间戳签名
+命令: 
+结果: 算法=Authenticode-SHA256 证书=CN=My Root CA By Timstamp SHA256, OU=Only TSA SHA256 Signing, C=CN, O=My Org, OID.1.2.3.4.5.6.7.8.9=AAAAAAA 摘要=b2aceedac1508f375f9c2748a2f0f8035205a1dc
+
+时间: 2026/09/12 01:22:57
+时间戳: 1789147377713
+操作: 时间戳响应
+命令: 
+结果: 长度=2428字节
+
+时间: 2026/09/12 01:23:02
+时间戳: 1789147382453
+操作: 收到时间戳请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/timestamp
+
+时间: 2026/09/12 01:23:02
+时间戳: 1789147382454
+操作: 收到时间戳请求(RFC3161)
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/timestamp
+
+时间: 2026/09/12 01:23:02
+时间戳: 1789147382459
+操作: 时间戳请求解析(RFC3161)
+命令: 
+结果: 摘要算法=2.16.840.1.101.3.4.2.1 消息摘要=f3e2de69d7bbda589f6cb059d6bb374c13ec8431c1550bac95a9de0b315e28e3 Nonce=null
+
+时间: 2026/09/12 01:23:02
+时间戳: 1789147382504
+操作: 时间戳签名(RFC3161)
+命令: 
+结果: 算法=sha256 TSA证书=CN=My Root CA By Timstamp SHA256, OU=Only TSA SHA256 Signing, C=CN, O=My Org, OID.1.2.3.4.5.6.7.8.9=AAAAAAA 摘要=f9fb59647cde4bcba95da7ccfe852c5d3b6fc336
+
+时间: 2026/09/12 01:23:02
+时间戳: 1789147382508
+操作: 时间戳响应(RFC3161)
+命令: 
+结果: 长度=3400字节
+
+时间: 2026/09/12 01:23:07
+时间戳: 1789147387079
+操作: 收到时间戳请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/timestamp
+
+时间: 2026/09/12 01:23:07
+时间戳: 1789147387088
+操作: 时间戳签名
+命令: 
+结果: 算法=Authenticode-SHA256 证书=CN=My Root CA By Timstamp SHA256, OU=Only TSA SHA256 Signing, C=CN, O=My Org, OID.1.2.3.4.5.6.7.8.9=AAAAAAA 摘要=b2aceedac1508f375f9c2748a2f0f8035205a1dc
+
+时间: 2026/09/12 01:23:07
+时间戳: 1789147387094
+操作: 时间戳响应
+命令: 
+结果: 长度=2428字节
+
+时间: 2026/09/12 01:23:18
+时间戳: 1789147398054
+操作: 收到时间戳请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/timestamp
+
+时间: 2026/09/12 01:23:18
+时间戳: 1789147398064
+操作: 时间戳签名
+命令: 
+结果: 算法=Authenticode-SHA256 证书=CN=My Root CA By Timstamp SHA256, OU=Only TSA SHA256 Signing, C=CN, O=My Org, OID.1.2.3.4.5.6.7.8.9=AAAAAAA 摘要=b2aceedac1508f375f9c2748a2f0f8035205a1dc
+
+时间: 2026/09/12 01:23:18
+时间戳: 1789147398067
+操作: 时间戳响应
+命令: 
+结果: 长度=2428字节
+
+时间: 2026/09/12 01:23:19
+时间戳: 1789147399148
+操作: 收到时间戳请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/timestamp
+
+时间: 2026/09/12 01:23:19
+时间戳: 1789147399163
+操作: 时间戳签名
+命令: 
+结果: 算法=Authenticode-SHA256 证书=CN=My Root CA By Timstamp SHA256, OU=Only TSA SHA256 Signing, C=CN, O=My Org, OID.1.2.3.4.5.6.7.8.9=AAAAAAA 摘要=b2aceedac1508f375f9c2748a2f0f8035205a1dc
+
+时间: 2026/09/12 01:23:19
+时间戳: 1789147399166
+操作: 时间戳响应
+命令: 
+结果: 长度=2428字节
+
+时间: 2026/09/12 01:26:07
+时间戳: 1789147567830
+操作: 收到时间戳请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/timestamp
+
+时间: 2026/09/12 01:26:07
+时间戳: 1789147567925
+操作: 时间戳签名
+命令: 
+结果: 算法=Authenticode-SHA256 证书=CN=My Root CA By Timstamp SHA256, OU=Only TSA SHA256 Signing, C=CN, O=My Org, OID.1.2.3.4.5.6.7.8.9=AAAAAAA 摘要=b2aceedac1508f375f9c2748a2f0f8035205a1dc
+
+时间: 2026/09/12 01:26:07
+时间戳: 1789147567977
+操作: 时间戳响应
+命令: 
+结果: 长度=3308字节
+
+时间: 2026/09/12 01:29:06
+时间戳: 1789147746152
+操作: 收到时间戳请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/timestamp
+
+时间: 2026/09/12 01:29:06
+时间戳: 1789147746212
+操作: 时间戳签名
+命令: 
+结果: 算法=Authenticode-SHA256 证书=CN=My Root CA By Timstamp SHA256, OU=Only TSA SHA256 Signing, C=CN, O=My Org, OID.1.2.3.4.5.6.7.8.9=AAAAAAA 摘要=b2aceedac1508f375f9c2748a2f0f8035205a1dc
+
+时间: 2026/09/12 01:29:06
+时间戳: 1789147746215
+操作: 时间戳响应
+命令: 
+结果: 长度=3308字节
+
+时间: 2026/09/12 01:29:23
+时间戳: 1789147763126
+操作: 收到时间戳请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/timestamp
+
+时间: 2026/09/12 01:29:23
+时间戳: 1789147763138
+操作: 时间戳签名
+命令: 
+结果: 算法=Authenticode-SHA256 证书=CN=My Root CA By Timstamp SHA256, OU=Only TSA SHA256 Signing, C=CN, O=My Org, OID.1.2.3.4.5.6.7.8.9=AAAAAAA 摘要=30da2ccf6e86bca323da28ef582581a5e422c363
+
+时间: 2026/09/12 01:29:23
+时间戳: 1789147763142
+操作: 时间戳响应
+命令: 
+结果: 长度=3308字节
+
+时间: 2026/09/12 01:29:23
+时间戳: 1789147763615
+操作: 收到时间戳请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/timestamp
+
+时间: 2026/09/12 01:29:23
+时间戳: 1789147763625
+操作: 时间戳签名
+命令: 
+结果: 算法=Authenticode-SHA256 证书=CN=My Root CA By Timstamp SHA256, OU=Only TSA SHA256 Signing, C=CN, O=My Org, OID.1.2.3.4.5.6.7.8.9=AAAAAAA 摘要=30da2ccf6e86bca323da28ef582581a5e422c363
+
+时间: 2026/09/12 01:29:23
+时间戳: 1789147763629
+操作: 时间戳响应
+命令: 
+结果: 长度=3308字节
+
+时间: 2026/09/12 01:29:47
+时间戳: 1789147787201
+操作: 收到时间戳请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/timestamp
+
+时间: 2026/09/12 01:29:47
+时间戳: 1789147787212
+操作: 时间戳签名
+命令: 
+结果: 算法=Authenticode-SHA256 证书=CN=My Root CA By Timstamp SHA256, OU=Only TSA SHA256 Signing, C=CN, O=My Org, OID.1.2.3.4.5.6.7.8.9=AAAAAAA 摘要=b2aceedac1508f375f9c2748a2f0f8035205a1dc
+
+时间: 2026/09/12 01:29:47
+时间戳: 1789147787217
+操作: 时间戳响应
+命令: 
+结果: 长度=3308字节
+
+时间: 2026/09/12 01:29:53
+时间戳: 1789147793842
+操作: 收到时间戳请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/timestamp
+
+时间: 2026/09/12 01:29:53
+时间戳: 1789147793844
+操作: 收到时间戳请求(RFC3161)
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/timestamp
+
+时间: 2026/09/12 01:29:53
+时间戳: 1789147793849
+操作: 时间戳请求解析(RFC3161)
+命令: 
+结果: 摘要算法=2.16.840.1.101.3.4.2.1 消息摘要=f3e2de69d7bbda589f6cb059d6bb374c13ec8431c1550bac95a9de0b315e28e3 Nonce=null
+
+时间: 2026/09/12 01:29:53
+时间戳: 1789147793900
+操作: 时间戳签名(RFC3161)
+命令: 
+结果: 算法=sha256 TSA证书=CN=My Root CA By Timstamp SHA256, OU=Only TSA SHA256 Signing, C=CN, O=My Org, OID.1.2.3.4.5.6.7.8.9=AAAAAAA 摘要=f9fb59647cde4bcba95da7ccfe852c5d3b6fc336
+
+时间: 2026/09/12 01:29:53
+时间戳: 1789147793906
+操作: 时间戳响应(RFC3161)
+命令: 
+结果: 长度=3400字节
+
+时间: 2026/09/12 01:30:09
+时间戳: 1789147809863
+操作: 收到时间戳请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/timestamp
+
+时间: 2026/09/12 01:30:09
+时间戳: 1789147809865
+操作: 收到时间戳请求(RFC3161)
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/timestamp
+
+时间: 2026/09/12 01:30:09
+时间戳: 1789147809867
+操作: 时间戳请求解析(RFC3161)
+命令: 
+结果: 摘要算法=1.3.14.3.2.26 消息摘要=30da2ccf6e86bca323da28ef582581a5e422c363 Nonce=null
+
+时间: 2026/09/12 01:30:09
+时间戳: 1789147809905
+操作: 时间戳签名(RFC3161)
+命令: 
+结果: 算法=sha1 TSA证书=CN=My Root CA By Timstamp SHA1, OU=Only TSA SHA1 Signing, C=CN, O=My Org, OID.1.2.3.4.5.6.7.8.9=AAAAAAA 摘要=75666b61d8a0a724154b5ebd9632583af853d572
+
+时间: 2026/09/12 01:30:09
+时间戳: 1789147809910
+操作: 时间戳响应(RFC3161)
+命令: 
+结果: 长度=3350字节
+
+时间: 2026/09/12 01:30:37
+时间戳: 1789147837167
+操作: 收到时间戳请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/timestamp
+
+时间: 2026/09/12 01:30:37
+时间戳: 1789147837168
+操作: 收到时间戳请求(RFC3161)
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/timestamp
+
+时间: 2026/09/12 01:30:37
+时间戳: 1789147837169
+操作: 时间戳请求解析(RFC3161)
+命令: 
+结果: 摘要算法=2.16.840.1.101.3.4.2.1 消息摘要=f3e2de69d7bbda589f6cb059d6bb374c13ec8431c1550bac95a9de0b315e28e3 Nonce=null
+
+时间: 2026/09/12 01:30:37
+时间戳: 1789147837191
+操作: 时间戳签名(RFC3161)
+命令: 
+结果: 算法=sha256 TSA证书=CN=My Root CA By Timstamp SHA256, OU=Only TSA SHA256 Signing, C=CN, O=My Org, OID.1.2.3.4.5.6.7.8.9=AAAAAAA 摘要=f9fb59647cde4bcba95da7ccfe852c5d3b6fc336
+
+时间: 2026/09/12 01:30:37
+时间戳: 1789147837195
+操作: 时间戳响应(RFC3161)
+命令: 
+结果: 长度=3400字节
+
+时间: 2026/09/12 01:33:31
+时间戳: 1789148011311
+操作: ADMIN signCRL
+命令: signCRL
+结果: CRL 已刷新
+
+时间: 2026/09/12 01:33:31
+时间戳: 1789148011314
+操作: WebAdmin /api/crl
+命令: POST /api/crl 提交数据={}
+结果: CRL 已生成: 13fbe86586d1bca (算法 RSA/sha512, 吊销 1 条)\r\nCRL 已生成: 1cdd332012bdc (算法 RSA/sha256, 吊销 1 条)\r\nCRL 已生成: 1cdd332012e83 (算法 RSA/sha256, 吊销 1 条)\r\nCRL 已生成: 1cdd332012fe6 (算法 RSA/sha256, 吊销 1 条)\r\nCRL 已生成: 1cdd332012fa2 (算法 RSA/sha256, 吊销 1 条)\r\nCRL 已生成: 1cdd332012deb (算法 RSA/sha256, 吊销 1 条)\r\nCRL 已生成: 1cdd332012dbf (算法 RSA/sha256, 吊销 1 条)\r\nCRL 已生成: 1cdd33201302f (算法 RSA/sha256, 吊销 1 条)\r\nCRL 生成完成，共处理颁发者 8 个\r\n
+
+时间: 2026/09/12 01:33:32
+时间戳: 1789148012855
+操作: ADMIN initOCSP
+命令: initOCSP RSA 13fbe86586d1bca
+结果: OCSP 签名证书 13fbe86586d1bca 算法=RSA
+
+时间: 2026/09/12 01:33:33
+时间戳: 1789148013887
+操作: ADMIN initOCSP
+命令: initOCSP RSA 1cdd332012bdc
+结果: OCSP 签名证书 1cdd332012bdc 算法=RSA
+
+时间: 2026/09/12 01:33:34
+时间戳: 1789148014026
+操作: ADMIN initOCSP
+命令: initOCSP RSA 1cdd332012e83
+结果: OCSP 签名证书 1cdd332012e83 算法=RSA
+
+时间: 2026/09/12 01:33:34
+时间戳: 1789148014336
+操作: ADMIN initOCSP
+命令: initOCSP RSA 1cdd332012fe6
+结果: OCSP 签名证书 1cdd332012fe6 算法=RSA
+
+时间: 2026/09/12 01:33:34
+时间戳: 1789148014569
+操作: ADMIN initOCSP
+命令: initOCSP RSA 1cdd332012fa2
+结果: OCSP 签名证书 1cdd332012fa2 算法=RSA
+
+时间: 2026/09/12 01:33:34
+时间戳: 1789148014697
+操作: ADMIN initOCSP
+命令: initOCSP RSA 1cdd332012deb
+结果: OCSP 签名证书 1cdd332012deb 算法=RSA
+
+时间: 2026/09/12 01:33:35
+时间戳: 1789148015237
+操作: ADMIN initOCSP
+命令: initOCSP RSA 1cdd332012dbf
+结果: OCSP 签名证书 1cdd332012dbf 算法=RSA
+
+时间: 2026/09/12 01:33:35
+时间戳: 1789148015749
+操作: ADMIN initOCSP
+命令: initOCSP RSA 1cdd33201302f
+结果: OCSP 签名证书 1cdd33201302f 算法=RSA
+
+时间: 2026/09/12 01:33:35
+时间戳: 1789148015751
+操作: WebAdmin /api/initocsp
+命令: POST /api/initocsp 提交数据={}
+结果: OCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/13fbe86586d1bca_ocsp.crt\r\nOCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/1cdd332012bdc_ocsp.crt\r\nOCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/1cdd332012e83_ocsp.crt\r\nOCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/1cdd332012fe6_ocsp.crt\r\nOCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/1cdd332012fa2_ocsp.crt\r\nOCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/1cdd332012deb_ocsp.crt\r\nOCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/1cdd332012dbf_ocsp.crt\r\nOCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/1cdd33201302f_ocsp.crt\r\ninitOCSP 完成，共 8 张\n
+
+时间: 2026/09/12 01:33:37
+时间戳: 1789148017150
+操作: ADMIN initTIMSTAMP
+命令: initTIMSTAMP SHA1 RSA 13fbe86586d1bca
+结果: TSA 证书 RSA_sha1 根=13fbe86586d1bca
+
+时间: 2026/09/12 01:33:37
+时间戳: 1789148017327
+操作: ADMIN initTIMSTAMP
+命令: initTIMSTAMP SHA256 RSA 13fbe86586d1bca
+结果: TSA 证书 RSA_sha256 根=13fbe86586d1bca
+
+时间: 2026/09/12 01:33:37
+时间戳: 1789148017329
+操作: WebAdmin /api/inittimestamp
+命令: POST /api/inittimestamp 提交数据={}
+结果: initTIMSTAMP 完成，共 1 张\n
+
+时间: 2026/09/12 01:35:30
+时间戳: 1789148130554
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"113521bfd"}
+结果:         版本： 3\r\n      序列号： 0113521bfd\r\n    签名算法： SHA256WITHRSA (1.2.840.113549.1.1.11)\r\n签名哈希算法： SHA256\n\r\n颁发者： CN=www.test.com, O=My Org, C=CN\r\n有效期从： Sat Sep 12 01:52:21 CST 2026\r\n有效期到： Sat Sep 12 06:52:24 CST 2026\n\r\n使用者： CN=www.test.com, O=My Org, C=CN\r\n    公钥： RSA 2048\r\n授权密钥标识符  ： 30168014867a99c2c2f9a70ead0a7cd9797e34deac43c2f3\r\n使用者密钥标识符： 041434d76ec0b8e35227cece2953cb0b08488f981821\n\r\n增强型密钥用法：\n\r\n              1.3.6.1.5.5.7.3.5 (1.3.6.1.5.5.7.3.5)\r\n              服务器身份验证 (1.3.6.1.5.5.7.3.1)\r\n              代码签名 (1.3.6.1.5.5.7.3.3)\r\n              1.3.6.1.5.5.7.3.6 (1.3.6.1.5.5.7.3.6)\r\n              内核模式代码签名 (1.3.6.1.4.1.311.61.1.1)\r\n授权信息访问：\r\n              OCSP   URL=http://localhost:80/ocsp\r\n              颁发者 URL=http://localhost:80/CRT/1cdd332012fa2.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost:80/CRL/1cdd332012fa2.crl\r\n              CRL分发点 = http://localhost:80/CRL/1cdd332012fa2.der.crl\r\ndigitalSignature, nonRepudiation, keyEncipherment, dataEncipherment, keyAgreement\r\n证书策略：\r\n               OID = 1.3.6.1.4.1.4146.1.95\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\n1.3.6.1.5.5.7.1.1:\n        305d302406082b060105050730018618687474703a2f2f6c6f63616c686f73743a38302f6f637370303506082b060105050730028629687474703a2f2f6c6f63616c686f73743a38302f4352542f316364643333323031326661322e637274\n\r\n2.5.29.31:\n        3066302fa02da02b8629687474703a2f2f6c6f63616c686f73743a38302f43524c2f316364643333323031326661322e63726c3033a031a02f862d687474703a2f2f6c6f63616c686f73743a38302f43524c2f316364643333323031326661322e6465722e63726c\n\r\n2.5.29.32:\n        3074306006092b06010401a032015f3053303006082b06010505070201162468747470733a2f2f67697465652e636f6d2f7778677368756a752f6d6f64706b6963612f301f06082b0601050507020230130c11574f41494e490a6e696169776f0a3532313007060567810c01013007060567810c0103\n\r\n2.5.29.35:\n        30168014867a99c2c2f9a70ead0a7cd9797e34deac43c2f3\n\r\n2.5.29.14:\n        041434d76ec0b8e35227cece2953cb0b08488f981821\n\r\n2.5.29.37:\n        303406082b0601050507030506082b0601050507030106082b0601050507030306082b06010505070306060a2b0601040182373d0101\n\r\n\n\n\r\n证书签名：\n        c83de700bb32217b2c82d6d4a97849ff3d0bd0f317bce091ca5af32934a8120936c24bbe6923bcc16a3bdecc63bce9a3b623a5ea909fbfe2bc813fe44b03aee5b7a468005d55543e01f79c8a6fbf66b29217ac1aca2926fbdf49d18060b594411b9190d81497fbb69a94675fbac759e90e49c1f59eed146b9a4c64b7f20cd031988b7fcadd81cf2acc4bb5603595ce17f2fb42c5da6d528a02c07d76db04f0e0bcff89ffcf711cb5a87a9056c1a00a8462837bc0d9809305f6e00c1d435c86be32aec551c8a64d7cb40bd076e81b68e6ddbf16605e158e8fe021c72ace911eb47d138ee5a4fa7ca04a69cebac8b573f2f8c13123660515bf5bc37d8cbdcb1d2c\n\r\n证书类别： 根证书\n\r\n验证签名： 失败\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n证书状态：该证书尚未生效。\r\n\r\n密钥 Id 哈希(SHA1)          ： 7e100325d8a581e34798244fb041b9fce94d14e6\r\n密钥 Id 哈希(RFC-SHA1)      ： 34d76ec0b8e35227cece2953cb0b08488f981821\r\n密钥 Id 哈希(Pin-SHA256)    ： Ni74hMP5U5c/EeREKUkSBCe0SKmH7+yUME3zg25WlRA=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 362ef884c3f953973f11e4442949120427b448a987efec94304df3836e569510\r\n\n\r\n证书哈希(SHA1)              ： 84e1f8ba515e66d68de99311dbc4e24330b53eb7\r\n证书哈希(SHA256)            ： ecbd4a701e2c822eae19b6a48d44f811fd7c481977d85c129798a2df9f2b3bbd\r\n签名哈希                    ： f02bce8b7cf7dc0824110c11f7f9bed61b10e1cd9c4bac514df65220d676133d\r\n
+
+时间: 2026/09/12 01:35:39
+时间戳: 1789148139189
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"113521bfd"}
+结果:         版本： 3\r\n      序列号： 0113521bfd\r\n    签名算法： SHA256WITHRSA (1.2.840.113549.1.1.11)\r\n签名哈希算法： SHA256\n\r\n颁发者： CN=www.test.com, O=My Org, C=CN\r\n有效期从： Sat Sep 12 01:52:21 CST 2026\r\n有效期到： Sat Sep 12 06:52:24 CST 2026\n\r\n使用者： CN=www.test.com, O=My Org, C=CN\r\n    公钥： RSA 2048\r\n授权密钥标识符  ： 30168014867a99c2c2f9a70ead0a7cd9797e34deac43c2f3\r\n使用者密钥标识符： 041434d76ec0b8e35227cece2953cb0b08488f981821\n\r\n增强型密钥用法：\n\r\n              1.3.6.1.5.5.7.3.5 (1.3.6.1.5.5.7.3.5)\r\n              服务器身份验证 (1.3.6.1.5.5.7.3.1)\r\n              代码签名 (1.3.6.1.5.5.7.3.3)\r\n              1.3.6.1.5.5.7.3.6 (1.3.6.1.5.5.7.3.6)\r\n              内核模式代码签名 (1.3.6.1.4.1.311.61.1.1)\r\n授权信息访问：\r\n              OCSP   URL=http://localhost:80/ocsp\r\n              颁发者 URL=http://localhost:80/CRT/1cdd332012fa2.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost:80/CRL/1cdd332012fa2.crl\r\n              CRL分发点 = http://localhost:80/CRL/1cdd332012fa2.der.crl\r\ndigitalSignature, nonRepudiation, keyEncipherment, dataEncipherment, keyAgreement\r\n证书策略：\r\n               OID = 1.3.6.1.4.1.4146.1.95\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\n1.3.6.1.5.5.7.1.1:\n        305d302406082b060105050730018618687474703a2f2f6c6f63616c686f73743a38302f6f637370303506082b060105050730028629687474703a2f2f6c6f63616c686f73743a38302f4352542f316364643333323031326661322e637274\n\r\n2.5.29.31:\n        3066302fa02da02b8629687474703a2f2f6c6f63616c686f73743a38302f43524c2f316364643333323031326661322e63726c3033a031a02f862d687474703a2f2f6c6f63616c686f73743a38302f43524c2f316364643333323031326661322e6465722e63726c\n\r\n2.5.29.32:\n        3074306006092b06010401a032015f3053303006082b06010505070201162468747470733a2f2f67697465652e636f6d2f7778677368756a752f6d6f64706b6963612f301f06082b0601050507020230130c11574f41494e490a6e696169776f0a3532313007060567810c01013007060567810c0103\n\r\n2.5.29.35:\n        30168014867a99c2c2f9a70ead0a7cd9797e34deac43c2f3\n\r\n2.5.29.14:\n        041434d76ec0b8e35227cece2953cb0b08488f981821\n\r\n2.5.29.37:\n        303406082b0601050507030506082b0601050507030106082b0601050507030306082b06010505070306060a2b0601040182373d0101\n\r\n\n\n\r\n证书签名：\n        c83de700bb32217b2c82d6d4a97849ff3d0bd0f317bce091ca5af32934a8120936c24bbe6923bcc16a3bdecc63bce9a3b623a5ea909fbfe2bc813fe44b03aee5b7a468005d55543e01f79c8a6fbf66b29217ac1aca2926fbdf49d18060b594411b9190d81497fbb69a94675fbac759e90e49c1f59eed146b9a4c64b7f20cd031988b7fcadd81cf2acc4bb5603595ce17f2fb42c5da6d528a02c07d76db04f0e0bcff89ffcf711cb5a87a9056c1a00a8462837bc0d9809305f6e00c1d435c86be32aec551c8a64d7cb40bd076e81b68e6ddbf16605e158e8fe021c72ace911eb47d138ee5a4fa7ca04a69cebac8b573f2f8c13123660515bf5bc37d8cbdcb1d2c\n\r\n证书类别： 根证书\n\r\n验证签名： 失败\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n证书状态：该证书尚未生效。\r\n\r\n密钥 Id 哈希(SHA1)          ： 7e100325d8a581e34798244fb041b9fce94d14e6\r\n密钥 Id 哈希(RFC-SHA1)      ： 34d76ec0b8e35227cece2953cb0b08488f981821\r\n密钥 Id 哈希(Pin-SHA256)    ： Ni74hMP5U5c/EeREKUkSBCe0SKmH7+yUME3zg25WlRA=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 362ef884c3f953973f11e4442949120427b448a987efec94304df3836e569510\r\n\n\r\n证书哈希(SHA1)              ： 84e1f8ba515e66d68de99311dbc4e24330b53eb7\r\n证书哈希(SHA256)            ： ecbd4a701e2c822eae19b6a48d44f811fd7c481977d85c129798a2df9f2b3bbd\r\n签名哈希                    ： f02bce8b7cf7dc0824110c11f7f9bed61b10e1cd9c4bac514df65220d676133d\r\n
+
+时间: 2026/09/12 01:49:29
+时间戳: 1789148969826
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRL/1cdd33201302f.crl
+
+时间: 2026/09/12 01:49:29
+时间戳: 1789148969876
+操作: 文件响应
+命令: 
+结果: 文件=1cdd33201302f.crl 大小=636字节 类型=crl
+
+时间: 2026/09/12 01:49:29
+时间戳: 1789148969880
+操作: 收到OCSP请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/ocsp 长度=72字节
+
+时间: 2026/09/12 01:49:29
+时间戳: 1789148969890
+操作: OCSP请求解析
+命令: 
+结果: 序列号=113521f03 哈希=1.3.14.3.2.26 Nonce=无
+
+时间: 2026/09/12 01:49:29
+时间戳: 1789148969986
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=www.test.com By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=113521f03
+
+时间: 2026/09/12 01:49:29
+时间戳: 1789148969990
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1809字节
+
+时间: 2026/09/12 01:49:32
+时间戳: 1789148972583
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRL/1cdd33201302f.crl
+
+时间: 2026/09/12 01:49:32
+时间戳: 1789148972586
+操作: 文件响应
+命令: 
+结果: 文件=1cdd33201302f.crl 大小=636字节 类型=crl
+
+时间: 2026/09/12 01:49:32
+时间戳: 1789148972588
+操作: 收到OCSP请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/ocsp 长度=72字节
+
+时间: 2026/09/12 01:49:32
+时间戳: 1789148972590
+操作: OCSP请求解析
+命令: 
+结果: 序列号=113521f03 哈希=1.3.14.3.2.26 Nonce=无
+
+时间: 2026/09/12 01:49:32
+时间戳: 1789148972617
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=www.test.com By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=113521f03
+
+时间: 2026/09/12 01:49:32
+时间戳: 1789148972621
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1809字节
+
+时间: 2026/09/12 01:49:34
+时间戳: 1789148974011
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRL/1cdd33201302f.crl
+
+时间: 2026/09/12 01:49:34
+时间戳: 1789148974013
+操作: 文件响应
+命令: 
+结果: 文件=1cdd33201302f.crl 大小=636字节 类型=crl
+
+时间: 2026/09/12 01:49:34
+时间戳: 1789148974015
+操作: 收到OCSP请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/ocsp 长度=72字节
+
+时间: 2026/09/12 01:49:34
+时间戳: 1789148974017
+操作: OCSP请求解析
+命令: 
+结果: 序列号=113521f03 哈希=1.3.14.3.2.26 Nonce=无
+
+时间: 2026/09/12 01:49:34
+时间戳: 1789148974036
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=www.test.com By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=113521f03
+
+时间: 2026/09/12 01:49:34
+时间戳: 1789148974040
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1809字节
+
+时间: 2026/09/12 01:49:36
+时间戳: 1789148976985
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRL/1cdd33201302f.crl
+
+时间: 2026/09/12 01:49:36
+时间戳: 1789148976988
+操作: 文件响应
+命令: 
+结果: 文件=1cdd33201302f.crl 大小=636字节 类型=crl
+
+时间: 2026/09/12 01:49:36
+时间戳: 1789148976990
+操作: 收到OCSP请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/ocsp 长度=72字节
+
+时间: 2026/09/12 01:49:36
+时间戳: 1789148976991
+操作: OCSP请求解析
+命令: 
+结果: 序列号=113521f03 哈希=1.3.14.3.2.26 Nonce=无
+
+时间: 2026/09/12 01:49:37
+时间戳: 1789148977009
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=www.test.com By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=113521f03
+
+时间: 2026/09/12 01:49:37
+时间戳: 1789148977012
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1809字节
+
+时间: 2026/09/12 01:50:05
+时间戳: 1789149005780
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/CRL/1cdd33201302f.crl
+
+时间: 2026/09/12 01:50:05
+时间戳: 1789149005783
+操作: 文件响应
+命令: 
+结果: 文件=1cdd33201302f.crl 大小=636字节 类型=crl
+
+时间: 2026/09/12 01:50:05
+时间戳: 1789149005801
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=70字节
+
+时间: 2026/09/12 01:50:05
+时间戳: 1789149005806
+操作: OCSP请求解析
+命令: 
+结果: 序列号=113521f03 哈希=1.3.14.3.2.26 Nonce=无
+
+时间: 2026/09/12 01:50:05
+时间戳: 1789149005882
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=www.test.com By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=113521f03
+
+时间: 2026/09/12 01:50:05
+时间戳: 1789149005896
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1809字节
+
+时间: 2026/09/12 01:50:05
+时间戳: 1789149005903
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"113521f03"}
+结果:         版本： 3\r\n      序列号： 0113521f03\r\n    签名算法： SHA256WITHRSA (1.2.840.113549.1.1.11)\r\n签名哈希算法： SHA256\n\r\n颁发者： CN=www.test.com, O=My Org, C=CN\r\n有效期从： Sat Sep 12 01:01:33 CST 2026\r\n有效期到： Sun Sep 12 01:01:33 CST 2027\n\r\n使用者： CN=www.test.com, O=My Org, C=CN\r\n    公钥： RSA 2048\r\n授权密钥标识符  ： 301680144584810a3415fdb1ce6ad6eb23739979573dd2b9\r\n使用者密钥标识符： 04149c42dea5f241599cd4843630ac99cd670c8ba3ac\n\r\n增强型密钥用法：\n\r\n              服务器身份验证 (1.3.6.1.5.5.7.3.1)\r\n              客户端身份验证 (1.3.6.1.5.5.7.3.2)\r\n授权信息访问：\r\n              OCSP   URL=http://localhost:80/ocsp\r\n              颁发者 URL=http://localhost:80/CRT/1cdd33201302f.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost:80/CRL/1cdd33201302f.crl\r\n              CRL分发点 = http://localhost:80/CRL/1cdd33201302f.der.crl\r\ndigitalSignature, nonRepudiation, keyCertSign, cRLSign\r\n证书策略：\r\n               OID = 1.3.6.1.4.1.4146.1.95\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\n1.3.6.1.5.5.7.1.1:\n        305d302406082b060105050730018618687474703a2f2f6c6f63616c686f73743a38302f6f637370303506082b060105050730028629687474703a2f2f6c6f63616c686f73743a38302f4352542f316364643333323031333032662e637274\n\r\n2.5.29.31:\n        3066302fa02da02b8629687474703a2f2f6c6f63616c686f73743a38302f43524c2f316364643333323031333032662e63726c3033a031a02f862d687474703a2f2f6c6f63616c686f73743a38302f43524c2f316364643333323031333032662e6465722e63726c\n\r\n2.5.29.32:\n        3074306006092b06010401a032015f3053303006082b06010505070201162468747470733a2f2f67697465652e636f6d2f7778677368756a752f6d6f64706b6963612f301f06082b0601050507020230130c11574f41494e490a6e696169776f0a3532313007060567810c01013007060567810c0103\n\r\n2.5.29.35:\n        301680144584810a3415fdb1ce6ad6eb23739979573dd2b9\n\r\n2.5.29.14:\n        04149c42dea5f241599cd4843630ac99cd670c8ba3ac\n\r\n2.5.29.37:\n        301406082b0601050507030106082b06010505070302\n\r\n\n\n\r\n证书签名：\n        49958afe9a65652e245b8f156ff425886a36602ae091ab1551a98f8b39f50cb68182e39128d7ff2780cd5f83f3e68e6b5c2378df832b94d457c5465d1da57e9b452360128b6813e2fac4a06b0a660dcdda1fc6f3d48aaa6aabf2adcaff984827477fcf898fe05f4179e9577e78dc4f0c4fced59e8b3a48a77836f28fa6afafbd23852f44a1b3ac146184dce647095ad74a3fb113bc55a62dabba82cd606d423c83b6a76474db25e239cd20a7e1abe4aeab55d66fbd968b29895cf8d44db9f58e7068d4bf1e6996d6a2868a9f52474f8e063cde83c9cc0cb2d79b5528dc5a5ee090057ed492216a0da839290519e81dd7e41cfb632a2b097f82e5a3d3dc87cf48\n\r\n证书类别： 根证书\n\r\n验证签名： 失败\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n证书状态：证书正常。（CRL）\r\n2026/09/12 01:50:05 OCSP:正常,序列号 113521f03\r\n          证书正常。（OCSP）\r\n\r\n密钥 Id 哈希(SHA1)          ： 632c6c5fd08f86e7e627a20f399d5cc127b1424c\r\n密钥 Id 哈希(RFC-SHA1)      ： 9c42dea5f241599cd4843630ac99cd670c8ba3ac\r\n密钥 Id 哈希(Pin-SHA256)    ： h4psfJbhkMLvMfIKNj9kveOC97IDUjsRkVbpSe97gXw=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 878a6c7c96e190c2ef31f20a363f64bde382f7b203523b119156e949ef7b817c\r\n\n\r\n证书哈希(SHA1)              ： c80d543db25b66fb70aa86826e66f534427e5923\r\n证书哈希(SHA256)            ： 673f8bc5636199a858b2b070c63bf6488c155f14a3a3b3383fdb79541d984b6a\r\n签名哈希                    ： eeb9e1ba99e51f9c9d35ddf99c808680b9ccca6f252a543ea866abfe5d648219\r\n
+
+时间: 2026/09/12 01:50:15
+时间戳: 1789149015866
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/CRL/1cdd33201302f.crl
+
+时间: 2026/09/12 01:50:15
+时间戳: 1789149015872
+操作: 文件响应
+命令: 
+结果: 文件=1cdd33201302f.crl 大小=636字节 类型=crl
+
+时间: 2026/09/12 01:50:15
+时间戳: 1789149015875
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=70字节
+
+时间: 2026/09/12 01:50:15
+时间戳: 1789149015877
+操作: OCSP请求解析
+命令: 
+结果: 序列号=113521f03 哈希=1.3.14.3.2.26 Nonce=无
+
+时间: 2026/09/12 01:50:15
+时间戳: 1789149015897
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=www.test.com By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=113521f03
+
+时间: 2026/09/12 01:50:15
+时间戳: 1789149015903
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"113521f03"}
+结果:         版本： 3\r\n      序列号： 0113521f03\r\n    签名算法： SHA256WITHRSA (1.2.840.113549.1.1.11)\r\n签名哈希算法： SHA256\n\r\n颁发者： CN=www.test.com, O=My Org, C=CN\r\n有效期从： Sat Sep 12 01:01:33 CST 2026\r\n有效期到： Sun Sep 12 01:01:33 CST 2027\n\r\n使用者： CN=www.test.com, O=My Org, C=CN\r\n    公钥： RSA 2048\r\n授权密钥标识符  ： 301680144584810a3415fdb1ce6ad6eb23739979573dd2b9\r\n使用者密钥标识符： 04149c42dea5f241599cd4843630ac99cd670c8ba3ac\n\r\n增强型密钥用法：\n\r\n              服务器身份验证 (1.3.6.1.5.5.7.3.1)\r\n              客户端身份验证 (1.3.6.1.5.5.7.3.2)\r\n授权信息访问：\r\n              OCSP   URL=http://localhost:80/ocsp\r\n              颁发者 URL=http://localhost:80/CRT/1cdd33201302f.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost:80/CRL/1cdd33201302f.crl\r\n              CRL分发点 = http://localhost:80/CRL/1cdd33201302f.der.crl\r\ndigitalSignature, nonRepudiation, keyCertSign, cRLSign\r\n证书策略：\r\n               OID = 1.3.6.1.4.1.4146.1.95\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\n1.3.6.1.5.5.7.1.1:\n        305d302406082b060105050730018618687474703a2f2f6c6f63616c686f73743a38302f6f637370303506082b060105050730028629687474703a2f2f6c6f63616c686f73743a38302f4352542f316364643333323031333032662e637274\n\r\n2.5.29.31:\n        3066302fa02da02b8629687474703a2f2f6c6f63616c686f73743a38302f43524c2f316364643333323031333032662e63726c3033a031a02f862d687474703a2f2f6c6f63616c686f73743a38302f43524c2f316364643333323031333032662e6465722e63726c\n\r\n2.5.29.32:\n        3074306006092b06010401a032015f3053303006082b06010505070201162468747470733a2f2f67697465652e636f6d2f7778677368756a752f6d6f64706b6963612f301f06082b0601050507020230130c11574f41494e490a6e696169776f0a3532313007060567810c01013007060567810c0103\n\r\n2.5.29.35:\n        301680144584810a3415fdb1ce6ad6eb23739979573dd2b9\n\r\n2.5.29.14:\n        04149c42dea5f241599cd4843630ac99cd670c8ba3ac\n\r\n2.5.29.37:\n        301406082b0601050507030106082b06010505070302\n\r\n\n\n\r\n证书签名：\n        49958afe9a65652e245b8f156ff425886a36602ae091ab1551a98f8b39f50cb68182e39128d7ff2780cd5f83f3e68e6b5c2378df832b94d457c5465d1da57e9b452360128b6813e2fac4a06b0a660dcdda1fc6f3d48aaa6aabf2adcaff984827477fcf898fe05f4179e9577e78dc4f0c4fced59e8b3a48a77836f28fa6afafbd23852f44a1b3ac146184dce647095ad74a3fb113bc55a62dabba82cd606d423c83b6a76474db25e239cd20a7e1abe4aeab55d66fbd968b29895cf8d44db9f58e7068d4bf1e6996d6a2868a9f52474f8e063cde83c9cc0cb2d79b5528dc5a5ee090057ed492216a0da839290519e81dd7e41cfb632a2b097f82e5a3d3dc87cf48\n\r\n证书类别： 根证书\n\r\n验证签名： 失败\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n证书状态：证书正常。（CRL）\r\n2026/09/12 01:50:15 OCSP:正常,序列号 113521f03\r\n          证书正常。（OCSP）\r\n\r\n密钥 Id 哈希(SHA1)          ： 632c6c5fd08f86e7e627a20f399d5cc127b1424c\r\n密钥 Id 哈希(RFC-SHA1)      ： 9c42dea5f241599cd4843630ac99cd670c8ba3ac\r\n密钥 Id 哈希(Pin-SHA256)    ： h4psfJbhkMLvMfIKNj9kveOC97IDUjsRkVbpSe97gXw=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 878a6c7c96e190c2ef31f20a363f64bde382f7b203523b119156e949ef7b817c\r\n\n\r\n证书哈希(SHA1)              ： c80d543db25b66fb70aa86826e66f534427e5923\r\n证书哈希(SHA256)            ： 673f8bc5636199a858b2b070c63bf6488c155f14a3a3b3383fdb79541d984b6a\r\n签名哈希                    ： eeb9e1ba99e51f9c9d35ddf99c808680b9ccca6f252a543ea866abfe5d648219\r\n
+
+时间: 2026/09/12 01:50:15
+时间戳: 1789149015904
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1809字节
+
+时间: 2026/09/12 01:50:59
+时间戳: 1789149059084
+操作: ADMIN initOCSP
+命令: initOCSP RSA 13fbe86586d3f82
+结果: OCSP 签名证书 13fbe86586d3f82 算法=RSA
+
+时间: 2026/09/12 01:51:00
+时间戳: 1789149060658
+操作: ADMIN initTIMSTAMP
+命令: initTIMSTAMP SHA1 RSA 13fbe86586d3f82
+结果: TSA 证书 RSA_sha1 根=13fbe86586d3f82
+
+时间: 2026/09/12 01:51:02
+时间戳: 1789149062613
+操作: ADMIN initTIMSTAMP
+命令: initTIMSTAMP SHA256 RSA 13fbe86586d3f82
+结果: TSA 证书 RSA_sha256 根=13fbe86586d3f82
+
+时间: 2026/09/12 01:51:02
+时间戳: 1789149062615
+操作: ADMIN init
+命令: init "CN=My Root CA,O=My Org,C=CN" 2048 sha256 RSA
+结果: 初始化环境完成
+
+时间: 2026/09/12 01:51:02
+时间戳: 1789149062616
+操作: WebAdmin /api/init
+命令: POST /api/init 提交数据={"dn":"CN=My Root CA,O=My Org,C=CN","bits":"2048","hash":"sha256","algo":"RSA"}
+结果: 已清理 125 个证书/密钥/吊销列表文件\r\nCERTS.txt 已备份并重建模板\r\n根证书生成成功 序列号=13fbe86586d3f82 算法=RSA 位长=2048 哈希=sha256\r\nCRL 已生成: 13fbe86586d3f82 (算法 RSA/sha256, 吊销 0 条)\r\nCRL 生成完成，共处理颁发者 1 个\r\n\nOCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/13fbe86586d3f82_ocsp.crt\r\ninitOCSP 完成，共 1 张\n\ninitTIMSTAMP 完成，共 1 张\n
+
+时间: 2026/09/12 01:51:12
+时间戳: 1789149072830
+操作: ADMIN initOCSP
+命令: initOCSP RSA 13fbe86586d3f90
+结果: OCSP 签名证书 13fbe86586d3f90 算法=RSA
+
+时间: 2026/09/12 01:51:13
+时间戳: 1789149073055
+操作: ADMIN initTIMSTAMP
+命令: initTIMSTAMP SHA1 RSA 13fbe86586d3f90
+结果: TSA 证书 RSA_sha1 根=13fbe86586d3f90
+
+时间: 2026/09/12 01:51:13
+时间戳: 1789149073144
+操作: ADMIN initTIMSTAMP
+命令: initTIMSTAMP SHA256 RSA 13fbe86586d3f90
+结果: TSA 证书 RSA_sha256 根=13fbe86586d3f90
+
+时间: 2026/09/12 01:51:13
+时间戳: 1789149073146
+操作: ADMIN init
+命令: init "CN=ROOTCA,O=My Org,C=CN" 2048 sha256 RSA
+结果: 初始化环境完成
+
+时间: 2026/09/12 01:51:13
+时间戳: 1789149073147
+操作: WebAdmin /api/init
+命令: POST /api/init 提交数据={"dn":"CN=ROOTCA,O=My Org,C=CN","bits":"2048","hash":"sha256","algo":"RSA"}
+结果: 已清理 14 个证书/密钥/吊销列表文件\r\nCERTS.txt 已备份并重建模板\r\n根证书生成成功 序列号=13fbe86586d3f90 算法=RSA 位长=2048 哈希=sha256\r\nCRL 已生成: 13fbe86586d3f90 (算法 RSA/sha256, 吊销 0 条)\r\nCRL 生成完成，共处理颁发者 1 个\r\n\nOCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/13fbe86586d3f90_ocsp.crt\r\ninitOCSP 完成，共 1 张\n\ninitTIMSTAMP 完成，共 1 张\n
+
+时间: 2026/09/12 01:51:17
+时间戳: 1789149077113
+操作: ADMIN initOCSP
+命令: initOCSP RSA 13fbe86586d3f90
+结果: OCSP 签名证书 13fbe86586d3f90 算法=RSA
+
+时间: 2026/09/12 01:51:17
+时间戳: 1789149077114
+操作: WebAdmin /api/initocsp
+命令: POST /api/initocsp 提交数据={}
+结果: OCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/13fbe86586d3f90_ocsp.crt\r\ninitOCSP 完成，共 1 张\n
+
+时间: 2026/09/12 01:51:18
+时间戳: 1789149078270
+操作: ADMIN initTIMSTAMP
+命令: initTIMSTAMP SHA1 RSA 13fbe86586d3f90
+结果: TSA 证书 RSA_sha1 根=13fbe86586d3f90
+
+时间: 2026/09/12 01:51:18
+时间戳: 1789149078450
+操作: ADMIN initTIMSTAMP
+命令: initTIMSTAMP SHA256 RSA 13fbe86586d3f90
+结果: TSA 证书 RSA_sha256 根=13fbe86586d3f90
+
+时间: 2026/09/12 01:51:18
+时间戳: 1789149078453
+操作: WebAdmin /api/inittimestamp
+命令: POST /api/inittimestamp 提交数据={}
+结果: initTIMSTAMP 完成，共 1 张\n
+
+时间: 2026/09/12 01:51:51
+时间戳: 1789149111965
+操作: ADMIN signCERT
+命令: signCERT "CN=EVCA,O=My Org,C=CN" 2048 sha256 1 1 1 1 null null 13fbe86586d3f90 RSA
+结果: 签发证书 CN=EVCA,O=My Org,C=CN 算法=RSA 颁发者=13fbe86586d3f90
+
+时间: 2026/09/12 01:51:51
+时间戳: 1789149111966
+操作: WebAdmin /api/signcert
+命令: POST /api/signcert 提交数据={"dn":"CN=EVCA,O=My Org,C=CN","bits":"2048","hash":"sha256","keyusage":"1","exusage":"1","isca":"1","days":"1","dns":"null","ips":"null","issuer":"13fbe86586d3f90","algo":"RSA"}
+结果: 中间CA证书生成成功！\r\n
+
+时间: 2026/09/12 01:52:04
+时间戳: 1789149124740
+操作: ADMIN signCERT
+命令: signCERT "CN=www.test.com,O=My Org,C=CN" 2048 sha256 1 1 0 1 null null 1cdd332014ecd RSA
+结果: 签发证书 CN=www.test.com,O=My Org,C=CN 算法=RSA 颁发者=1cdd332014ecd
+
+时间: 2026/09/12 01:52:04
+时间戳: 1789149124741
+操作: WebAdmin /api/signcert
+命令: POST /api/signcert 提交数据={"dn":"CN=www.test.com,O=My Org,C=CN","bits":"2048","hash":"sha256","keyusage":"1","exusage":"1","isca":"0","days":"1","dns":"null","ips":"null","issuer":"1cdd332014ecd","algo":"RSA"}
+结果: 用户证书生成成功！\r\n
+
+时间: 2026/09/12 01:52:20
+时间戳: 1789149140516
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/CRT/1cdd332014ecd.crt
+
+时间: 2026/09/12 01:52:20
+时间戳: 1789149140519
+操作: 文件响应
+命令: 
+结果: 文件=1cdd332014ecd.crt 大小=1736字节 类型=crt
+
+时间: 2026/09/12 01:52:20
+时间戳: 1789149140523
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/CRL/1cdd332014ecd.crl
+
+时间: 2026/09/12 01:52:20
+时间戳: 1789149140526
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=70字节
+
+时间: 2026/09/12 01:52:20
+时间戳: 1789149140528
+操作: OCSP请求解析
+命令: 
+结果: 序列号=1135228a2 哈希=1.3.14.3.2.26 Nonce=无
+
+时间: 2026/09/12 01:52:20
+时间戳: 1789149140530
+操作: OCSP处理异常
+命令: 
+结果: 错误=java.lang.IllegalStateException: 缺少 OCSP 签名证书: PKI/OCSP/1cdd332014ecd_ocsp.crt（请先运行 admin initOCSP）
+
+时间: 2026/09/12 01:52:20
+时间戳: 1789149140535
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"1135228a2"}
+结果:         版本： 3\r\n      序列号： 01135228a2\r\n    签名算法： SHA256WITHRSA (1.2.840.113549.1.1.11)\r\n签名哈希算法： SHA256\n\r\n颁发者： CN=EVCA, O=My Org, C=CN\r\n有效期从： Sat Sep 12 01:52:04 CST 2026\r\n有效期到： Sun Sep 12 01:52:04 CST 2027\n\r\n使用者： CN=www.test.com, O=My Org, C=CN\r\n    公钥： RSA 2048\r\n授权密钥标识符  ： 3016801435ad60145bb7ec76cdef2a283c03938790f5ca87\r\n使用者密钥标识符： 04145c67795d44551fefc015077e1fbd9f11e40b693b\n\r\n增强型密钥用法：\n\r\n              服务器身份验证 (1.3.6.1.5.5.7.3.1)\r\n授权信息访问：\r\n              OCSP   URL=http://localhost:80/ocsp\r\n              颁发者 URL=http://localhost:80/CRT/1cdd332014ecd.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost:80/CRL/1cdd332014ecd.crl\r\n              CRL分发点 = http://localhost:80/CRL/1cdd332014ecd.der.crl\r\ndigitalSignature, nonRepudiation, keyEncipherment, dataEncipherment, keyAgreement\r\n证书策略：\r\n               OID = 1.3.6.1.4.1.4146.1.95\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\nSCT列表:\r\n      第 1 条 SCT:\r\n        日志版本:  V1\r\n      日志标识符:  750035ad60145bb7ec76cdef2a283c03938790f5ca875c67795d44551fefc015\r\n          时间戳:  Fri Sep 27 15:32:18 CST 17109737\r\n        签名类型:  TYPE0-HASH0\r\n            签名:  03004630\r\n\r\n公钥列表:\r\n         公钥标识符: 13480c02c75a6dc2e0f9139377850c01217f1019ddbe000bb8e70ce662cd4bba\r\n           签名公钥: 048201153059301306072a8648ce3d020106082a8648ce3d030107034200048f3ed690a699f66a2a24ca18c42b262d797272101058b51424d00a8e49da3d5c1f35ad47fc3e29d086d89b60c895cc9679cd51e52445c89abe5e9dc0c1583656\r\n\r\n         公钥标识符: cb629f68c9732b8e6e266e0a6f33064c860033555ced81696be269b29a942842\r\n           签名公钥: 3059301306072a8648ce3d020106082a8648ce3d030107034200040c24908b0d578ed61d26e69382f0f04a3518166156bf70df5064c8fdf76fc64ab0af4fb03c66d00be1c0c883aa2bb0ce2e16fdfe0f6c0c0ddfbbb0d34c0b6915\r\n\r\n         公钥标识符: 5c0c471bd04f2c31f3b445d54cd4563f6265eba21416ed4786b7c1460e442a84\r\n           签名公钥: 3059301306072a8648ce3d020106082a8648ce3d03010703420004d1bf7946eebc868f08d3a7685d303abc41ee7cc5c860c6c1b6a9637f849195fd796bf84b8915061090d199eaf7baaab8095419670930ec4da152f2bd7bfaf3b4\r\n\r\n1.3.6.1.5.5.7.1.1:\n        305d302406082b060105050730018618687474703a2f2f6c6f63616c686f73743a38302f6f637370303506082b060105050730028629687474703a2f2f6c6f63616c686f73743a38302f4352542f316364643333323031346563642e637274\n\r\n2.5.29.31:\n        3066302fa02da02b8629687474703a2f2f6c6f63616c686f73743a38302f43524c2f316364643333323031346563642e63726c3033a031a02f862d687474703a2f2f6c6f63616c686f73743a38302f43524c2f316364643333323031346563642e6465722e63726c\n\r\n2.5.29.32:\n        3074306006092b06010401a032015f3053303006082b06010505070201162468747470733a2f2f67697465652e636f6d2f7778677368756a752f6d6f64706b6963612f301f06082b0601050507020230130c11574f41494e490a6e696169776f0a3532313007060567810c01013007060567810c0103\n\r\n2.5.29.35:\n        3016801435ad60145bb7ec76cdef2a283c03938790f5ca87\n\r\n2.5.29.14:\n        04145c67795d44551fefc015077e1fbd9f11e40b693b\n\r\n2.5.29.37:\n        300a06082b06010505070301\n\r\n\n\n\r\n证书签名：\n        6c57875035ebc7cb374f2677d3411e61295c8bc294ae1a4b2f0b6836dcd54f045ab4bc76ae8954759221715b961cd520491acd99a1b7a6cd8df255989ea73cd82e7d7394dcc1282dc630e0e72a235aca0296a379fd9fa30a9634501b2b16a8813febd1d65139a6c784a1d877f29712612d6b537d52f15b4a360784d1c0b745f984154704bb0f3bec2a1a313288e4e1093b26675166231d869468558e756892e127e9d7cd752ab8d66a96c54211a6fc5f3f398f981d6fd4173ac64e27d87625adb0d19922a4917263d9a95116a8a97636a8204d5bfd370f8964225a431a14594defe60d438d01c3e9c44438da0e64cf6db069646d5d6b0e177953a6dd3ca2c0be\n\r\n证书类别： 非根证书\n\r\n证书链： \r\n       CA   --> 434e3d455643412c4f3d4d79204f72672c433d434e\r\n验证签名： 成功 颁发者=CN=EVCA, O=My Org, C=CN\r\n信任状态： 可信 (已找到上级证书)\r\n证书状态：CRL无法检查吊销状态 | 下载失败~ \r\n2026/09/12 01:52:20 OCSP:正常,序列号 1135228a2\r\n          OCSP无法检查吊销状态 | 上报失败~ \r\n\r\n密钥 Id 哈希(SHA1)          ： 1fc4300a1f580bc3f6c17f9ed46591acd0f44b9d\r\n密钥 Id 哈希(RFC-SHA1)      ： 5c67795d44551fefc015077e1fbd9f11e40b693b\r\n密钥 Id 哈希(Pin-SHA256)    ： 2d6/y+V+ubsFub2TBUx9hDHuDmZcxxlQ52LZ+/vrK5w=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： d9debfcbe57eb9bb05b9bd93054c7d8431ee0e665cc71950e762d9fbfbeb2b9c\r\n\n\r\n证书哈希(SHA1)              ： 099e434f621479e2b2b37f45ae9090cc4efc773f\r\n证书哈希(SHA256)            ： 32e54ac7bafa9a2bfb78c07378e3b9f37d338f171e652103529284fdbf126318\r\n签名哈希                    ： c8689bc91561517d00dbb22efe704ece39849288043399b223e442931040f91a\r\n
+
+时间: 2026/09/12 01:52:29
+时间戳: 1789149149333
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/CRT/1cdd332014ecd.crt
+
+时间: 2026/09/12 01:52:29
+时间戳: 1789149149340
+操作: 文件响应
+命令: 
+结果: 文件=1cdd332014ecd.crt 大小=1736字节 类型=crt
+
+时间: 2026/09/12 01:52:29
+时间戳: 1789149149343
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/CRL/1cdd332014ecd.crl
+
+时间: 2026/09/12 01:52:29
+时间戳: 1789149149346
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=70字节
+
+时间: 2026/09/12 01:52:29
+时间戳: 1789149149348
+操作: OCSP请求解析
+命令: 
+结果: 序列号=1135228a2 哈希=1.3.14.3.2.26 Nonce=无
+
+时间: 2026/09/12 01:52:29
+时间戳: 1789149149350
+操作: OCSP处理异常
+命令: 
+结果: 错误=java.lang.IllegalStateException: 缺少 OCSP 签名证书: PKI/OCSP/1cdd332014ecd_ocsp.crt（请先运行 admin initOCSP）
+
+时间: 2026/09/12 01:52:29
+时间戳: 1789149149353
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"1135228a2"}
+结果:         版本： 3\r\n      序列号： 01135228a2\r\n    签名算法： SHA256WITHRSA (1.2.840.113549.1.1.11)\r\n签名哈希算法： SHA256\n\r\n颁发者： CN=EVCA, O=My Org, C=CN\r\n有效期从： Sat Sep 12 01:52:04 CST 2026\r\n有效期到： Sun Sep 12 01:52:04 CST 2027\n\r\n使用者： CN=www.test.com, O=My Org, C=CN\r\n    公钥： RSA 2048\r\n授权密钥标识符  ： 3016801435ad60145bb7ec76cdef2a283c03938790f5ca87\r\n使用者密钥标识符： 04145c67795d44551fefc015077e1fbd9f11e40b693b\n\r\n增强型密钥用法：\n\r\n              服务器身份验证 (1.3.6.1.5.5.7.3.1)\r\n授权信息访问：\r\n              OCSP   URL=http://localhost:80/ocsp\r\n              颁发者 URL=http://localhost:80/CRT/1cdd332014ecd.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost:80/CRL/1cdd332014ecd.crl\r\n              CRL分发点 = http://localhost:80/CRL/1cdd332014ecd.der.crl\r\ndigitalSignature, nonRepudiation, keyEncipherment, dataEncipherment, keyAgreement\r\n证书策略：\r\n               OID = 1.3.6.1.4.1.4146.1.95\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\nSCT列表:\r\n      第 1 条 SCT:\r\n        日志版本:  V1\r\n      日志标识符:  750035ad60145bb7ec76cdef2a283c03938790f5ca875c67795d44551fefc015\r\n          时间戳:  Fri Sep 27 15:32:18 CST 17109737\r\n        签名类型:  TYPE0-HASH0\r\n            签名:  03004630\r\n\r\n公钥列表:\r\n         公钥标识符: 13480c02c75a6dc2e0f9139377850c01217f1019ddbe000bb8e70ce662cd4bba\r\n           签名公钥: 048201153059301306072a8648ce3d020106082a8648ce3d030107034200048f3ed690a699f66a2a24ca18c42b262d797272101058b51424d00a8e49da3d5c1f35ad47fc3e29d086d89b60c895cc9679cd51e52445c89abe5e9dc0c1583656\r\n\r\n         公钥标识符: cb629f68c9732b8e6e266e0a6f33064c860033555ced81696be269b29a942842\r\n           签名公钥: 3059301306072a8648ce3d020106082a8648ce3d030107034200040c24908b0d578ed61d26e69382f0f04a3518166156bf70df5064c8fdf76fc64ab0af4fb03c66d00be1c0c883aa2bb0ce2e16fdfe0f6c0c0ddfbbb0d34c0b6915\r\n\r\n         公钥标识符: 5c0c471bd04f2c31f3b445d54cd4563f6265eba21416ed4786b7c1460e442a84\r\n           签名公钥: 3059301306072a8648ce3d020106082a8648ce3d03010703420004d1bf7946eebc868f08d3a7685d303abc41ee7cc5c860c6c1b6a9637f849195fd796bf84b8915061090d199eaf7baaab8095419670930ec4da152f2bd7bfaf3b4\r\n\r\n1.3.6.1.5.5.7.1.1:\n        305d302406082b060105050730018618687474703a2f2f6c6f63616c686f73743a38302f6f637370303506082b060105050730028629687474703a2f2f6c6f63616c686f73743a38302f4352542f316364643333323031346563642e637274\n\r\n2.5.29.31:\n        3066302fa02da02b8629687474703a2f2f6c6f63616c686f73743a38302f43524c2f316364643333323031346563642e63726c3033a031a02f862d687474703a2f2f6c6f63616c686f73743a38302f43524c2f316364643333323031346563642e6465722e63726c\n\r\n2.5.29.32:\n        3074306006092b06010401a032015f3053303006082b06010505070201162468747470733a2f2f67697465652e636f6d2f7778677368756a752f6d6f64706b6963612f301f06082b0601050507020230130c11574f41494e490a6e696169776f0a3532313007060567810c01013007060567810c0103\n\r\n2.5.29.35:\n        3016801435ad60145bb7ec76cdef2a283c03938790f5ca87\n\r\n2.5.29.14:\n        04145c67795d44551fefc015077e1fbd9f11e40b693b\n\r\n2.5.29.37:\n        300a06082b06010505070301\n\r\n\n\n\r\n证书签名：\n        6c57875035ebc7cb374f2677d3411e61295c8bc294ae1a4b2f0b6836dcd54f045ab4bc76ae8954759221715b961cd520491acd99a1b7a6cd8df255989ea73cd82e7d7394dcc1282dc630e0e72a235aca0296a379fd9fa30a9634501b2b16a8813febd1d65139a6c784a1d877f29712612d6b537d52f15b4a360784d1c0b745f984154704bb0f3bec2a1a313288e4e1093b26675166231d869468558e756892e127e9d7cd752ab8d66a96c54211a6fc5f3f398f981d6fd4173ac64e27d87625adb0d19922a4917263d9a95116a8a97636a8204d5bfd370f8964225a431a14594defe60d438d01c3e9c44438da0e64cf6db069646d5d6b0e177953a6dd3ca2c0be\n\r\n证书类别： 非根证书\n\r\n证书链： \r\n       CA   --> 434e3d455643412c4f3d4d79204f72672c433d434e\r\n验证签名： 成功 颁发者=CN=EVCA, O=My Org, C=CN\r\n信任状态： 可信 (已找到上级证书)\r\n证书状态：CRL无法检查吊销状态 | 下载失败~ \r\n2026/09/12 01:52:29 OCSP:正常,序列号 1135228a2\r\n          OCSP无法检查吊销状态 | 上报失败~ \r\n\r\n密钥 Id 哈希(SHA1)          ： 1fc4300a1f580bc3f6c17f9ed46591acd0f44b9d\r\n密钥 Id 哈希(RFC-SHA1)      ： 5c67795d44551fefc015077e1fbd9f11e40b693b\r\n密钥 Id 哈希(Pin-SHA256)    ： 2d6/y+V+ubsFub2TBUx9hDHuDmZcxxlQ52LZ+/vrK5w=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： d9debfcbe57eb9bb05b9bd93054c7d8431ee0e665cc71950e762d9fbfbeb2b9c\r\n\n\r\n证书哈希(SHA1)              ： 099e434f621479e2b2b37f45ae9090cc4efc773f\r\n证书哈希(SHA256)            ： 32e54ac7bafa9a2bfb78c07378e3b9f37d338f171e652103529284fdbf126318\r\n签名哈希                    ： c8689bc91561517d00dbb22efe704ece39849288043399b223e442931040f91a\r\n
+
+时间: 2026/09/12 01:52:31
+时间戳: 1789149151540
+操作: ADMIN signCRL
+命令: signCRL
+结果: CRL 已刷新
+
+时间: 2026/09/12 01:52:31
+时间戳: 1789149151541
+操作: WebAdmin /api/crl
+命令: POST /api/crl 提交数据={}
+结果: CRL 已生成: 13fbe86586d3f90 (算法 RSA/sha256, 吊销 0 条)\r\nCRL 已生成: 1cdd332014ecd (算法 RSA/sha256, 吊销 0 条)\r\nCRL 生成完成，共处理颁发者 2 个\r\n
+
+时间: 2026/09/12 01:52:33
+时间戳: 1789149153114
+操作: ADMIN initOCSP
+命令: initOCSP RSA 13fbe86586d3f90
+结果: OCSP 签名证书 13fbe86586d3f90 算法=RSA
+
+时间: 2026/09/12 01:52:33
+时间戳: 1789149153287
+操作: ADMIN initOCSP
+命令: initOCSP RSA 1cdd332014ecd
+结果: OCSP 签名证书 1cdd332014ecd 算法=RSA
+
+时间: 2026/09/12 01:52:33
+时间戳: 1789149153288
+操作: WebAdmin /api/initocsp
+命令: POST /api/initocsp 提交数据={}
+结果: OCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/13fbe86586d3f90_ocsp.crt\r\nOCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/1cdd332014ecd_ocsp.crt\r\ninitOCSP 完成，共 2 张\n
+
+时间: 2026/09/12 01:52:34
+时间戳: 1789149154118
+操作: ADMIN initTIMSTAMP
+命令: initTIMSTAMP SHA1 RSA 13fbe86586d3f90
+结果: TSA 证书 RSA_sha1 根=13fbe86586d3f90
+
+时间: 2026/09/12 01:52:34
+时间戳: 1789149154296
+操作: ADMIN initTIMSTAMP
+命令: initTIMSTAMP SHA256 RSA 13fbe86586d3f90
+结果: TSA 证书 RSA_sha256 根=13fbe86586d3f90
+
+时间: 2026/09/12 01:52:34
+时间戳: 1789149154297
+操作: WebAdmin /api/inittimestamp
+命令: POST /api/inittimestamp 提交数据={}
+结果: initTIMSTAMP 完成，共 1 张\n
+
+时间: 2026/09/12 01:52:37
+时间戳: 1789149157820
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/CRT/1cdd332014ecd.crt
+
+时间: 2026/09/12 01:52:37
+时间戳: 1789149157822
+操作: 文件响应
+命令: 
+结果: 文件=1cdd332014ecd.crt 大小=1736字节 类型=crt
+
+时间: 2026/09/12 01:52:37
+时间戳: 1789149157824
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/CRL/1cdd332014ecd.crl
+
+时间: 2026/09/12 01:52:37
+时间戳: 1789149157828
+操作: 文件响应
+命令: 
+结果: 文件=1cdd332014ecd.crl 大小=570字节 类型=crl
+
+时间: 2026/09/12 01:52:37
+时间戳: 1789149157830
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=70字节
+
+时间: 2026/09/12 01:52:37
+时间戳: 1789149157832
+操作: OCSP请求解析
+命令: 
+结果: 序列号=1135228a2 哈希=1.3.14.3.2.26 Nonce=无
+
+时间: 2026/09/12 01:52:37
+时间戳: 1789149157841
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=EVCA By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=1135228a2
+
+时间: 2026/09/12 01:52:37
+时间戳: 1789149157843
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1785字节
+
+时间: 2026/09/12 01:52:37
+时间戳: 1789149157845
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"1135228a2"}
+结果:         版本： 3\r\n      序列号： 01135228a2\r\n    签名算法： SHA256WITHRSA (1.2.840.113549.1.1.11)\r\n签名哈希算法： SHA256\n\r\n颁发者： CN=EVCA, O=My Org, C=CN\r\n有效期从： Sat Sep 12 01:52:04 CST 2026\r\n有效期到： Sun Sep 12 01:52:04 CST 2027\n\r\n使用者： CN=www.test.com, O=My Org, C=CN\r\n    公钥： RSA 2048\r\n授权密钥标识符  ： 3016801435ad60145bb7ec76cdef2a283c03938790f5ca87\r\n使用者密钥标识符： 04145c67795d44551fefc015077e1fbd9f11e40b693b\n\r\n增强型密钥用法：\n\r\n              服务器身份验证 (1.3.6.1.5.5.7.3.1)\r\n授权信息访问：\r\n              OCSP   URL=http://localhost:80/ocsp\r\n              颁发者 URL=http://localhost:80/CRT/1cdd332014ecd.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost:80/CRL/1cdd332014ecd.crl\r\n              CRL分发点 = http://localhost:80/CRL/1cdd332014ecd.der.crl\r\ndigitalSignature, nonRepudiation, keyEncipherment, dataEncipherment, keyAgreement\r\n证书策略：\r\n               OID = 1.3.6.1.4.1.4146.1.95\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\nSCT列表:\r\n      第 1 条 SCT:\r\n        日志版本:  V1\r\n      日志标识符:  750035ad60145bb7ec76cdef2a283c03938790f5ca875c67795d44551fefc015\r\n          时间戳:  Fri Sep 27 15:32:18 CST 17109737\r\n        签名类型:  TYPE0-HASH0\r\n            签名:  03004630\r\n\r\n公钥列表:\r\n         公钥标识符: 13480c02c75a6dc2e0f9139377850c01217f1019ddbe000bb8e70ce662cd4bba\r\n           签名公钥: 048201153059301306072a8648ce3d020106082a8648ce3d030107034200048f3ed690a699f66a2a24ca18c42b262d797272101058b51424d00a8e49da3d5c1f35ad47fc3e29d086d89b60c895cc9679cd51e52445c89abe5e9dc0c1583656\r\n\r\n         公钥标识符: cb629f68c9732b8e6e266e0a6f33064c860033555ced81696be269b29a942842\r\n           签名公钥: 3059301306072a8648ce3d020106082a8648ce3d030107034200040c24908b0d578ed61d26e69382f0f04a3518166156bf70df5064c8fdf76fc64ab0af4fb03c66d00be1c0c883aa2bb0ce2e16fdfe0f6c0c0ddfbbb0d34c0b6915\r\n\r\n         公钥标识符: 5c0c471bd04f2c31f3b445d54cd4563f6265eba21416ed4786b7c1460e442a84\r\n           签名公钥: 3059301306072a8648ce3d020106082a8648ce3d03010703420004d1bf7946eebc868f08d3a7685d303abc41ee7cc5c860c6c1b6a9637f849195fd796bf84b8915061090d199eaf7baaab8095419670930ec4da152f2bd7bfaf3b4\r\n\r\n1.3.6.1.5.5.7.1.1:\n        305d302406082b060105050730018618687474703a2f2f6c6f63616c686f73743a38302f6f637370303506082b060105050730028629687474703a2f2f6c6f63616c686f73743a38302f4352542f316364643333323031346563642e637274\n\r\n2.5.29.31:\n        3066302fa02da02b8629687474703a2f2f6c6f63616c686f73743a38302f43524c2f316364643333323031346563642e63726c3033a031a02f862d687474703a2f2f6c6f63616c686f73743a38302f43524c2f316364643333323031346563642e6465722e63726c\n\r\n2.5.29.32:\n        3074306006092b06010401a032015f3053303006082b06010505070201162468747470733a2f2f67697465652e636f6d2f7778677368756a752f6d6f64706b6963612f301f06082b0601050507020230130c11574f41494e490a6e696169776f0a3532313007060567810c01013007060567810c0103\n\r\n2.5.29.35:\n        3016801435ad60145bb7ec76cdef2a283c03938790f5ca87\n\r\n2.5.29.14:\n        04145c67795d44551fefc015077e1fbd9f11e40b693b\n\r\n2.5.29.37:\n        300a06082b06010505070301\n\r\n\n\n\r\n证书签名：\n        6c57875035ebc7cb374f2677d3411e61295c8bc294ae1a4b2f0b6836dcd54f045ab4bc76ae8954759221715b961cd520491acd99a1b7a6cd8df255989ea73cd82e7d7394dcc1282dc630e0e72a235aca0296a379fd9fa30a9634501b2b16a8813febd1d65139a6c784a1d877f29712612d6b537d52f15b4a360784d1c0b745f984154704bb0f3bec2a1a313288e4e1093b26675166231d869468558e756892e127e9d7cd752ab8d66a96c54211a6fc5f3f398f981d6fd4173ac64e27d87625adb0d19922a4917263d9a95116a8a97636a8204d5bfd370f8964225a431a14594defe60d438d01c3e9c44438da0e64cf6db069646d5d6b0e177953a6dd3ca2c0be\n\r\n证书类别： 非根证书\n\r\n证书链： \r\n       CA   --> 434e3d455643412c4f3d4d79204f72672c433d434e\r\n验证签名： 成功 颁发者=CN=EVCA, O=My Org, C=CN\r\n信任状态： 可信 (已找到上级证书)\r\n证书状态：证书正常。（CRL）\r\n2026/09/12 01:52:37 OCSP:正常,序列号 1135228a2\r\n          证书正常。（OCSP）\r\n\r\n密钥 Id 哈希(SHA1)          ： 1fc4300a1f580bc3f6c17f9ed46591acd0f44b9d\r\n密钥 Id 哈希(RFC-SHA1)      ： 5c67795d44551fefc015077e1fbd9f11e40b693b\r\n密钥 Id 哈希(Pin-SHA256)    ： 2d6/y+V+ubsFub2TBUx9hDHuDmZcxxlQ52LZ+/vrK5w=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： d9debfcbe57eb9bb05b9bd93054c7d8431ee0e665cc71950e762d9fbfbeb2b9c\r\n\n\r\n证书哈希(SHA1)              ： 099e434f621479e2b2b37f45ae9090cc4efc773f\r\n证书哈希(SHA256)            ： 32e54ac7bafa9a2bfb78c07378e3b9f37d338f171e652103529284fdbf126318\r\n签名哈希                    ： c8689bc91561517d00dbb22efe704ece39849288043399b223e442931040f91a\r\n
+
+时间: 2026/09/12 01:54:08
+时间戳: 1789149248226
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRT/1cdd332014ecd.crt
+
+时间: 2026/09/12 01:54:08
+时间戳: 1789149248227
+操作: 文件响应
+命令: 
+结果: 文件=1cdd332014ecd.crt 大小=1736字节 类型=crt
+
+时间: 2026/09/12 01:54:08
+时间戳: 1789149248240
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRT/13fbe86586d3f90.crt
+
+时间: 2026/09/12 01:54:08
+时间戳: 1789149248242
+操作: 文件响应
+命令: 
+结果: 文件=13fbe86586d3f90.crt 大小=1744字节 类型=crt
+
+时间: 2026/09/12 01:55:06
+时间戳: 1789149306383
+操作: ADMIN signCERT
+命令: signCERT "CN=demo.com,O=My Org,C=CN" 2048 sha256 1 1.3.6.1.5.5.7.3.3,1.3.6.1.5.5.7.3.4,1 0 1 null null 1cdd332014ecd RSA
+结果: 签发证书 CN=demo.com,O=My Org,C=CN 算法=RSA 颁发者=1cdd332014ecd
+
+时间: 2026/09/12 01:55:06
+时间戳: 1789149306384
+操作: WebAdmin /api/signcert
+命令: POST /api/signcert 提交数据={"dn":"CN=demo.com,O=My Org,C=CN","bits":"2048","hash":"sha256","keyusage":"1","exusage":"1.3.6.1.5.5.7.3.3,1.3.6.1.5.5.7.3.4,1","isca":"0","days":"1","dns":"null","ips":"null","issuer":"1cdd332014ecd","algo":"RSA"}
+结果: 用户证书生成成功！\r\n
+
+时间: 2026/09/12 01:55:17
+时间戳: 1789149317595
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/CRT/1cdd332014ecd.crt
+
+时间: 2026/09/12 01:55:17
+时间戳: 1789149317597
+操作: 文件响应
+命令: 
+结果: 文件=1cdd332014ecd.crt 大小=1736字节 类型=crt
+
+时间: 2026/09/12 01:55:17
+时间戳: 1789149317603
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/CRL/1cdd332014ecd.crl
+
+时间: 2026/09/12 01:55:17
+时间戳: 1789149317606
+操作: 文件响应
+命令: 
+结果: 文件=1cdd332014ecd.crl 大小=570字节 类型=crl
+
+时间: 2026/09/12 01:55:17
+时间戳: 1789149317608
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=70字节
+
+时间: 2026/09/12 01:55:17
+时间戳: 1789149317609
+操作: OCSP请求解析
+命令: 
+结果: 序列号=113522b95 哈希=1.3.14.3.2.26 Nonce=无
+
+时间: 2026/09/12 01:55:17
+时间戳: 1789149317621
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=EVCA By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=113522b95
+
+时间: 2026/09/12 01:55:17
+时间戳: 1789149317624
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1785字节
+
+时间: 2026/09/12 01:55:17
+时间戳: 1789149317625
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"113522b95"}
+结果:         版本： 3\r\n      序列号： 0113522b95\r\n    签名算法： SHA256WITHRSA (1.2.840.113549.1.1.11)\r\n签名哈希算法： SHA256\n\r\n颁发者： CN=EVCA, O=My Org, C=CN\r\n有效期从： Sat Sep 12 01:55:06 CST 2026\r\n有效期到： Sun Sep 12 01:55:06 CST 2027\n\r\n使用者： CN=demo.com, O=My Org, C=CN\r\n    公钥： RSA 2048\r\n授权密钥标识符  ： 3016801435ad60145bb7ec76cdef2a283c03938790f5ca87\r\n使用者密钥标识符： 04149d10c5460d74a5ef7434e1418e03726422b8944d\n\r\n增强型密钥用法：\n\r\n              服务器身份验证 (1.3.6.1.5.5.7.3.1)\r\n              代码签名 (1.3.6.1.5.5.7.3.3)\r\n              安全电子邮件 (1.3.6.1.5.5.7.3.4)\r\n授权信息访问：\r\n              OCSP   URL=http://localhost:80/ocsp\r\n              颁发者 URL=http://localhost:80/CRT/1cdd332014ecd.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost:80/CRL/1cdd332014ecd.crl\r\n              CRL分发点 = http://localhost:80/CRL/1cdd332014ecd.der.crl\r\ndigitalSignature, nonRepudiation, keyEncipherment, dataEncipherment, keyAgreement\r\n证书策略：\r\n               OID = 1.3.6.1.4.1.4146.1.95\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\nSCT列表:\r\n      第 1 条 SCT:\r\n        日志版本:  V1\r\n      日志标识符:  750035ad60145bb7ec76cdef2a283c03938790f5ca879d10c5460d74a5ef7434\r\n          时间戳:  Tue Oct 26 19:08:46 CST 70202659\r\n        签名类型:  TYPE0-HASH0\r\n            签名:  03004630\r\n\r\n公钥列表:\r\n         公钥标识符: f81310c97f960bd8e7e66a56a33217f8a6e47835c0084386dd0daf3b24a2c4a0\r\n           签名公钥: 048201153059301306072a8648ce3d020106082a8648ce3d0301070342000494e2305fac186fe281c858f45752160e286565d18765bcd6ff3eee348cbb5b37bab67301cfd2c53f2e0592ec75da477479dd706c06d807547de3a2bf3acc96ff\r\n\r\n         公钥标识符: 9c0646b445e87d9415cecab7a14b3985abbf3ee28f4484a075a8250eb28ee0fd\r\n           签名公钥: 3059301306072a8648ce3d020106082a8648ce3d03010703420004d6618c45c05725f4553eb0ca053aa61f58e8b5d4b732d18a304515c3ab6b8d23d6bd947c343e479a4be813b2b14252ab3cff4e3b31332eeac5d462d6d17d1ab6\r\n\r\n         公钥标识符: fb10e82d8823f46d767b55bf6b02a043830d04cf538ed5290267257773ef265f\r\n           签名公钥: 3059301306072a8648ce3d020106082a8648ce3d03010703420004ecc933d0ee4d8b3cb792defb65c60bc1f24df380a8b94b5aed29c97f7fe573d63efa2b55cdac6eec06bef8a80f26e47576ddc94ecae261b66ba1daf65565b178\r\n\r\n1.3.6.1.5.5.7.1.1:\n        305d302406082b060105050730018618687474703a2f2f6c6f63616c686f73743a38302f6f637370303506082b060105050730028629687474703a2f2f6c6f63616c686f73743a38302f4352542f316364643333323031346563642e637274\n\r\n2.5.29.31:\n        3066302fa02da02b8629687474703a2f2f6c6f63616c686f73743a38302f43524c2f316364643333323031346563642e63726c3033a031a02f862d687474703a2f2f6c6f63616c686f73743a38302f43524c2f316364643333323031346563642e6465722e63726c\n\r\n2.5.29.32:\n        3074306006092b06010401a032015f3053303006082b06010505070201162468747470733a2f2f67697465652e636f6d2f7778677368756a752f6d6f64706b6963612f301f06082b0601050507020230130c11574f41494e490a6e696169776f0a3532313007060567810c01013007060567810c0103\n\r\n2.5.29.35:\n        3016801435ad60145bb7ec76cdef2a283c03938790f5ca87\n\r\n2.5.29.14:\n        04149d10c5460d74a5ef7434e1418e03726422b8944d\n\r\n2.5.29.37:\n        301e06082b0601050507030106082b0601050507030306082b06010505070304\n\r\n\n\n\r\n证书签名：\n        ab9a0d6e76e893be47b46a26078ddf631332f0e2016ca4bf328a1c9d73536dc70de1e1ca001b24a7c1361cff7b0d79d8c7987a1cd43b968648bf11cba20f7138788b506674e51241dd72a1dc828503b43f5ea443a4cba91b363c951fba45d40d0b0845f5ebcb7b3baf415efcf3bb0d2a3879524bb08b90662de8569e26b4351233d1c86955edd07337eb968742774b724943bb0a2660e1379ccf167c69e961b5aca13be5bbc35d74959c70391ad021c585c2fe550f053aa30003a075d211851445f4442942d0ca2dface7c40c74a16dc6afea7d2d385387169ced22e3ba33f459cfdda967492081d6458ae7fb2b6d6aa502965a92da33e6e141c2cbd89b936ab\n\r\n证书类别： 非根证书\n\r\n证书链： \r\n       CA   --> 434e3d455643412c4f3d4d79204f72672c433d434e\r\n验证签名： 成功 颁发者=CN=EVCA, O=My Org, C=CN\r\n信任状态： 可信 (已找到上级证书)\r\n证书状态：证书正常。（CRL）\r\n2026/09/12 01:55:17 OCSP:正常,序列号 113522b95\r\n          证书正常。（OCSP）\r\n\r\n密钥 Id 哈希(SHA1)          ： fbb9fa05c256ea9b4f92414146a39b10a0d19492\r\n密钥 Id 哈希(RFC-SHA1)      ： 9d10c5460d74a5ef7434e1418e03726422b8944d\r\n密钥 Id 哈希(Pin-SHA256)    ： VdkefKgqxBBa5Cbzelri7f3ComGHm8A2H+1xPzk25sw=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 55d91e7ca82ac4105ae426f37a5ae2edfdc2a261879bc0361fed713f3936e6cc\r\n\n\r\n证书哈希(SHA1)              ： a99abd70e52cc81616f936596b5de9aac64988a1\r\n证书哈希(SHA256)            ： 9a7ae4a785380691414ed02f7d926f46f32aaa96675a063d336f5616f0bd7c38\r\n签名哈希                    ： 11a493ed7cbe46471e464945a631a2d09a31f7e1465c06620d2b5c30c849a6e6\r\n
+
+时间: 2026/09/12 01:56:41
+时间戳: 1789149401083
+操作: ADMIN signCERT
+命令: signCERT "CN=www.baidu.com,O=My Org,C=CN" 2048 sha256 1 1.3.6.1.4.1.311.20.2.2 0 1 null null 1cdd332014ecd RSA
+结果: 签发证书 CN=www.baidu.com,O=My Org,C=CN 算法=RSA 颁发者=1cdd332014ecd
+
+时间: 2026/09/12 01:56:41
+时间戳: 1789149401085
+操作: WebAdmin /api/signcert
+命令: POST /api/signcert 提交数据={"dn":"CN=www.baidu.com,O=My Org,C=CN","bits":"2048","hash":"sha256","keyusage":"1","exusage":"1.3.6.1.4.1.311.20.2.2","isca":"0","days":"1","dns":"null","ips":"null","issuer":"1cdd332014ecd","algo":"RSA"}
+结果: 用户证书生成成功！\r\n
+
+时间: 2026/09/12 01:56:57
+时间戳: 1789149417324
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/CRT/1cdd332014ecd.crt
+
+时间: 2026/09/12 01:56:57
+时间戳: 1789149417326
+操作: 文件响应
+命令: 
+结果: 文件=1cdd332014ecd.crt 大小=1736字节 类型=crt
+
+时间: 2026/09/12 01:56:57
+时间戳: 1789149417328
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/CRL/1cdd332014ecd.crl
+
+时间: 2026/09/12 01:56:57
+时间戳: 1789149417330
+操作: 文件响应
+命令: 
+结果: 文件=1cdd332014ecd.crl 大小=570字节 类型=crl
+
+时间: 2026/09/12 01:56:57
+时间戳: 1789149417334
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=70字节
+
+时间: 2026/09/12 01:56:57
+时间戳: 1789149417337
+操作: OCSP请求解析
+命令: 
+结果: 序列号=113522cb2 哈希=1.3.14.3.2.26 Nonce=无
+
+时间: 2026/09/12 01:56:57
+时间戳: 1789149417345
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=EVCA By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=113522cb2
+
+时间: 2026/09/12 01:56:57
+时间戳: 1789149417347
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1785字节
+
+时间: 2026/09/12 01:56:57
+时间戳: 1789149417348
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"113522cb2"}
+结果:         版本： 3\r\n      序列号： 0113522cb2\r\n    签名算法： SHA256WITHRSA (1.2.840.113549.1.1.11)\r\n签名哈希算法： SHA256\n\r\n颁发者： CN=EVCA, O=My Org, C=CN\r\n有效期从： Sat Sep 12 01:56:41 CST 2026\r\n有效期到： Sun Sep 12 01:56:41 CST 2027\n\r\n使用者： CN=www.baidu.com, O=My Org, C=CN\r\n    公钥： RSA 2048\r\n授权密钥标识符  ： 3016801435ad60145bb7ec76cdef2a283c03938790f5ca87\r\n使用者密钥标识符： 0414e1fc622a112f1557aefd039ed7c21bdffb35af3a\n\r\n增强型密钥用法：\n\r\n              1.3.6.1.4.1.311.20.2.2 (1.3.6.1.4.1.311.20.2.2)\r\n授权信息访问：\r\n              OCSP   URL=http://localhost:80/ocsp\r\n              颁发者 URL=http://localhost:80/CRT/1cdd332014ecd.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost:80/CRL/1cdd332014ecd.crl\r\n              CRL分发点 = http://localhost:80/CRL/1cdd332014ecd.der.crl\r\ndigitalSignature, nonRepudiation, keyEncipherment, dataEncipherment, keyAgreement\r\n证书策略：\r\n               OID = 1.3.6.1.4.1.4146.1.95\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\n1.3.6.1.5.5.7.1.1:\n        305d302406082b060105050730018618687474703a2f2f6c6f63616c686f73743a38302f6f637370303506082b060105050730028629687474703a2f2f6c6f63616c686f73743a38302f4352542f316364643333323031346563642e637274\n\r\n2.5.29.31:\n        3066302fa02da02b8629687474703a2f2f6c6f63616c686f73743a38302f43524c2f316364643333323031346563642e63726c3033a031a02f862d687474703a2f2f6c6f63616c686f73743a38302f43524c2f316364643333323031346563642e6465722e63726c\n\r\n2.5.29.32:\n        3074306006092b06010401a032015f3053303006082b06010505070201162468747470733a2f2f67697465652e636f6d2f7778677368756a752f6d6f64706b6963612f301f06082b0601050507020230130c11574f41494e490a6e696169776f0a3532313007060567810c01013007060567810c0103\n\r\n2.5.29.35:\n        3016801435ad60145bb7ec76cdef2a283c03938790f5ca87\n\r\n2.5.29.14:\n        0414e1fc622a112f1557aefd039ed7c21bdffb35af3a\n\r\n2.5.29.37:\n        300c060a2b060104018237140202\n\r\n\n\n\r\n证书签名：\n        6c590e163ef1b30c6a52ceda7185b36bc54a2f66633476432c8085bb00ef6fd2554284ab5b4ad8ca22bc2364c2199cb8a4f0858cca39a191439225d720c465ba817b0b04428fa0114290e023040b2f5f6865cbe092b1f9c80c82e59061c3fb3325623020ab5eb91edb5e03fe1c61c4b6d14e3eee867fce3e020a1ea20d31cf403b5b5d0c9233e234531280d6a3ba36be88f320c5c2559b10e9401a27d23c9608bca2e7455042704653bc0a1a7c4c7f7b93adfd597de3060ef835e8822cc4e9d6a40cf88a62f2ac2eff238d5ddf1008c1cf336ddb31bcaacf8b36f5efee9167de8c165ff81f1f16f0dd0c5a47307b9463d8852d5a6e42e0b360595192d4066711\n\r\n证书类别： 非根证书\n\r\n证书链： \r\n       CA   --> 434e3d455643412c4f3d4d79204f72672c433d434e\r\n验证签名： 成功 颁发者=CN=EVCA, O=My Org, C=CN\r\n信任状态： 可信 (已找到上级证书)\r\n证书状态：证书正常。（CRL）\r\n2026/09/12 01:56:57 OCSP:正常,序列号 113522cb2\r\n          证书正常。（OCSP）\r\n\r\n密钥 Id 哈希(SHA1)          ： eacc20cfb6a05c8cf5ea531b7d223952d9a59823\r\n密钥 Id 哈希(RFC-SHA1)      ： e1fc622a112f1557aefd039ed7c21bdffb35af3a\r\n密钥 Id 哈希(Pin-SHA256)    ： klMroMkCDrSU60/mKvx5T0o7bg/NHk8RyhTePWOf+dA=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 92532ba0c9020eb494eb4fe62afc794f4a3b6e0fcd1e4f11ca14de3d639ff9d0\r\n\n\r\n证书哈希(SHA1)              ： 173233a9a4e87eb72e65aad97ffbffb34c92c633\r\n证书哈希(SHA256)            ： 13e8513579c1ff9e96790c6a6328be0fcf666e9afb03d26cc27b5410f264ab11\r\n签名哈希                    ： d8d9e9afee35fb43c130b6928d501e215badbe332ef4989b093f7f3dd57d4147\r\n
+
+时间: 2026/09/12 01:57:21
+时间戳: 1789149441553
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRT/1cdd332014ecd.crt
+
+时间: 2026/09/12 01:57:21
+时间戳: 1789149441555
+操作: 文件响应
+命令: 
+结果: 文件=1cdd332014ecd.crt 大小=1736字节 类型=crt
+
+时间: 2026/09/12 01:57:21
+时间戳: 1789149441556
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRT/13fbe86586d3f90.crt
+
+时间: 2026/09/12 01:57:21
+时间戳: 1789149441557
+操作: 文件响应
+命令: 
+结果: 文件=13fbe86586d3f90.crt 大小=1744字节 类型=crt
+
+时间: 2026/09/12 01:57:21
+时间戳: 1789149441559
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRL/1cdd332014ecd.crl
+
+时间: 2026/09/12 01:57:21
+时间戳: 1789149441561
+操作: 文件响应
+命令: 
+结果: 文件=1cdd332014ecd.crl 大小=570字节 类型=crl
+
+时间: 2026/09/12 01:57:21
+时间戳: 1789149441561
+操作: 收到OCSP请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/ocsp 长度=72字节
+
+时间: 2026/09/12 01:57:21
+时间戳: 1789149441563
+操作: OCSP请求解析
+命令: 
+结果: 序列号=113522cb2 哈希=1.3.14.3.2.26 Nonce=无
+
+时间: 2026/09/12 01:57:21
+时间戳: 1789149441572
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=EVCA By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=113522cb2
+
+时间: 2026/09/12 01:57:21
+时间戳: 1789149441574
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1785字节
+
+时间: 2026/09/12 01:57:31
+时间戳: 1789149451559
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRT/1cdd332014ecd.crt
+
+时间: 2026/09/12 01:57:31
+时间戳: 1789149451562
+操作: 文件响应
+命令: 
+结果: 文件=1cdd332014ecd.crt 大小=1736字节 类型=crt
+
+时间: 2026/09/12 01:57:31
+时间戳: 1789149451563
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRT/13fbe86586d3f90.crt
+
+时间: 2026/09/12 01:57:31
+时间戳: 1789149451565
+操作: 文件响应
+命令: 
+结果: 文件=13fbe86586d3f90.crt 大小=1744字节 类型=crt
+
+时间: 2026/09/12 01:57:31
+时间戳: 1789149451566
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRL/1cdd332014ecd.crl
+
+时间: 2026/09/12 01:57:31
+时间戳: 1789149451569
+操作: 文件响应
+命令: 
+结果: 文件=1cdd332014ecd.crl 大小=570字节 类型=crl
+
+时间: 2026/09/12 01:57:31
+时间戳: 1789149451575
+操作: 收到OCSP请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/ocsp 长度=72字节
+
+时间: 2026/09/12 01:57:31
+时间戳: 1789149451578
+操作: OCSP请求解析
+命令: 
+结果: 序列号=113522cb2 哈希=1.3.14.3.2.26 Nonce=无
+
+时间: 2026/09/12 01:57:31
+时间戳: 1789149451590
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=EVCA By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=113522cb2
+
+时间: 2026/09/12 01:57:31
+时间戳: 1789149451593
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1785字节
+
+时间: 2026/09/12 01:58:24
+时间戳: 1789149504012
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/CRT/1cdd332014ecd.crt
+
+时间: 2026/09/12 01:58:24
+时间戳: 1789149504013
+操作: 文件响应
+命令: 
+结果: 文件=1cdd332014ecd.crt 大小=1736字节 类型=crt
+
+时间: 2026/09/12 01:58:24
+时间戳: 1789149504016
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/CRL/1cdd332014ecd.crl
+
+时间: 2026/09/12 01:58:24
+时间戳: 1789149504020
+操作: 文件响应
+命令: 
+结果: 文件=1cdd332014ecd.crl 大小=570字节 类型=crl
+
+时间: 2026/09/12 01:58:24
+时间戳: 1789149504022
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=70字节
+
+时间: 2026/09/12 01:58:24
+时间戳: 1789149504024
+操作: OCSP请求解析
+命令: 
+结果: 序列号=113522cb2 哈希=1.3.14.3.2.26 Nonce=无
+
+时间: 2026/09/12 01:58:24
+时间戳: 1789149504035
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=EVCA By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=113522cb2
+
+时间: 2026/09/12 01:58:24
+时间戳: 1789149504037
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1785字节
+
+时间: 2026/09/12 01:58:24
+时间戳: 1789149504038
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"113522cb2"}
+结果:         版本： 3\r\n      序列号： 0113522cb2\r\n    签名算法： SHA256WITHRSA (1.2.840.113549.1.1.11)\r\n签名哈希算法： SHA256\n\r\n颁发者： CN=EVCA, O=My Org, C=CN\r\n有效期从： Sat Sep 12 01:56:41 CST 2026\r\n有效期到： Sun Sep 12 01:56:41 CST 2027\n\r\n使用者： CN=www.baidu.com, O=My Org, C=CN\r\n    公钥： RSA 2048\r\n授权密钥标识符  ： 3016801435ad60145bb7ec76cdef2a283c03938790f5ca87\r\n使用者密钥标识符： 0414e1fc622a112f1557aefd039ed7c21bdffb35af3a\n\r\n增强型密钥用法：\n\r\n              1.3.6.1.4.1.311.20.2.2 (1.3.6.1.4.1.311.20.2.2)\r\n授权信息访问：\r\n              OCSP   URL=http://localhost:80/ocsp\r\n              颁发者 URL=http://localhost:80/CRT/1cdd332014ecd.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost:80/CRL/1cdd332014ecd.crl\r\n              CRL分发点 = http://localhost:80/CRL/1cdd332014ecd.der.crl\r\ndigitalSignature, nonRepudiation, keyEncipherment, dataEncipherment, keyAgreement\r\n证书策略：\r\n               OID = 1.3.6.1.4.1.4146.1.95\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\n1.3.6.1.5.5.7.1.1:\n        305d302406082b060105050730018618687474703a2f2f6c6f63616c686f73743a38302f6f637370303506082b060105050730028629687474703a2f2f6c6f63616c686f73743a38302f4352542f316364643333323031346563642e637274\n\r\n2.5.29.31:\n        3066302fa02da02b8629687474703a2f2f6c6f63616c686f73743a38302f43524c2f316364643333323031346563642e63726c3033a031a02f862d687474703a2f2f6c6f63616c686f73743a38302f43524c2f316364643333323031346563642e6465722e63726c\n\r\n2.5.29.32:\n        3074306006092b06010401a032015f3053303006082b06010505070201162468747470733a2f2f67697465652e636f6d2f7778677368756a752f6d6f64706b6963612f301f06082b0601050507020230130c11574f41494e490a6e696169776f0a3532313007060567810c01013007060567810c0103\n\r\n2.5.29.35:\n        3016801435ad60145bb7ec76cdef2a283c03938790f5ca87\n\r\n2.5.29.14:\n        0414e1fc622a112f1557aefd039ed7c21bdffb35af3a\n\r\n2.5.29.37:\n        300c060a2b060104018237140202\n\r\n\n\n\r\n证书签名：\n        6c590e163ef1b30c6a52ceda7185b36bc54a2f66633476432c8085bb00ef6fd2554284ab5b4ad8ca22bc2364c2199cb8a4f0858cca39a191439225d720c465ba817b0b04428fa0114290e023040b2f5f6865cbe092b1f9c80c82e59061c3fb3325623020ab5eb91edb5e03fe1c61c4b6d14e3eee867fce3e020a1ea20d31cf403b5b5d0c9233e234531280d6a3ba36be88f320c5c2559b10e9401a27d23c9608bca2e7455042704653bc0a1a7c4c7f7b93adfd597de3060ef835e8822cc4e9d6a40cf88a62f2ac2eff238d5ddf1008c1cf336ddb31bcaacf8b36f5efee9167de8c165ff81f1f16f0dd0c5a47307b9463d8852d5a6e42e0b360595192d4066711\n\r\n证书类别： 非根证书\n\r\n证书链： \r\n       CA   --> 434e3d455643412c4f3d4d79204f72672c433d434e\r\n验证签名： 成功 颁发者=CN=EVCA, O=My Org, C=CN\r\n信任状态： 可信 (已找到上级证书)\r\n证书状态：证书正常。（CRL）\r\n2026/09/12 01:58:24 OCSP:正常,序列号 113522cb2\r\n          证书正常。（OCSP）\r\n\r\n密钥 Id 哈希(SHA1)          ： eacc20cfb6a05c8cf5ea531b7d223952d9a59823\r\n密钥 Id 哈希(RFC-SHA1)      ： e1fc622a112f1557aefd039ed7c21bdffb35af3a\r\n密钥 Id 哈希(Pin-SHA256)    ： klMroMkCDrSU60/mKvx5T0o7bg/NHk8RyhTePWOf+dA=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 92532ba0c9020eb494eb4fe62afc794f4a3b6e0fcd1e4f11ca14de3d639ff9d0\r\n\n\r\n证书哈希(SHA1)              ： 173233a9a4e87eb72e65aad97ffbffb34c92c633\r\n证书哈希(SHA256)            ： 13e8513579c1ff9e96790c6a6328be0fcf666e9afb03d26cc27b5410f264ab11\r\n签名哈希                    ： d8d9e9afee35fb43c130b6928d501e215badbe332ef4989b093f7f3dd57d4147\r\n
+
+时间: 2026/09/12 02:04:53
+时间戳: 1789149893984
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/CRT/1cdd332014ecd.crt
+
+时间: 2026/09/12 02:04:53
+时间戳: 1789149893991
+操作: 文件响应
+命令: 
+结果: 文件=1cdd332014ecd.crt 大小=1736字节 类型=crt
+
+时间: 2026/09/12 02:04:53
+时间戳: 1789149893995
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/CRT/13fbe86586d3f90.crt
+
+时间: 2026/09/12 02:04:53
+时间戳: 1789149893997
+操作: 文件响应
+命令: 
+结果: 文件=13fbe86586d3f90.crt 大小=1744字节 类型=crt
+
+时间: 2026/09/12 02:04:54
+时间戳: 1789149894003
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/CRL/1cdd332014ecd.crl
+
+时间: 2026/09/12 02:04:54
+时间戳: 1789149894007
+操作: 文件响应
+命令: 
+结果: 文件=1cdd332014ecd.crl 大小=570字节 类型=crl
+
+时间: 2026/09/12 02:04:54
+时间戳: 1789149894034
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=70字节
+
+时间: 2026/09/12 02:04:54
+时间戳: 1789149894041
+操作: OCSP请求解析
+命令: 
+结果: 序列号=113522cb2 哈希=1.3.14.3.2.26 Nonce=无
+
+时间: 2026/09/12 02:04:54
+时间戳: 1789149894113
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=EVCA By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=113522cb2
+
+时间: 2026/09/12 02:04:54
+时间戳: 1789149894122
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1785字节
+
+时间: 2026/09/12 02:04:54
+时间戳: 1789149894129
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"113522cb2"}
+结果:         版本： 3\r\n      序列号： 0113522cb2\r\n    签名算法： SHA256-RSA (1.2.840.113549.1.1.11)\r\n签名哈希算法： SHA256\n\r\n颁发者： CN=EVCA, O=My Org, C=CN\r\n有效期从： Sat Sep 12 01:56:41 CST 2026\r\n有效期到： Sun Sep 12 01:56:41 CST 2027\n\r\n使用者： CN=www.baidu.com, O=My Org, C=CN\r\n    公钥： RSA 2048\r\n授权密钥标识符  ： 35ad60145bb7ec76cdef2a283c03938790f5ca87\r\n使用者密钥标识符： e1fc622a112f1557aefd039ed7c21bdffb35af3a\n\r\n增强型密钥用法：\n\r\n              智能卡登录 (1.3.6.1.4.1.311.20.2.2)\r\n授权信息访问：\r\n              OCSP   URL=http://localhost:80/ocsp\r\n              颁发者 URL=http://localhost:80/CRT/1cdd332014ecd.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost:80/CRL/1cdd332014ecd.crl\r\n              CRL分发点 = http://localhost:80/CRL/1cdd332014ecd.der.crl\r\ndigitalSignature, nonRepudiation, keyEncipherment, dataEncipherment, keyAgreement\r\n证书策略：\r\n              证书颁发策略(Statement Identifier) OID = 1.3.6.1.4.1.4146.1.95\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\n\n\n\r\n证书签名：\n        6c590e163ef1b30c6a52ceda7185b36bc54a2f66633476432c8085bb00ef6fd2554284ab5b4ad8ca22bc2364c2199cb8a4f0858cca39a191439225d720c465ba817b0b04428fa0114290e023040b2f5f6865cbe092b1f9c80c82e59061c3fb3325623020ab5eb91edb5e03fe1c61c4b6d14e3eee867fce3e020a1ea20d31cf403b5b5d0c9233e234531280d6a3ba36be88f320c5c2559b10e9401a27d23c9608bca2e7455042704653bc0a1a7c4c7f7b93adfd597de3060ef835e8822cc4e9d6a40cf88a62f2ac2eff238d5ddf1008c1cf336ddb31bcaacf8b36f5efee9167de8c165ff81f1f16f0dd0c5a47307b9463d8852d5a6e42e0b360595192d4066711\n\r\n证书类别： 非根证书\n\r\n证书链： \r\n       CA   --> 35ad60145bb7ec76cdef2a283c03938790f5ca87\r\n       Root --> 7377c95fbe1119350d6ad61c7c3b7aac9fed5913\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n验证签名： 通过、签名有效 颁发者=CN=EVCA, O=My Org, C=CN\r\n证书状态：证书正常。（CRL）\r\n2026/09/12 02:04:54 OCSP:正常,序列号 113522cb2\r\n          证书正常。（OCSP）\r\n\r\n密钥 Id 哈希(SHA1)          ： eacc20cfb6a05c8cf5ea531b7d223952d9a59823\r\n密钥 Id 哈希(RFC-SHA1)      ： e1fc622a112f1557aefd039ed7c21bdffb35af3a\r\n密钥 Id 哈希(Pin-SHA256)    ： klMroMkCDrSU60/mKvx5T0o7bg/NHk8RyhTePWOf+dA=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 92532ba0c9020eb494eb4fe62afc794f4a3b6e0fcd1e4f11ca14de3d639ff9d0\r\n\n\r\n证书哈希(SHA1)              ： 173233a9a4e87eb72e65aad97ffbffb34c92c633\r\n证书哈希(SHA256)            ： 13e8513579c1ff9e96790c6a6328be0fcf666e9afb03d26cc27b5410f264ab11\r\n签名哈希                    ： d8d9e9afee35fb43c130b6928d501e215badbe332ef4989b093f7f3dd57d4147\r\n
+
+时间: 2026/09/12 02:05:03
+时间戳: 1789149903198
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/CRT/1cdd332014ecd.crt
+
+时间: 2026/09/12 02:05:03
+时间戳: 1789149903200
+操作: 文件响应
+命令: 
+结果: 文件=1cdd332014ecd.crt 大小=1736字节 类型=crt
+
+时间: 2026/09/12 02:05:03
+时间戳: 1789149903205
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/CRT/13fbe86586d3f90.crt
+
+时间: 2026/09/12 02:05:03
+时间戳: 1789149903207
+操作: 文件响应
+命令: 
+结果: 文件=13fbe86586d3f90.crt 大小=1744字节 类型=crt
+
+时间: 2026/09/12 02:05:03
+时间戳: 1789149903212
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/CRL/1cdd332014ecd.crl
+
+时间: 2026/09/12 02:05:03
+时间戳: 1789149903215
+操作: 文件响应
+命令: 
+结果: 文件=1cdd332014ecd.crl 大小=570字节 类型=crl
+
+时间: 2026/09/12 02:05:03
+时间戳: 1789149903219
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=70字节
+
+时间: 2026/09/12 02:05:03
+时间戳: 1789149903221
+操作: OCSP请求解析
+命令: 
+结果: 序列号=113522cb2 哈希=1.3.14.3.2.26 Nonce=无
+
+时间: 2026/09/12 02:05:03
+时间戳: 1789149903240
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=EVCA By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=113522cb2
+
+时间: 2026/09/12 02:05:03
+时间戳: 1789149903246
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1785字节
+
+时间: 2026/09/12 02:05:03
+时间戳: 1789149903246
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"113522cb2"}
+结果:         版本： 3\r\n      序列号： 0113522cb2\r\n    签名算法： SHA256-RSA (1.2.840.113549.1.1.11)\r\n签名哈希算法： SHA256\n\r\n颁发者： CN=EVCA, O=My Org, C=CN\r\n有效期从： Sat Sep 12 01:56:41 CST 2026\r\n有效期到： Sun Sep 12 01:56:41 CST 2027\n\r\n使用者： CN=www.baidu.com, O=My Org, C=CN\r\n    公钥： RSA 2048\r\n授权密钥标识符  ： 35ad60145bb7ec76cdef2a283c03938790f5ca87\r\n使用者密钥标识符： e1fc622a112f1557aefd039ed7c21bdffb35af3a\n\r\n增强型密钥用法：\n\r\n              智能卡登录 (1.3.6.1.4.1.311.20.2.2)\r\n授权信息访问：\r\n              OCSP   URL=http://localhost:80/ocsp\r\n              颁发者 URL=http://localhost:80/CRT/1cdd332014ecd.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost:80/CRL/1cdd332014ecd.crl\r\n              CRL分发点 = http://localhost:80/CRL/1cdd332014ecd.der.crl\r\ndigitalSignature, nonRepudiation, keyEncipherment, dataEncipherment, keyAgreement\r\n证书策略：\r\n              证书颁发策略(Statement Identifier) OID = 1.3.6.1.4.1.4146.1.95\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\n\n\n\r\n证书签名：\n        6c590e163ef1b30c6a52ceda7185b36bc54a2f66633476432c8085bb00ef6fd2554284ab5b4ad8ca22bc2364c2199cb8a4f0858cca39a191439225d720c465ba817b0b04428fa0114290e023040b2f5f6865cbe092b1f9c80c82e59061c3fb3325623020ab5eb91edb5e03fe1c61c4b6d14e3eee867fce3e020a1ea20d31cf403b5b5d0c9233e234531280d6a3ba36be88f320c5c2559b10e9401a27d23c9608bca2e7455042704653bc0a1a7c4c7f7b93adfd597de3060ef835e8822cc4e9d6a40cf88a62f2ac2eff238d5ddf1008c1cf336ddb31bcaacf8b36f5efee9167de8c165ff81f1f16f0dd0c5a47307b9463d8852d5a6e42e0b360595192d4066711\n\r\n证书类别： 非根证书\n\r\n证书链： \r\n       CA   --> 35ad60145bb7ec76cdef2a283c03938790f5ca87\r\n       Root --> 7377c95fbe1119350d6ad61c7c3b7aac9fed5913\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n验证签名： 通过、签名有效 颁发者=CN=EVCA, O=My Org, C=CN\r\n证书状态：证书正常。（CRL）\r\n2026/09/12 02:05:03 OCSP:正常,序列号 113522cb2\r\n          证书正常。（OCSP）\r\n\r\n密钥 Id 哈希(SHA1)          ： eacc20cfb6a05c8cf5ea531b7d223952d9a59823\r\n密钥 Id 哈希(RFC-SHA1)      ： e1fc622a112f1557aefd039ed7c21bdffb35af3a\r\n密钥 Id 哈希(Pin-SHA256)    ： klMroMkCDrSU60/mKvx5T0o7bg/NHk8RyhTePWOf+dA=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 92532ba0c9020eb494eb4fe62afc794f4a3b6e0fcd1e4f11ca14de3d639ff9d0\r\n\n\r\n证书哈希(SHA1)              ： 173233a9a4e87eb72e65aad97ffbffb34c92c633\r\n证书哈希(SHA256)            ： 13e8513579c1ff9e96790c6a6328be0fcf666e9afb03d26cc27b5410f264ab11\r\n签名哈希                    ： d8d9e9afee35fb43c130b6928d501e215badbe332ef4989b093f7f3dd57d4147\r\n
+
+时间: 2026/09/12 02:05:04
+时间戳: 1789149904714
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/CRT/1cdd332014ecd.crt
+
+时间: 2026/09/12 02:05:04
+时间戳: 1789149904717
+操作: 文件响应
+命令: 
+结果: 文件=1cdd332014ecd.crt 大小=1736字节 类型=crt
+
+时间: 2026/09/12 02:05:04
+时间戳: 1789149904720
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/CRT/13fbe86586d3f90.crt
+
+时间: 2026/09/12 02:05:04
+时间戳: 1789149904722
+操作: 文件响应
+命令: 
+结果: 文件=13fbe86586d3f90.crt 大小=1744字节 类型=crt
+
+时间: 2026/09/12 02:05:04
+时间戳: 1789149904727
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/CRL/1cdd332014ecd.crl
+
+时间: 2026/09/12 02:05:04
+时间戳: 1789149904730
+操作: 文件响应
+命令: 
+结果: 文件=1cdd332014ecd.crl 大小=570字节 类型=crl
+
+时间: 2026/09/12 02:05:04
+时间戳: 1789149904732
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=70字节
+
+时间: 2026/09/12 02:05:04
+时间戳: 1789149904734
+操作: OCSP请求解析
+命令: 
+结果: 序列号=113522cb2 哈希=1.3.14.3.2.26 Nonce=无
+
+时间: 2026/09/12 02:05:04
+时间戳: 1789149904756
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=EVCA By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=113522cb2
+
+时间: 2026/09/12 02:05:04
+时间戳: 1789149904761
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"113522cb2"}
+结果:         版本： 3\r\n      序列号： 0113522cb2\r\n    签名算法： SHA256-RSA (1.2.840.113549.1.1.11)\r\n签名哈希算法： SHA256\n\r\n颁发者： CN=EVCA, O=My Org, C=CN\r\n有效期从： Sat Sep 12 01:56:41 CST 2026\r\n有效期到： Sun Sep 12 01:56:41 CST 2027\n\r\n使用者： CN=www.baidu.com, O=My Org, C=CN\r\n    公钥： RSA 2048\r\n授权密钥标识符  ： 35ad60145bb7ec76cdef2a283c03938790f5ca87\r\n使用者密钥标识符： e1fc622a112f1557aefd039ed7c21bdffb35af3a\n\r\n增强型密钥用法：\n\r\n              智能卡登录 (1.3.6.1.4.1.311.20.2.2)\r\n授权信息访问：\r\n              OCSP   URL=http://localhost:80/ocsp\r\n              颁发者 URL=http://localhost:80/CRT/1cdd332014ecd.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost:80/CRL/1cdd332014ecd.crl\r\n              CRL分发点 = http://localhost:80/CRL/1cdd332014ecd.der.crl\r\ndigitalSignature, nonRepudiation, keyEncipherment, dataEncipherment, keyAgreement\r\n证书策略：\r\n              证书颁发策略(Statement Identifier) OID = 1.3.6.1.4.1.4146.1.95\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\n\n\n\r\n证书签名：\n        6c590e163ef1b30c6a52ceda7185b36bc54a2f66633476432c8085bb00ef6fd2554284ab5b4ad8ca22bc2364c2199cb8a4f0858cca39a191439225d720c465ba817b0b04428fa0114290e023040b2f5f6865cbe092b1f9c80c82e59061c3fb3325623020ab5eb91edb5e03fe1c61c4b6d14e3eee867fce3e020a1ea20d31cf403b5b5d0c9233e234531280d6a3ba36be88f320c5c2559b10e9401a27d23c9608bca2e7455042704653bc0a1a7c4c7f7b93adfd597de3060ef835e8822cc4e9d6a40cf88a62f2ac2eff238d5ddf1008c1cf336ddb31bcaacf8b36f5efee9167de8c165ff81f1f16f0dd0c5a47307b9463d8852d5a6e42e0b360595192d4066711\n\r\n证书类别： 非根证书\n\r\n证书链： \r\n       CA   --> 35ad60145bb7ec76cdef2a283c03938790f5ca87\r\n       Root --> 7377c95fbe1119350d6ad61c7c3b7aac9fed5913\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n验证签名： 通过、签名有效 颁发者=CN=EVCA, O=My Org, C=CN\r\n证书状态：证书正常。（CRL）\r\n2026/09/12 02:05:04 OCSP:正常,序列号 113522cb2\r\n          证书正常。（OCSP）\r\n\r\n密钥 Id 哈希(SHA1)          ： eacc20cfb6a05c8cf5ea531b7d223952d9a59823\r\n密钥 Id 哈希(RFC-SHA1)      ： e1fc622a112f1557aefd039ed7c21bdffb35af3a\r\n密钥 Id 哈希(Pin-SHA256)    ： klMroMkCDrSU60/mKvx5T0o7bg/NHk8RyhTePWOf+dA=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 92532ba0c9020eb494eb4fe62afc794f4a3b6e0fcd1e4f11ca14de3d639ff9d0\r\n\n\r\n证书哈希(SHA1)              ： 173233a9a4e87eb72e65aad97ffbffb34c92c633\r\n证书哈希(SHA256)            ： 13e8513579c1ff9e96790c6a6328be0fcf666e9afb03d26cc27b5410f264ab11\r\n签名哈希                    ： d8d9e9afee35fb43c130b6928d501e215badbe332ef4989b093f7f3dd57d4147\r\n
+
+时间: 2026/09/12 02:05:04
+时间戳: 1789149904767
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1785字节
+
