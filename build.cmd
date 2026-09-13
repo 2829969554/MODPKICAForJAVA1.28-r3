@@ -1,12 +1,27 @@
 @echo off
 rem ============================================================
 rem  MODPKICA Java (BC 1.85) Offline One-Click Build Script
-rem  Usage: double-click build.cmd or run in cmd
+rem  Usage:
+rem    build.cmd            -> build only
+rem    build.cmd 1          -> build, then auto-run command #1
+rem    build.cmd 2          -> build, then auto-run command #2
+rem    ...                  -> (see numbered list below)
 rem  Requirement: JDK 17+ installed, BC185 jars in .\BC185
 rem  Output: compiled classes in .\out
 rem  NOTE: comments are in English to avoid cmd code page issues
 rem ============================================================
 setlocal
+
+rem ---- validate optional command number early (1-8) ----
+set "RUN=%~1"
+if defined RUN (
+    set "VALID="
+    for /l %%i in (1,1,8) do if "%RUN%"=="%%i" set "VALID=1"
+    if not defined VALID (
+        echo [ERROR] Invalid command number: %RUN%. Valid range: 1-8.
+        exit /b 1
+    )
+)
 
 rem ---- locate javac / java on PATH ----
 where javac >nul 2>nul
@@ -30,6 +45,7 @@ echo [1/2] Compiling shared library and all 7 main programs...
 javac -encoding UTF-8 -cp "%BC_CP%" -d out src\modpkica\*.java
 if errorlevel 1 (
     echo [ERROR] Compilation FAILED. See messages above.
+    echo         Build aborted. Command #%1 was NOT executed.
     exit /b 1
 )
 
@@ -72,16 +88,62 @@ echo Build SUCCESS. Classes are in .\out
 echo.
 echo How to run (set MODPKICA_BASE to your PKI root first):
 echo   set MODPKICA_BASE=C:\path\to\your\pki_root
-echo   java "-Dfile.encoding=UTF-8" -cp "out;%BC_CP%" modpkica.MAIN   (GUI auto starts at http://localhost:8080)
-echo   java "-Dfile.encoding=UTF-8" -cp "out;%BC_CP%" modpkica.WebAdmin  (GUI only)
-echo   java "-Dfile.encoding=UTF-8" -cp "out;%BC_CP%" modpkica.Admin
-echo   java "-Dfile.encoding=UTF-8" -cp "out;%BC_CP%" modpkica.MakeRoot "CN=Root,O=Org,C=CN" 2048 sha256 RSA
-echo   java "-Dfile.encoding=UTF-8" -cp "out;%BC_CP%" modpkica.MakeCert "CN=www.test.com" 2048 sha256 1 1 0 1 "www.test.com" null null root RSA
-echo   java "-Dfile.encoding=UTF-8" -cp "out;%BC_CP%" modpkica.RootGetCrl
-echo   java "-Dfile.encoding=UTF-8" -cp "out;%BC_CP%" modpkica.CertVerify cert.crt
-echo   java "-Dfile.encoding=UTF-8" -cp "out;%BC_CP%" modpkica.Auto revoke 1234567890 1
+echo.
+echo   [1] java "-Dfile.encoding=UTF-8" -cp "out;%BC_CP%" modpkica.MAIN
+echo       (GUI auto starts at http://localhost:8080)
+echo   [2] java "-Dfile.encoding=UTF-8" -cp "out;%BC_CP%" modpkica.WebAdmin
+echo       (GUI only)
+echo   [3] java "-Dfile.encoding=UTF-8" -cp "out;%BC_CP%" modpkica.Admin
+echo   [4] java "-Dfile.encoding=UTF-8" -cp "out;%BC_CP%" modpkica.MakeRoot "CN=Root,O=Org,C=CN" 2048 sha256 RSA
+echo   [5] java "-Dfile.encoding=UTF-8" -cp "out;%BC_CP%" modpkica.MakeCert "CN=www.test.com" 2048 sha256 1 1 0 1 "www.test.com" null null root RSA
+echo   [6] java "-Dfile.encoding=UTF-8" -cp "out;%BC_CP%" modpkica.RootGetCrl
+echo   [7] java "-Dfile.encoding=UTF-8" -cp "out;%BC_CP%" modpkica.CertVerify cert.crt
+echo   [8] java "-Dfile.encoding=UTF-8" -cp "out;%BC_CP%" modpkica.Auto revoke 1234567890 1
+echo.
+echo Auto-run: build.cmd [1-8]  -> compile first, then run command #N automatically.
+echo           (If compilation fails, the command is NOT executed.)
 echo.
 echo Note: PKI folder layout (CERTS.txt, ROOT, CA, CERT, KEY, OCSP,
 echo       TIMSTAMP, WebPublic, CONFIG.txt, logs.log) is created at MODPKICA_BASE.
 
-endlocal
+rem ---- auto-run selected command number (validated above) ----
+if defined RUN (
+    echo.
+    echo ============================================
+    echo   Auto-running command #%RUN% ...
+    echo ============================================
+    call :run_%RUN%
+)
+exit /b 0
+
+:run_1
+java "-Dfile.encoding=UTF-8" -cp "out;BC185\*" modpkica.MAIN
+goto :eof
+
+:run_2
+java "-Dfile.encoding=UTF-8" -cp "out;BC185\*" modpkica.WebAdmin
+goto :eof
+
+:run_3
+java "-Dfile.encoding=UTF-8" -cp "out;BC185\*" modpkica.Admin
+goto :eof
+
+:run_4
+java "-Dfile.encoding=UTF-8" -cp "out;BC185\*" modpkica.MakeRoot "CN=Root,O=Org,C=CN" 2048 sha256 RSA
+goto :eof
+
+:run_5
+java "-Dfile.encoding=UTF-8" -cp "out;BC185\*" modpkica.MakeCert "CN=www.test.com" 2048 sha256 1 1 0 1 "www.test.com" null null root RSA
+goto :eof
+
+:run_6
+java "-Dfile.encoding=UTF-8" -cp "out;BC185\*" modpkica.RootGetCrl
+goto :eof
+
+:run_7
+java "-Dfile.encoding=UTF-8" -cp "out;BC185\*" modpkica.CertVerify cert.crt
+goto :eof
+
+:run_8
+java "-Dfile.encoding=UTF-8" -cp "out;BC185\*" modpkica.Auto revoke 1234567890 1
+goto :eof

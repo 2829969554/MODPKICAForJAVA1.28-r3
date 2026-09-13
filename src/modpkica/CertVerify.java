@@ -387,6 +387,7 @@ public final class CertVerify {
         switch (oid) {
             case "2.23.140.1.3": return "Extended Validation(扩展验证，代码签名)";
             case "2.23.140.1.4.1": return "Code Signing(代码签名)";
+            case "2.23.140.1.4.2": return "TSA 证书(时间戳)";
             case "2.23.140.1.1": return "Extended Validation(扩展验证，SSL)";
             case "2.23.140.1.2.2": return "Organization Validation(组织验证)";
             case "2.23.140.1.2.1": return "Domain Validation(域名验证)";

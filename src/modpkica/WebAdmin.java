@@ -1130,7 +1130,7 @@ public final class WebAdmin {
     // 内嵌前端页面（单文件原生 HTML/CSS/JS，无任何外部依赖，离线可用）
     // ============================================================
 
-    private static final String PAGE_HTML = """
+    private static final String PAGE_P1 = """
         <!DOCTYPE html>
         <html lang="zh-CN">
         <head>
@@ -1251,6 +1251,20 @@ public final class WebAdmin {
           .modal-head h3 { flex: 1; font-size: 14px; color: var(--accent); }
           .modal-body { overflow: auto; padding: 14px 18px; }
           .modal-body pre { font-family: var(--mono); font-size: 12px; line-height: 1.5; white-space: pre-wrap; word-break: break-all; }
+          /* ===== 证书操作弹窗（吊销/续签/密钥更换） ===== */
+          .op-tabs { display: flex; gap: 4px; margin-bottom: 14px; border-bottom: 1px solid var(--border); }
+          .op-tab { padding: 8px 18px; cursor: pointer; color: var(--dim); border-bottom: 2px solid transparent; font-size: 13px; user-select: none; }
+          .op-tab:hover { color: var(--text); }
+          .op-tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 700; }
+          .op-pane label { display: block; color: var(--dim); font-size: 12px; margin: 10px 0 6px; }
+          .op-pane input[list] { width: 100%; }
+          .op-serial-info { margin-top: 12px; padding: 10px 14px; background: var(--panel2); border: 1px solid var(--border); border-radius: 8px; font-size: 12px; line-height: 1.8; }
+          .op-serial-info .kv { font-family: var(--mono); }
+          .op-serial-info .kv b { color: var(--accent); }
+          #opSerialList { display: none; }
+          /* ===== 证书验证弹窗：状态徽标 + 标题三态配色 ===== */
+          .v-badge { padding: 3px 14px; border-radius: 6px; font-weight: 700; font-size: 12px; margin-right: 10px; white-space: nowrap; }
+          .v-text { font-size: 13px; color: var(--text); margin-right: 12px; white-space: nowrap; }
         </style>
         </head>
         <body>
@@ -1605,6 +1619,60 @@ public final class WebAdmin {
           </div>
         </div>
 
+        <!-- 证书操作弹窗：吊销证书 / 续签证书 / 密钥更换 -->
+        <div class="modal-mask" id="opModal" style="display:none" onclick="if(event.target===this)closeOp()">
+          <div class="modal" style="width:min(580px,92vw)">
+            <div class="modal-head">
+              <h3>证书操作</h3>
+              <button class="ghost" onclick="closeOp()">关闭</button>
+            </div>
+            <div class="modal-body">
+              <div class="op-tabs">
+                <span class="op-tab active" id="opTabRevoke" onclick="switchOp('revoke')">吊销证书</span>
+                <span class="op-tab" id="opTabRenew" onclick="switchOp('renew')">续签证书</span>
+                <span class="op-tab" id="opTabKey" onclick="switchOp('key')">密钥更换</span>
+              </div>
+              <!-- 吊销证书 -->
+              <div class="op-pane" id="opPaneRevoke">
+                <label>证书序列号（可输入，也可从下拉中选择）</label>
+                <input id="opSerial" list="opSerialList" placeholder="输入或选择证书序列号" oninput="opInfo()">
+                <datalist id="opSerialList"></datalist>
+                <div class="op-serial-info" id="opSerialInfo">未选择证书</div>
+                <label>吊销理由</label>
+                <select id="opReason"></select>
+                <pre class="out" id="opOut" style="margin-top:14px"></pre>
+              </div>
+              <!-- 续签证书（占位） -->
+              <div class="op-pane" id="opPaneRenew" style="display:none">
+                <p class="cfg-hint">续签证书功能开发中：将基于当前证书信息（相同 DN、相同密钥）重新签发一张新证书并自动吊销旧证书。</p>
+              </div>
+              <!-- 密钥更换（占位） -->
+              <div class="op-pane" id="opPaneKey" style="display:none">
+                <p class="cfg-hint">密钥更换功能开发中：将生成新密钥对并以相同 DN 重签证书，同时吊销旧证书。</p>
+              </div>
+            </div>
+            <div class="modal-foot" id="opFoot">
+              <button class="danger" onclick="doOpRevoke()">确认吊销</button>
+              <button class="ghost" onclick="closeOp()">取消</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 证书验证弹窗：按序列号调用 /api/verify -->
+        <div class="modal-mask" id="verifyModal" style="display:none" onclick="if(event.target===this)closeVerifyModal()">
+          <div class="modal">
+            <div class="modal-head" id="verifyHead">
+              <h3 id="verifyModalTitle">证书验证</h3>
+              <span class="v-badge" id="verifyBadge" style="display:none">状态</span>
+              <span class="v-text" id="verifyText"></span>
+              <button class="ghost" onclick="closeVerifyModal()">关闭</button>
+            </div>
+            <div class="modal-body">
+              <pre class="out" id="verifyModalOut">验证中...</pre>
+            </div>
+          </div>
+        </div>
+
         <!-- 有效期选择悬浮窗 -->
         <div class="modal-mask" id="valModal" style="display:none" onclick="if(event.target===this)closeValModal()">
           <div class="modal" style="width:min(460px,92vw)">
@@ -1702,7 +1770,7 @@ public final class WebAdmin {
             $('page-' + p).classList.add('active');
             $('pageTitle').textContent = TITLES[p] || p;
             if (p === 'dashboard') loadStatus();
-            if (p === 'certs') loadCerts();
+            if (p === 'certs') { loadCerts(); loadIssuers(); }
             if (p === 'config') loadConfig();
             if (p === 'logs') loadLogs();          };
         });
@@ -1754,12 +1822,34 @@ public final class WebAdmin {
           tb.innerHTML = '';
           rows.forEach(e => {
             const tr = document.createElement('tr');
-            const stCls = e.status === 'R' ? 'color:var(--err)' : e.status === 'V' ? 'color:var(--ok)' : '';
-            tr.innerHTML = '<td>' + e.serial + '</td><td>' + e.type + '</td><td style="' + stCls + ';font-weight:700">' + e.status + '</td><td>' + e.reason + '</td><td>' + e.time + '</td><td>' + e.issuer + '</td><td>' + e.algo + '</td>' +
-              '<td><button class="ghost" data-serial="' + e.serial + '" style="padding:4px 12px;font-size:12px">详情</button></td>';
+            // 状态文本：V.正常 / R.已吊销 / N.未知；配色：正常绿、已吊销深红、未知橙
+            const stTxt = {V:'V.正常', R:'R.已吊销', N:'N.未知'}[e.status] || e.status;
+            const stCls = e.status === 'R' ? 'color:#dc2626' : e.status === 'V' ? 'color:var(--ok)' : e.status === 'N' ? 'color:#f59e0b' : '';
+            // 序列号列：鼠标悬浮显示证书详情（与仪表盘证书链同款悬浮窗）
+            const tip = certTip(e.serial);
+            tr.innerHTML = '<td class="t-box" data-tip="' + esc(tip) + '">' + esc(e.serial) + '</td>' +
+              '<td>' + esc(typeName(e.type)) + '</td><td style="' + stCls + ';font-weight:700">' + esc(stTxt) + '</td>' +
+              '<td>' + esc(e.reason) + '</td><td>' + esc(e.time) + '</td>' +
+              '<td class="t-box" data-tip="' + esc(certTip(e.issuer)) + '">' + esc(e.issuer) + '</td><td>' + esc(e.algo) + '</td>' +
+              '<td><button class="ghost" data-serial="' + e.serial + '" style="padding:4px 12px;font-size:12px">详情</button> ' +
+              '<button class="ghost" data-verify="' + e.serial + '" style="padding:4px 12px;font-size:12px">验证</button> ' +
+              '<button class="ghost" data-op="' + e.serial + '" style="padding:4px 12px;font-size:12px">操作</button></td>';
             tb.appendChild(tr);
           });
           if (!rows.length) tb.innerHTML = '<tr><td colspan="8" style="color:var(--dim)">（无匹配记录）</td></tr>';
+        }
+        // 证书悬浮窗：优先用证书链树的详情（DN/密钥/哈希/长度/OCSP/CRL），未登记链数据时回退登记表信息
+        function certTip(serial) {
+          const n = issuerMap[serial];
+          if (n) return issuerTip(serial);
+          const e = certData.find(x => x.serial.toLowerCase() === String(serial).toLowerCase());
+          if (!e) return '<div class="kv"><b>证书信息：</b>未找到（该序列号未登记详情）</div>';
+          const stTxt = {V:'正常', R:'已吊销', N:'未知'}[e.status] || e.status;
+          return '<div class="kv"><b>序列号：</b>' + esc(e.serial) + '</div>' +
+            '<div class="kv"><b>证书类型：</b>' + esc(typeName(e.type)) + '</div>' +
+            '<div class="kv"><b>状态：</b>' + esc(stTxt) + ' / 算法：' + esc(e.algo || '-') + '</div>' +
+            '<div class="kv"><b>颁发者：</b>' + esc(e.issuer) + '</div>' +
+            '<div class="kv"><b>时间：</b>' + esc(e.time) + '</div>';
         }
 
         // 签发证书的颁发者下拉：CERTS.txt 中 R/C 类型序列号（悬停显示证书详情）
@@ -1830,9 +1920,116 @@ public final class WebAdmin {
         }
         function closeModal() { $('modal').classList.remove('show'); }
 
+        // ===== 证书操作弹窗（吊销证书 / 续签证书 / 密钥更换） =====
+        const OP_REASONS = [['0','未指定'],['1','密钥泄露'],['2','CA泄露'],['3','从属关系变更'],['4','证书超期'],['5','停止运营'],['6','证书吊销'],['8','从CRL移除'],['9','其他']];
+        function openOp(serial) {
+          $('opSerial').value = serial || '';
+          $('opSerialList').innerHTML = certData.map(e => '<option value="' + esc(e.serial) + '"></option>').join('');
+          const sel = $('opReason');
+          sel.innerHTML = OP_REASONS.map(r => '<option value="' + r[0] + '">' + r[0] + ' - ' + r[1] + '</option>').join('');
+          sel.value = '0';
+          $('opOut').textContent = '';
+          $('opOut').hidden = true;
+          switchOp('revoke');
+          $('opModal').style.display = 'flex';
+          opInfo();
+        }
+        function closeOp() { $('opModal').style.display = 'none'; }
+        // 分组切换：吊销有实际功能；续签/密钥更换仅前端占位
+        function switchOp(tab) {
+          ['revoke', 'renew', 'key'].forEach(t => {
+            const cap = t[0].toUpperCase() + t.slice(1);
+            $('opTab' + cap).classList.toggle('active', t === tab);
+            $('opPane' + cap).style.display = t === tab ? '' : 'none';
+          });
+          $('opFoot').style.display = tab === 'revoke' ? '' : 'none';
+        }
+        // 序列号输入/选择后：显示证书简要信息（同仪表盘证书链悬浮窗数据）
+        function opInfo() {
+          const s = $('opSerial').value.trim().toLowerCase();
+          const box = $('opSerialInfo');
+          if (!s) { box.innerHTML = '<span style="color:var(--dim)">未选择证书</span>'; return; }
+          const n = issuerMap[s];
+          if (n) {
+            box.innerHTML = '<div class="kv"><b>证书类型：</b>' + esc(typeName(n.type) + (n.type === 'E' && n.kind ? '[' + n.kind + ']' : '')) + '</div>' +
+              '<div class="kv"><b>序列号：</b>' + esc(n.serial) + '</div>' +
+              '<div class="kv"><b>DN：</b>' + esc(n.dn) + '</div>' +
+              '<div class="kv"><b>密钥对：</b>' + esc(n.algo || '-') + ' / 哈希：' + esc(n.hash || '-') + ' / 长度：' + (n.bits ? n.bits + '位' : '-') + '</div>' +
+              '<div class="kv"><b>OCSP 状态：</b>' + esc(n.ocsp) + '</div>' +
+              '<div class="kv"><b>CRL 状态：</b>' + esc(n.crl) + '（登记状态 ' + esc({V:'正常', R:'已吊销', N:'未知'}[n.status] || n.status) + '）</div>';
+          } else {
+            const e = certData.find(x => x.serial.toLowerCase() === s);
+            if (e) {
+              box.innerHTML = '<div class="kv"><b>序列号：</b>' + esc(e.serial) + '</div>' +
+                '<div class="kv"><b>证书类型：</b>' + esc(typeName(e.type)) + ' / 状态：' + esc({V:'正常', R:'已吊销', N:'未知'}[e.status] || e.status) + '</div>' +
+                '<div class="kv"><b>算法：</b>' + esc(e.algo || '-') + ' / 颁发者：' + esc(e.issuer) + '</div>' +
+                '<div class="kv"><b>时间：</b>' + esc(e.time) + '</div>';
+            } else {
+              box.innerHTML = '<div class="kv" style="color:var(--err)"><b>提示：</b>未找到该序列号（请检查 CERTS.txt 登记表）</div>';
+            }
+          }
+        }
+        // 确认吊销：调用 /api/revoke，成功后刷新证书库列表
+        async function doOpRevoke() {
+          const s = $('opSerial').value.trim();
+          if (!s) { $('opOut').hidden = false; showOut('opOut', '请先输入证书序列号', false); return; }
+          await postForm('/api/revoke', { serial: s, reason: $('opReason').value }, 'opOut');
+          loadCerts();
+          loadIssuers();
+        }
+
+        // ===== 证书验证弹窗：按当前行序列号调用 /api/verify =====
+        const V_REASONS = {0:'未指定', 1:'密钥泄露', 2:'CA泄露', 3:'从属关系变更', 4:'证书超期', 5:'停止运营', 6:'证书吊销', 8:'从CRL移除', 9:'其他'};
+        // 从验证输出文本解析证书状态：正常 / 已吊销（含原因）/ 未知（实时数据获取失败）
+        function parseVerifyState(text) {
+          const t = text || '';
+          if (/无法|失败|未知|None|解析失败/.test(t)) {
+            return { k: 'unknown', badge: '未知', txt: '证书有效，因实时数据获取失败无法进行权威校验' };
+          }
+          if (t.includes('已吊销') || t.includes('已被')) {
+            const m = t.match(/原因[:：]?\\s*(\\d+)/);
+            const reason = m ? (V_REASONS[parseInt(m[1], 10)] || ('原因码 ' + m[1])) : '';
+            return { k: 'revoked', badge: '已吊销', txt: reason ? '因' + reason + '，证书已被吊销' : '证书已被吊销' };
+          }
+          if (t.includes('证书正常') || t.includes('正常')) {
+            return { k: 'ok', badge: '正常', txt: '证书有效，状态正常' };
+          }
+          return { k: 'unknown', badge: '未知', txt: '证书有效，因实时数据获取失败无法进行权威校验' };
+        }
+        const V_HEAD_BG = { ok: 'rgba(16,185,129,0.16)', revoked: 'rgba(239,68,68,0.16)', unknown: 'rgba(245,158,11,0.16)' };
+        const V_BADGE_BG = { ok: '#dcfce7', revoked: '#fee2e2', unknown: '#ffedd5' };
+        const V_BADGE_FG = { ok: '#065f46', revoked: '#991b1b', unknown: '#b45309' };
+        const V_TEXT_FG = { ok: '#6ee7b7', revoked: '#fca5a5', unknown: '#fcd34d' };
+        async function openVerify(serial) {
+          $('verifyModal').style.display = 'flex';
+          $('verifyModalTitle').textContent = '证书验证 · ' + serial;
+          const out = $('verifyModalOut');
+          out.className = 'out';
+          out.textContent = '验证中...';
+          try {
+            const r = await api('/api/verify', { target: serial });
+            out.textContent = r.message || (r.ok ? 'OK' : '失败');
+            out.className = 'out ' + (r.ok ? 'ok' : 'err');
+            const st = parseVerifyState(out.textContent);
+            $('verifyHead').style.background = V_HEAD_BG[st.k];
+            $('verifyHead').style.borderBottomColor = V_HEAD_BG[st.k];
+            const b = $('verifyBadge');
+            b.style.display = 'inline-block';
+            b.style.background = V_BADGE_BG[st.k];
+            b.style.color = V_BADGE_FG[st.k];
+            b.textContent = st.badge;
+            $('verifyText').textContent = st.txt;
+            $('verifyText').style.color = V_TEXT_FG[st.k];
+          } catch (e) {
+            out.textContent = '请求失败: ' + e;
+            out.className = 'out err';
+          }
+        }
+        function closeVerifyModal() { $('verifyModal').style.display = 'none'; }
+
         // ===== 证书链树 =====
         function esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-        function typeName(t) { return {R:'根证书', C:'中间证书', E:'终端证书'}[t] || t; }
+        function typeName(t) { return {R:'根证书', C:'CA证书', E:'终端证书'}[t] || t; }
         function tipHtml(n) {
           const stTxt = {V:'正常', R:'已吊销', N:'未知'}[n.status] || n.status;
           const kind = n.type === 'E' && n.kind ? '[' + n.kind + ']' : '';
@@ -1854,6 +2051,8 @@ public final class WebAdmin {
           }
           h += '<span class="t-box" data-tip="' + esc(tipHtml(n)) + '"><span class="t-badge ' + n.type + '">' + n.type + '</span>' +
             '<span class="t-kind">' + typeName(n.type) + kind + '</span>' + esc(n.dn || n.serial) +
+""";
+    private static final String PAGE_P2 = """
             ' <span class="t-st ' + n.status + '">' + (n.status === 'V' ? '● 正常' : n.status === 'R' ? '● 已吊销' : '● 未知') + '</span></span>';
           h += '</div>';
           h += '</div>';
@@ -2196,13 +2395,22 @@ public final class WebAdmin {
         loadIssuers();
         loadCerts();
 
-        // 证书库「详情」按钮：事件委托，避免内联 onclick 引号转义问题
+        // 证书库「详情 / 验证 / 操作」按钮：事件委托，避免内联 onclick 引号转义问题
         $('certsTable').querySelector('tbody').addEventListener('click', function (ev) {
           const btn = ev.target.closest ? ev.target.closest('button[data-serial]') : null;
           if (btn) showDetail(btn.getAttribute('data-serial'));
+          const vbtn = ev.target.closest ? ev.target.closest('button[data-verify]') : null;
+          if (vbtn) openVerify(vbtn.getAttribute('data-verify'));
+          const obtn = ev.target.closest ? ev.target.closest('button[data-op]') : null;
+          if (obtn) openOp(obtn.getAttribute('data-op'));
         });
         </script>
         </body>
         </html>
-        """;
+        
+
+
+
+""";
+    private static final String PAGE_HTML = PAGE_P1.concat(PAGE_P2);
 }

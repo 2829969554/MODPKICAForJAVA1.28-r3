@@ -236,10 +236,13 @@ public final class OcspUtil {
         ASN1EncodableVector singleVec = new ASN1EncodableVector();
         singleVec.add(certId);
         if (status == REVOKED) {
+            // RFC 6960：revoked [1] IMPLICIT RevokedInfo（内容不含 SEQUENCE 头）；
+            // revocationReason 为 [0] EXPLICIT CRLReason。此前 CertStatus 误用 explicit
+            // 导致 openssl/BC 按 IMPLICIT 解析错位（wrong tag / illegal object）。
             ASN1EncodableVector revokedInfo = new ASN1EncodableVector();
             revokedInfo.add(new ASN1GeneralizedTime(revokedAt));
             revokedInfo.add(new DERTaggedObject(true, 0, new ASN1Enumerated(reason)));
-            singleVec.add(new DERTaggedObject(true, 1, new DERSequence(revokedInfo)));
+            singleVec.add(new DERTaggedObject(false, 1, new DERSequence(revokedInfo)));
         } else if (status == UNKNOWN) {
             singleVec.add(new DERTaggedObject(false, 2, DERNull.INSTANCE));
         } else {

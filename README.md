@@ -1,4 +1,4 @@
-# MODPKICA Java 复刻版 v1.0（BC 1.85 离线）
+# MODPKICA Java 复刻版 v1.1（BC 1.85 离线）
 
 > 使用 **Java + BouncyCastle 1.85** 离线复刻 Go 版 MODPKICA 全套 PKI 功能：X.509 证书签发、CRL 吊销列表、OCSP 在线状态、RFC3161 / Authenticode 时间戳、WebAdmin 浏览器管理面板。
 >
@@ -9,8 +9,19 @@
 
 ---
 
+## 更新记录
+
+- **v1.1（2026-09-13）**
+  - 修复 SM2 分支 OCSP 吊销响应的 DER 编码错误：`CertStatus.revoked` 由 EXPLICIT 改为 RFC 6960 规定的 `[1] IMPLICIT RevokedInfo`（`OcspUtil.createResponseSm2`）。此前 openssl 解析报 `Field=revocationTime ... wrong tag`、BC 报 `illegal object in getInstance`，表现为 SM2 已吊销证书（含重复吊销/修改吊销原因）验证时输出 `OCSP无法检查吊销状态 | 上报失败~`；修复后 openssl / BC 均能正确解析出吊销时间与原因
+  - `build.cmd` / `build.sh` 支持编号参数：`build.cmd 1` ~ `build.cmd 8`，编译成功后自动运行对应编号的启动命令（编译失败则不运行；编号 4/5/7/8 为脚本内置固定示例参数）
+  - WebAdmin 证书库美化：类型中文显示（R=根证书 / C=CA证书 / E=终端证书）、状态三色（V 正常绿 / R 已吊销深红 / N 未知橙）、颁发者序列号悬停悬浮窗；每行新增「验证」按钮（弹窗三态：正常/已吊销/未知，对应绿/红/橙配色标题）与「操作」按钮（吊销证书 / 续签证书 / 密钥更换分组，吊销支持下拉选择 + 证书简要信息）
+  - `CertVerify` 证书策略识别补充 TSA 证书 OID `2.23.140.1.4.2`
+
+---
+
 ## 目录
 
+- [更新记录](#更新记录)
 - [功能特性](#功能特性)
 - [界面截图](#界面截图)
 - [项目结构](#项目结构)
@@ -32,7 +43,7 @@
 
 ### 1. MAIN —— 网络服务主程序
 
-- **OCSP 在线证书状态协议**：`/OCSP`、`/ocsp`（POST），按请求证书序列号查 CERTS.txt 返回正常 / 已吊销 / 未知状态；支持 Nonce、按请求摘要算法自适应（SHA1/SHA256/SHA384/SHA512，SM2 固定 SM3，无摘要默认 SHA1）；未知序列号返回无签名 unauthorized 响应；用 `序列号_ocsp.crt/.key` 签署响应
+- **OCSP 在线证书状态协议**：`/OCSP`、`/ocsp`（POST），按请求证书序列号查 CERTS.txt 返回正常 / 已吊销 / 未知状态；支持 Nonce、按请求摘要算法自适应（SHA1/SHA256/SHA384/SHA512，SM2 固定 SM3，无摘要默认 SHA1）；未知序列号返回无签名 unauthorized 响应；用 `序列号_ocsp.crt/.key` 签署响应；SM2 分支吊销响应按 RFC 6960 标准编码（`revoked [1] IMPLICIT RevokedInfo`），openssl / BC 均可正常解析
 - **CRL 吊销列表下载**：`/CRL/序列号.crl`、`/CRL/序列号.der.crl`
 - **证书下载**：`/CRT/序列号.crt`
 - **RFC3161 时间戳**：`/rfc3161`（文档签名专用，SHA1 / SHA256 自适应）
@@ -82,7 +93,7 @@
 
 ### 证书库（CERTS.txt 列表）
 
-序列号 / 类型 / 状态 / 原因 / 时间 / 颁发者 ID / 算法 / 操作（详情），支持筛选与刷新；状态 V（绿色正常）/ R（红色已吊销）。
+序列号 / 类型 / 状态 / 原因 / 时间 / 颁发者 ID / 算法 / 操作，支持筛选与刷新；类型中文显示（R=根证书 / C=CA证书 / E=终端证书），状态三色（V 正常绿 / R 已吊销深红 / N 未知橙）；序列号与颁发者序列号悬停显示证书简要信息；每行含详情 / 验证 / 操作三个按钮（验证弹窗按状态显示绿/红/橙标题，操作含吊销证书、续签证书、密钥更换分组）。
 
 ![证书库](b.png)
 
@@ -185,13 +196,35 @@ modpkica4JAVA/
 build.cmd
 ```
 
-脚本流程：检查 javac → 清理 `out/` → `javac -encoding UTF-8 -cp "BC185\*" -d out src\modpkica\*.java` → 校验 7 个主程序 + WebAdmin 的 class 产物。
+脚本流程：检查 javac → 清理 `out/` → `javac -encoding UTF-8 -cp "BC185\*" -d out src\modpkica\*.java` → 校验 8 个 class（7 个主程序 + WebAdmin）→ 编译成功才打印运行命令提示。
+
+**编号参数（编译后自动运行）：**
+
+```bat
+build.cmd [1-8]
+```
+
+`build.cmd` 后跟 1~8 的编号，编译**成功后**自动执行对应编号的命令；编译**失败**则跳过，不运行任何命令。编号非法（非 1-8）会在编译前直接报错退出。
+
+| 编号 | 自动运行的命令（等价于手敲 java 命令） |
+|---|---|
+| `1` | `java "-Dfile.encoding=UTF-8" -cp "out;BC185\*" modpkica.MAIN`（MAIN 服务 + WebAdmin 面板，默认 8080 端口） |
+| `2` | `java "-Dfile.encoding=UTF-8" -cp "out;BC185\*" modpkica.WebAdmin`（只开管理面板） |
+| `3` | `java "-Dfile.encoding=UTF-8" -cp "out;BC185\*" modpkica.Admin`（交互式管理控制台） |
+| `4` | `java ... modpkica.MakeRoot "CN=Root,O=Org,C=CN" 2048 sha256 RSA`（签发根证书**示例参数**） |
+| `5` | `java ... modpkica.MakeCert "CN=www.test.com" 2048 sha256 1 1 0 1 "www.test.com" null null root RSA`（签发证书**示例参数**） |
+| `6` | `java ... modpkica.RootGetCrl`（刷新全部 CRL） |
+| `7` | `java ... modpkica.CertVerify cert.crt`（验证**示例文件** cert.crt） |
+| `8` | `java ... modpkica.Auto revoke 1234567890 1`（吊销**示例序列号**） |
+
+> **注意**：编号 4/5/7/8 自动运行的是脚本内置的**固定示例参数**，不会透传额外参数（如 `build.cmd 8 revoke xxx 5` 中的 `revoke xxx 5` 会被忽略）。实际业务参数请改脚本 `:run_4`~`:run_8` 段落，或直接手敲完整 `java` 命令。
 
 ### Linux
 
 ```bash
 chmod +x build.sh
-./build.sh
+./build.sh        # 只编译
+./build.sh 1      # 编译成功后自动运行 MAIN（编号 1-8，与 build.cmd 完全一致）
 ```
 
 > 编译成功后所有类在 `out/` 目录。
@@ -294,15 +327,15 @@ java ... modpkica.Auto newcert 序列号 E V 0 null 13fbe86586d1bca RSA
 
 | 页面 | 功能 |
 |---|---|
-| 仪表盘 | 服务状态、证书链树（R→C→E，悬停详情、R/C 展开收起）、一键刷新 CRL / 签发 OCSP / 签发时间戳、最近日志 |
-| 证书库 | CERTS.txt 列表（筛选、刷新）、详情按钮弹出 JSON 结构化证书信息 |
+| 仪表盘 | 服务状态、证书链树（R→C→E，悬停详情、R 展开 / C 收起管理下级）、一键刷新 CRL / 签发 OCSP / 签发时间戳、最近日志 |
+| 证书库 | CERTS.txt 列表（类型中文：R=根证书 / C=CA证书 / E=终端证书；状态三色：V 正常绿 / R 已吊销深红 / N 未知橙；筛选、刷新）、序列号与颁发者序列号悬停悬浮窗、详情按钮（JSON 结构化证书信息）、验证按钮（弹窗三态：正常/已吊销/未知）、操作按钮（吊销证书 / 续签证书 / 密钥更换分组） |
 | 签发根证书 | 根证书参数表单 |
 | 签发证书 | 完整参数表单（DN / 类型 / 密钥算法 / 密钥位数联动 / 哈希 / KeyUsage / EKU / 有效期 / SAN） |
 | 吊销证书 | 按序列号 + 原因吊销 |
 | CRL 刷新 | 重新生成全部 CRL |
 | OCSP 签发 | 为全部 R/C 证书签发 OCSP 签名证书 |
 | 时间戳签发 | 签发时间戳证书 |
-| 证书验证 | 输入证书文件或序列号验证 |
+| 证书验证 | 输入证书文件或序列号验证（证书策略识别含 SSL/代码签名/文档签名/TSA 等 OID） |
 | 初始化环境 | 清空重建（不会执行重置类脚本，由 WEB 面板提供） |
 | 系统配置 | 可视化读写 CONFIG.txt（WEBPORT / OCSP / CRL / CRT / CPS / CPS_Nonice 多行文本） |
 | 操作日志 | logs.log 时间范围筛选 + 自动刷新 |
@@ -412,5 +445,8 @@ A：RFC3161 时间戳用于 PDF 文档签名；微软代码签名请选 **Authen
 **Q5：签发 ECC 证书报错？**
 A：确认密钥位数按 ECC 曲线选择（256/384/521），且 BC 1.85 的 `BC185/` 完整放入项目根。
 
-**Q6：如何离线开发？**
+**Q6：SM2 已吊销证书 OCSP 验证报 `OCSP无法检查吊销状态 | 上报失败~`？**
+A：v1.1 已修复。根因是 SM2 分支手动 ASN.1 编码 `CertStatus.revoked` 误用 EXPLICIT，RFC 6960 要求 `[1] IMPLICIT RevokedInfo`，导致 openssl / BC 解析错位（`wrong tag` / `illegal object`）。RSA / ECC 已吊销证书不受影响（走 BC 高层 API）。升级后重启 MAIN 生效。
+
+**Q7：如何离线开发？**
 A：所有依赖只有 `BC185/` 四个 jar，无 Maven 仓库；源码改完直接 `build.cmd` 编译，`out/` 即产物。

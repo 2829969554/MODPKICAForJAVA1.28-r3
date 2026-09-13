@@ -80,9 +80,12 @@ public final class RootGetCrl {
         PrivateKey caKey = new JcaPEMKeyConverter().setProvider("BC").getPrivateKey(
                 PrivateKeyInfoFactory.createPrivateKeyInfo(akp));
 
-        // 签名算法：由证书的签名算法 OID 推导（对齐 Go 版 CreateCRL 使用证书自身签名算法）
-        String keyType = certKeyType(caCert);
-        String hash = certHashFromSigAlg(caCert);
+        // 签名算法族：必须按 CA 私钥实际类型决定（不能用证书签名算法判断——例如 RSA 根
+        // 签发的 SM2 中间证书，其证书 SignatureAlgorithm 是 RSA，但 CA 自身密钥是 SM2，
+        // CRL 必须用 CA 自身密钥签名，否则报 "BCECPrivateKey is not a RSAPrivateKey"）。
+        String keyType = PemIO.detectKeyType(issuerPath + issuer.serial + ".key");
+        // 哈希：SM2 固定 SM3；RSA/ECC 沿用证书签名算法中的哈希（对齐 Go 版）
+        String hash = "SM2".equalsIgnoreCase(keyType) ? "sm3" : certHashFromSigAlg(caCert);
 
         // ---- 2. 收集全部已吊销证书（状态 R） ----
         Date thisUpdate = Date.from(java.time.Instant.now().minusSeconds(24 * 3600));
@@ -121,18 +124,6 @@ public final class RootGetCrl {
     /** CERTS.txt 内部时间（本地时间）转 Date。 */
     private static Date parseModTime(LocalDateTime t) {
         return Date.from(t.toInstant(ZoneOffset.ofHours(8))); // 按 UTC+8 解析（对齐 Go 文本时间）
-    }
-
-    /** 由证书签名算法 OID 推导证书类型（RSA/ECC/SM2）。 */
-    private static String certKeyType(X509Certificate cert) {
-        String oid = cert.getSigAlgOID();
-        if (oid.contains("1.2.156.10197.1.501") || oid.contains("1.2.156.10197.1.301")) {
-            return "SM2";
-        }
-        if (oid.contains("1.2.840.10045")) {
-            return "ECC";
-        }
-        return "RSA";
     }
 
     /** 由证书签名算法 OID 推导哈希算法。 */
