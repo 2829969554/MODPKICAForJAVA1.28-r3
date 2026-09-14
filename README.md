@@ -11,6 +11,31 @@
 
 ## 更新记录
 
+- **v1.4（2026-09-15）——签名专区修复与增强**
+  - **微软代码签名（Authenticode）重写**：`SignTool.signExe` 改为手工 ASN.1 构造（对齐参考项目 `java-lening\微软RSA国密双签名带时间戳` 的合规点），修复旧实现（BC `CMSSignedDataGenerator` 自动构造）产物被 Windows 判 `0x80096010 / 签名无效` 的问题：
+    - `SpcAttributeTypeAndOptionalValue.value` 直接 SEQUENCE（无 `[0]` 包装）；`SpcPeImageData.file` 实际标签 `[0] EXPLICIT`；`SpcString` 空串 `[0] IMPLICIT 80 00`；`DigestInfo.digestAlgorithm.parameters` 带 `NULL`；eContent 直接 SEQUENCE（无 OCTET STRING 包装）；messageDigest = SHA-256(SpcIndirectData **内容字节**，跳过 `30 xx` 头)；证书表 8 字节对齐追加 `WIN_CERTIFICATE 0x0200/0x0002`；证书顺序根在前
+    - **自动时间戳**：签名后 `messageImprint = SHA-256(签名值)` → 请求本机 MAIN `/rfc3161`（`application/timestamp-query`，WEBPORT 读 `PKI/CONFIG.txt`）→ `TimeStampToken` 嵌入 unsignedAttrs（`1.3.6.1.4.1.311.3.3.1`）；失败自动降级不影响签名，状态写入日志
+    - **实测（Windows 原生）**：`signtool verify /pa /v` → 0 错误、时间戳验证通过；`Get-AuthenticodeSignature` → **Valid**（证书链 ROOTCA→终端、时间戳 ROOTCA By Timstamp SHA256）
+    - **已知限制**：中间 CA 若 EKU 仅含 serverAuth（不含代码签名），Windows Authenticode 链验证会拒绝该 CA 签发的证书用于代码签名（`signing certificate is not valid for the requested usage`）——根直接签发的代码签名证书不受影响；如需使用中间 CA 链，请重签 CA 时在 EKU 中加入代码签名或不设 EKU
+    - SM2 主签名 EXE：签名与时间戳正常生成；Windows crypt32 白名单不含 SM2，原生验证不支持（与参考项目结论一致），可用本面板"签名验证"做链内验证
+  - **PDF 可见签章**：PDF 分组新增"签章图片（可选，png/jpg/bmp/gif）"选择框；采用参考项目 `SignatureOptions.setVisualSignature` 外观文档模式（独立外观 PDF 内放置带 Rect+AP 的 widget，PDFBox 将 Rect/外观搬至主文档第 1 页右下角，最大 150×80 等比缩放），**避免 addSignature 后改动文档破坏 ByteRange**（替代早期 PDSignatureField 手动方式，后者报 `signature reserve byte range has been changed`）；不选签章则不可见签名
+  - 实测：`test.pdf`（5 页）带签章签名 → `CMS 签名验证通过`、文档摘要比对通过、证书链通过，第 1 页右下角签章渲染可见；无签章 PDF 签名回归通过；SM2 证书 EXE 签名回归通过
+
+- **v1.3（2026-09-15）**
+  - WebAdmin 新增「签名专区」页面（调试专区下方）：两个分组均支持选择文件 + 下拉式证书选择（自动按 EKU 筛选、悬停显示证书简介）
+    - **微软代码签名（Authenticode）**：对 exe/dll/sys 等 PE 文件按 Microsoft PE/COFF 规范嵌入证书表（WIN_CERTIFICATE 0x0200/0x0002 + CMS SignedData，contentType=spcIndirectDataContext，SpcIndirectDataContent 内含 Authenticode 文件哈希：跳过 Checksum/Security Directory/证书表区域），支持 RSA/ECC/SM2（SM2 走 GB/T 32918 含 ZA，摘要 SM3；RSA/ECC 摘要 SHA256）；验证输出 CMS 签名、文件哈希比对、证书链逐级验证（签名证书 → 颁发者 → 自签根）三要素
+    - **PDF 文档签名**：标准 PKCS#7 detached（SubFilter adbe.pkcs7.detached），基于 PDFBox 3.0.4 外部签名两段式（saveIncrementalForExternalSigning）增量保存，ByteRange 由 PDFBox 维护；验证时以 ByteRange 区间数据作为 detached 内容构造 CMS 后验签（否则 BC 按空内容计算摘要导致 mismatch），同样支持 RSA/ECC/SM2
+  - 新增 `SignTool.java`（签名/验证核心，约 35KB）：按 CERTS.txt 台账加载证书（R→ROOT、C→CA、E→CERT）与私钥（E→KEY），按颁发者关系加载完整证书链；EKU 筛选集合：代码签名 `1.3.6.1.5.5.7.3.3` / 内核模式 `1.3.6.1.4.1.311.61.1.1` / 驱动验证 `1.3.6.1.4.1.311.10.3.5` / 系统组件 `1.3.6.1.4.1.311.10.3.6` / OEM `1.3.6.1.4.1.311.10.3.7` / 内嵌 `1.3.6.1.4.1.311.10.3.8`，文档签名 `1.3.6.1.4.1.311.10.3.12` / 通用文档签名 `1.3.6.1.5.5.7.3.36`（代码签名证书亦可签 PDF）
+  - WebAdmin 新增 API：`GET /api/signcerts?kind=exe|pdf`（可签名证书列表）、`POST /api/sign/exe`、`POST /api/sign/pdf`（multipart 上传文件 + serial，返回签名结果 + Base64 下载）、`POST /api/verify/exe`、`POST /api/verify/pdf`；所有签名/验证操作写入 logs.log
+  - 依赖：`lib/pdfbox-app-3.0.4.jar`（PDFBox 3.0.4，从参考项目引入）；`build.cmd` / `build.sh` 编译与运行 classpath 均加入 `lib\*`（`-cp "BC185\*;lib\*"` / `"out;BC185\*;lib\*"`）
+  - 实测（真实样本）：`CERTVERIFY.exe`（9.8MB）Authenticode 签名/验证三要素全部通过；`test.pdf`（5 页）与 SM2 证书 PDF 签名/验证全部通过（SM3 摘要、SM3withSM2 含 ZA 验签成功）
+
+- **v1.2（2026-09-14）**
+  - WebAdmin 新增「调试专区」页面：两个分组均按标准协议构造请求并 POST 本机 MAIN，日志逐步展示
+    - **模拟 OCSP 请求（RFC 6960）**：按 CertID（issuerNameHash/issuerKeyHash 基于真正颁发者证书计算，哈希算法可选 SHA1/SHA256/SHA384/SHA512/SM3）+ Nonce 扩展构造请求 → 解析响应（responseStatus、responderID、证书状态/吊销原因时间、thisUpdate/nextUpdate、Nonce 回显比对）→ 用响应者证书验证签名
+    - **模拟时间戳请求（RFC 3161）**：随机 32 字节数据 → 按所选摘要算法（SHA1/SHA256/SHA384/SHA512/SM3）计算 messageImprint → 构造 TimeStampReq（Nonce + certReq）→ 解析 TimeStampResp（status、TimeStampToken 序列号/genTime/policy、messageImprint 回显比对）→ 用签名者证书验证 token 签名；MAIN 返回非 200 时显示真实错误与所需 TSA 证书提示
+  - OCSP 服务端行为（RFC 6960）：解析请求哈希算法 OID 与序列号 → 按 `颁发者序列号_ocsp.crt/.key` 加载响应者密钥对；RSA/ECC 按请求哈希算法（sha1/256/384/512，缺省 sha1）签名，SM2 固定 SM3 签名（`MAIN.handleOcsp` + `OcspUtil`，此前已实现，本轮以调试专区实测 Nonce 回显与签名验证通过）
+
 - **v1.1（2026-09-13）**
   - 修复 SM2 分支 OCSP 吊销响应的 DER 编码错误：`CertStatus.revoked` 由 EXPLICIT 改为 RFC 6960 规定的 `[1] IMPLICIT RevokedInfo`（`OcspUtil.createResponseSm2`）。此前 openssl 解析报 `Field=revocationTime ... wrong tag`、BC 报 `illegal object in getInstance`，表现为 SM2 已吊销证书（含重复吊销/修改吊销原因）验证时输出 `OCSP无法检查吊销状态 | 上报失败~`；修复后 openssl / BC 均能正确解析出吊销时间与原因
   - `build.cmd` / `build.sh` 支持编号参数：`build.cmd 1` ~ `build.cmd 8`，编译成功后自动运行对应编号的启动命令（编译失败则不运行；编号 4/5/7/8 为脚本内置固定示例参数）
@@ -93,7 +118,13 @@
 
 ### 证书库（CERTS.txt 列表）
 
-序列号 / 类型 / 状态 / 原因 / 时间 / 颁发者 ID / 算法 / 操作，支持筛选与刷新；类型中文显示（R=根证书 / C=CA证书 / E=终端证书），状态三色（V 正常绿 / R 已吊销深红 / N 未知橙）；序列号与颁发者序列号悬停显示证书简要信息；每行含详情 / 验证 / 操作三个按钮（验证弹窗按状态显示绿/红/橙标题，操作含吊销证书、续签证书、密钥更换分组）。
+序列号 / 类型 / 状态 / 原因 / 时间 / 颁发者 ID / 算法 / 操作，支持筛选与刷新；类型中文显示（R=根证书 / C=CA证书 / E=终端证书），状态三色（V 正常绿 / R 已吊销深红 / N 未知橙）；序列号与颁发者序列号悬停显示证书简要信息；每行含详情 / 验证 / 操作三个按钮（验证弹窗按状态显示绿/红/橙标题）。
+
+「操作」弹窗分三组（序列号均可输入或下拉选择，并显示证书简要信息）：
+
+- **吊销证书**：选择序列号 → 选择吊销原因 → 确认吊销（写 CERTS.txt 状态 R + 原因，刷新 CRL/OCSP 状态）。同分组提供「恢复证书」按钮：将指定序列号状态 R→V、吊销原因置 0、时间刷新为当前时间，并同步重新生成全部 CRL（吊销列表中移除该证书）。
+- **续签证书**：选择序列号 → 选择新生效 / 失效时间（datetime-local，秒级，默认当前 ~ 一年后）→ 确认续签。后端更新 JSON validity 的 notBefore / notAfter（同步刷新 value / type / raw），保持原公钥与全部扩展（SKI 不变），重建 TBS 并用颁发者 CA/根私钥重签，写回新签名后转 PEM，替换原序列号对应文件（OCSP / TSA / ROOT / CA / CERT+KEY / WebPublic\CRT 全位置同步；私钥保持不变）。
+- **密钥更换**：选择序列号 → 后端按证书公钥算法（RSA / ECC / SM2，SM2 按曲线 OID 判定）生成同类型新密钥对 → 64 字节随机数据测试（RSA 加解密+签名验签 / ECC 签名验签 / SM2 加解密+签名验签，SM2 走 GB/T 32918 含 ZA）→ 用颁发者 CA/根私钥对换公钥后的 TBS 重签 → 按新公钥重算 SubjectKeyIdentifier(2.5.29.14) → 证书与私钥写回原位置（私钥自动转 PKCS#1 / SEC1 / SM2 格式），全位置同步替换。
 
 ![证书库](b.png)
 
@@ -115,6 +146,24 @@
 
 ![证书链详情](e.png)
 
+### 调试专区（模拟 OCSP / 时间戳请求）
+
+按标准协议构造请求并 POST 本机 MAIN，日志逐步展示：模拟 OCSP 请求（RFC 6960，CertID 基于真正颁发者证书 + Nonce，哈希算法可选 SHA1/SHA256/SHA384/SHA512/SM3，验证响应签名与 Nonce 回显）；模拟时间戳请求（RFC 3161，随机 32 字节 → 按所选摘要算法计算 messageImprint → TimeStampReq（Nonce + certReq）→ 解析 TimeStampResp 并验证 token 签名）。
+
+![调试专区](g.png)
+
+### 签名专区（微软代码签名 / PDF 文档签名）
+
+微软代码签名（Authenticode）：选择 PE 可执行文件（exe / dll / sys）与带代码签名 EKU 的证书进行签名或验证，支持 RSA / ECC / SM2（摘要分别 SHA256 / SHA256 / SM3），证书表按 Microsoft PE/COFF 规范嵌入，签名后自动请求本机 MAIN `/rfc3161` 附加 RFC3161 时间戳（Windows 原生 signtool / Get-AuthenticodeSignature 可验证）。PDF 文档签名：选择 PDF 文件与带文档签名 EKU 的证书（微软文档签名 OID `1.3.6.1.4.1.311.10.3.12` 或通用文档签名 OID `1.3.6.1.5.5.7.3.36` 任一即可），标准 PKCS#7 detached（adbe.pkcs7.detached），可选签章图片（png/jpg/bmp/gif）生成可见签章，支持 RSA / ECC / SM2。
+
+![签名专区](f.png)
+
+### 证书操作（吊销 / 续签 / 密钥更换）
+
+证书库每行「操作」按钮弹出窗口，默认「吊销证书」分组：序列号可输入或下拉选择，显示证书简要信息（类型 / 序列号 / DN / 密钥对 / 哈希 / 长度 / OCSP 状态 / CRL 状态），选择吊销理由后确认吊销，或「恢复证书」将状态 R→V、原因置 0 并同步生成 CRL；另有「续签证书」（选择生效 / 失效时间重签）与「密钥更换」（按原算法生成新密钥对测试后重签，SKI 随新公钥更新）分组。
+
+![证书操作](h.png)
+
 ---
 
 ## 项目结构
@@ -122,6 +171,7 @@
 ```
 modpkica4JAVA/
 ├── BC185/                        # BouncyCastle 1.85 离线 jar 全家桶
+├── lib/                          # pdfbox-app-3.0.4.jar（PDF 签名/验证）
 │   ├── bcprov-jdk18on-1.85.jar   # 加密 Provider
 │   ├── bcpkix-jdk18on-1.85.jar   # 证书 / CMS / TSP
 │   ├── bcutil-jdk18on-1.85.jar   # ASN.1 工具
@@ -143,7 +193,7 @@ modpkica4JAVA/
 │   ├── CERTS.txt                 # 证书登记表
 │   ├── CONFIG.txt                # 系统配置
 │   └── logs.log                  # 操作日志（只追加）
-├── a.png ~ e.png                 # WebAdmin 界面截图（本文档配图）
+├── a.png ~ h.png                 # WebAdmin 界面截图（本文档配图）
 ├── README.md                     # 本文件
 └── 开发助手_源码分析.pdf          # 源码结构 / 运行流程 / 常量函数速查
 ```
@@ -181,7 +231,7 @@ modpkica4JAVA/
 | 项目 | 要求 |
 |---|---|
 | JDK | 17+（已装 JDK 17/21 均可），`javac` / `java` 在 PATH 中 |
-| 依赖 | 无需联网，`BC185/` 目录内 BC 1.85 四件套 |
+| 依赖 | 无需联网，`BC185/`（BC 1.85 全家桶）+ `lib/`（pdfbox-app-3.0.4.jar） |
 | 系统 | Windows 10/11 或 Linux（脚本分别提供 .cmd / .sh） |
 
 ---
@@ -196,7 +246,7 @@ modpkica4JAVA/
 build.cmd
 ```
 
-脚本流程：检查 javac → 清理 `out/` → `javac -encoding UTF-8 -cp "BC185\*" -d out src\modpkica\*.java` → 校验 8 个 class（7 个主程序 + WebAdmin）→ 编译成功才打印运行命令提示。
+脚本流程：检查 javac → 清理 `out/` → `javac -encoding UTF-8 -cp "BC185\*;lib\*" -d out src\modpkica\*.java` → 校验 8 个 class（7 个主程序 + WebAdmin）→ 编译成功才打印运行命令提示。
 
 **编号参数（编译后自动运行）：**
 
@@ -208,9 +258,9 @@ build.cmd [1-8]
 
 | 编号 | 自动运行的命令（等价于手敲 java 命令） |
 |---|---|
-| `1` | `java "-Dfile.encoding=UTF-8" -cp "out;BC185\*" modpkica.MAIN`（MAIN 服务 + WebAdmin 面板，默认 8080 端口） |
-| `2` | `java "-Dfile.encoding=UTF-8" -cp "out;BC185\*" modpkica.WebAdmin`（只开管理面板） |
-| `3` | `java "-Dfile.encoding=UTF-8" -cp "out;BC185\*" modpkica.Admin`（交互式管理控制台） |
+| `1` | `java "-Dfile.encoding=UTF-8" -cp "out;BC185\*;lib\*" modpkica.MAIN`（MAIN 服务 + WebAdmin 面板，默认 8080 端口） |
+| `2` | `java "-Dfile.encoding=UTF-8" -cp "out;BC185\*;lib\*" modpkica.WebAdmin`（只开管理面板） |
+| `3` | `java "-Dfile.encoding=UTF-8" -cp "out;BC185\*;lib\*" modpkica.Admin`（交互式管理控制台） |
 | `4` | `java ... modpkica.MakeRoot "CN=Root,O=Org,C=CN" 2048 sha256 RSA`（签发根证书**示例参数**） |
 | `5` | `java ... modpkica.MakeCert "CN=www.test.com" 2048 sha256 1 1 0 1 "www.test.com" null null root RSA`（签发证书**示例参数**） |
 | `6` | `java ... modpkica.RootGetCrl`（刷新全部 CRL） |
@@ -237,7 +287,7 @@ chmod +x build.sh
 
 ```bat
 set MODPKICA_BASE=你的PKI根目录
-java "-Dfile.encoding=UTF-8" -cp "out;BC185\*" modpkica.主程序名 [参数...]
+java "-Dfile.encoding=UTF-8" -cp "out;BC185\*;lib\*" modpkica.主程序名 [参数...]
 ```
 
 > **重要**：Windows 下必须加 `-Dfile.encoding=UTF-8`，否则中文日志 / 中文 DN 乱码（GBK 问题）。
@@ -247,7 +297,7 @@ java "-Dfile.encoding=UTF-8" -cp "out;BC185\*" modpkica.主程序名 [参数...]
 
 ```bat
 set MODPKICA_BASE=C:\Users\28299\Desktop\modpkica4JAVA
-java "-Dfile.encoding=UTF-8" -cp "out;BC185\*" modpkica.MAIN
+java "-Dfile.encoding=UTF-8" -cp "out;BC185\*;lib\*" modpkica.MAIN
 ```
 
 - WEB 服务端口：`PKI/CONFIG.txt` 的 `WEBPORT`（默认 80）
@@ -257,7 +307,7 @@ java "-Dfile.encoding=UTF-8" -cp "out;BC185\*" modpkica.MAIN
 **只运行 WebAdmin（不启动 MAIN 服务）：**
 
 ```bat
-java "-Dfile.encoding=UTF-8" -cp "out;BC185\*" modpkica.WebAdmin
+java "-Dfile.encoding=UTF-8" -cp "out;BC185\*;lib\*" modpkica.WebAdmin
 ```
 
 ---
@@ -267,7 +317,7 @@ java "-Dfile.encoding=UTF-8" -cp "out;BC185\*" modpkica.WebAdmin
 ### Admin（管理控制台）
 
 ```bat
-java "-Dfile.encoding=UTF-8" -cp "out;BC185\*" modpkica.Admin
+java "-Dfile.encoding=UTF-8" -cp "out;BC185\*;lib\*" modpkica.Admin
 ```
 
 交互命令一览：
@@ -449,4 +499,4 @@ A：确认密钥位数按 ECC 曲线选择（256/384/521），且 BC 1.85 的 `B
 A：v1.1 已修复。根因是 SM2 分支手动 ASN.1 编码 `CertStatus.revoked` 误用 EXPLICIT，RFC 6960 要求 `[1] IMPLICIT RevokedInfo`，导致 openssl / BC 解析错位（`wrong tag` / `illegal object`）。RSA / ECC 已吊销证书不受影响（走 BC 高层 API）。升级后重启 MAIN 生效。
 
 **Q7：如何离线开发？**
-A：所有依赖只有 `BC185/` 四个 jar，无 Maven 仓库；源码改完直接 `build.cmd` 编译，`out/` 即产物。
+A：所有依赖只有 `BC185/` 全家桶 + `lib/`（pdfbox），无 Maven 仓库；源码改完直接 `build.cmd` 编译，`out/` 即产物。

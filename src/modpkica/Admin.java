@@ -309,6 +309,16 @@ public final class Admin {
         return "已吊销证书 " + serial + "（原因=" + reason + "），CRL 已刷新。\n" + out;
     }
 
+    /** RestoreCERT：恢复证书（撤销吊销，R→V、原因 0）并刷新 CRL。 */
+    public static String doRestore(String baseDir, String serial) throws Exception {
+        Auto.restore(baseDir, serial);
+        String out = captureStdout(() -> RootGetCrl.run(baseDir));
+        MLog.append(baseDir, "ADMIN RestoreCERT",
+                "restorecert " + serial,
+                "恢复证书 " + serial + "（状态 R→V，原因置 0）");
+        return "已恢复证书 " + serial + "（状态 V，原因 0），CRL 已刷新。\n" + out;
+    }
+
     /** signCRL：刷新全部 CRL。 */
     public static String doSignCrl(String baseDir) throws Exception {
         String out = captureStdout(() -> RootGetCrl.run(baseDir));

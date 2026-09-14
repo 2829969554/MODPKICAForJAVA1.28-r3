@@ -76,6 +76,11 @@ public final class Auto {
         revokeCert(baseDir, serial, reason);
     }
 
+    /** 供 ADMIN/WebAdmin 内部调用：恢复证书（R→V、原因 0、时间刷新为当前时间）。 */
+    public static void restore(String baseDir, String serial) throws Exception {
+        restoreCert(baseDir, serial);
+    }
+
     /** auto init：清理证书目录旧文件、备份 CERTS.txt 并写入模板。 */
     private static void initEnv(String baseDir) throws Exception {
         // 1) 清理各证书目录下所有 cer/crt/key/crl/der 文件（初始化环境即清空重来）
@@ -150,6 +155,39 @@ public final class Auto {
         }
         Files.write(certs, sb.toString().getBytes(StandardCharsets.UTF_8));
         System.out.println("吊销成功");
+    }
+
+    /** auto restore：把 CERTS.txt 中指定序列号记录改为 V 状态、原因 0（撤销吊销）。 */
+    private static void restoreCert(String baseDir, String serial) throws Exception {
+        Path certs = Paths.get(baseDir, "PKI", "CERTS.txt");
+        List<String> lines = Files.readAllLines(certs, StandardCharsets.UTF_8);
+        String newTime = LocalDateTime.now().format(MOD_TIME);
+        boolean found = false;
+        StringBuilder sb = new StringBuilder();
+        for (String line : lines) {
+            String t = line.trim();
+            if (t.isEmpty() || t.startsWith("#")) {
+                sb.append(line).append(System.lineSeparator());
+                continue;
+            }
+            String[] f = t.split("\\s+");
+            if (f[0].equals(serial) && f.length >= 7) {
+                // 新行：序列号 类型 V 0 时间 颁发者ID 算法
+                sb.append(f[0]).append(' ').append(f[1]).append(" V 0 ")
+                        .append(newTime).append(' ')
+                        .append(f[5]).append(' ').append(f[6])
+                        .append(System.lineSeparator());
+                found = true;
+            } else {
+                sb.append(line).append(System.lineSeparator());
+            }
+        }
+        if (!found) {
+            System.out.println("恢复失败:CERTS.txt证书库不存在此编号");
+            return;
+        }
+        Files.write(certs, sb.toString().getBytes(StandardCharsets.UTF_8));
+        System.out.println("恢复成功");
     }
 
     /** auto newcert：追加一条证书记录。 */

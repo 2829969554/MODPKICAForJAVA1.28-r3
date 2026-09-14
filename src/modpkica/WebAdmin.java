@@ -8,22 +8,74 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
+import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.KeyPair;
+import java.security.MessageDigest;
+import java.security.PrivateKey;
+import java.security.SecureRandom;
+import java.security.Signature;
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import javax.crypto.Cipher;
+
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ocsp.OCSPObjectIdentifiers;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.Extensions;
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
+import org.bouncycastle.cert.ocsp.BasicOCSPResp;
+import org.bouncycastle.cert.ocsp.CertificateID;
+import org.bouncycastle.cert.ocsp.CertificateStatus;
+import org.bouncycastle.cert.ocsp.OCSPReq;
+import org.bouncycastle.cert.ocsp.OCSPReqBuilder;
+import org.bouncycastle.cert.ocsp.OCSPResp;
+import org.bouncycastle.cert.ocsp.RespID;
+import org.bouncycastle.cert.ocsp.RevokedStatus;
+import org.bouncycastle.cert.ocsp.SingleResp;
+import org.bouncycastle.cert.ocsp.UnknownStatus;
+import org.bouncycastle.crypto.engines.SM2Engine;
+import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
+import org.bouncycastle.crypto.params.ECPublicKeyParameters;
+import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.operator.ContentSigner;
+import org.bouncycastle.operator.ContentVerifierProvider;
+import org.bouncycastle.operator.DigestCalculator;
+import org.bouncycastle.operator.DigestCalculatorProvider;
+import org.bouncycastle.operator.jcajce.JcaContentVerifierProviderBuilder;
+import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
+import org.bouncycastle.tsp.TimeStampRequest;
+import org.bouncycastle.tsp.TimeStampRequestGenerator;
+import org.bouncycastle.tsp.TimeStampResponse;
+import org.bouncycastle.tsp.TimeStampToken;
+import org.bouncycastle.tsp.TimeStampTokenInfo;
 
 /**
  * WebAdmin —— 浏览器版可视化管理界面（对应 Go 版 admin 的图形化替代）。
@@ -47,6 +99,11 @@ public final class WebAdmin {
     private static final int DEFAULT_PORT = 8080;
     /** 默认绑定地址：仅本机回环（管理界面不暴露公网）。 */
     private static final String DEFAULT_BIND = "127.0.0.1";
+
+    /** 注册 BC Provider（独立运行时也必须可用 SM2/SM3 等算法）。 */
+    static {
+        Bc.init();
+    }
 
     /** MAIN 服务端口（同进程集成时由 MAIN 传入）。 */
     private static volatile String mainPort = "未运行";
@@ -214,6 +271,22 @@ public final class WebAdmin {
                     runAction(ex, m -> Admin.doRevoke(baseDir,
                             str(m, "serial"), str(m, "reason")));
                     return;
+                case "/api/restore":
+                    runAction(ex, m -> Admin.doRestore(baseDir, str(m, "serial")));
+                    return;
+                case "/api/debug/ocsp":
+                    runAction(ex, m -> debugOcsp(str(m, "serial"), str(m, "hash")));
+                    return;
+                case "/api/debug/tsa":
+                    runAction(ex, m -> debugTsa(str(m, "hash")));
+                    return;
+                case "/api/rekey":
+                    runAction(ex, m -> rekeyAction(str(m, "serial")));
+                    return;
+                case "/api/renew":
+                    runAction(ex, m -> renewAction(str(m, "serial"),
+                            str(m, "notBefore"), str(m, "notAfter")));
+                    return;
                 case "/api/crl":
                     runAction(ex, m -> Admin.doSignCrl(baseDir));
                     return;
@@ -225,6 +298,25 @@ public final class WebAdmin {
                     return;
                 case "/api/verify":
                     runAction(ex, m -> Admin.doVerifyCert(baseDir, str(m, "target")));
+                    return;
+                case "/api/signcerts":
+                    if ("GET".equalsIgnoreCase(method)) {
+                        sendJson(ex, 200, signCertsJson(ex));
+                    } else {
+                        sendJson(ex, 405, Map.of("ok", false, "message", "仅支持 GET"));
+                    }
+                    return;
+                case "/api/sign/exe":
+                    signAction(ex, false);
+                    return;
+                case "/api/sign/pdf":
+                    signAction(ex, true);
+                    return;
+                case "/api/verify/exe":
+                    verifyAction(ex, false);
+                    return;
+                case "/api/verify/pdf":
+                    verifyAction(ex, true);
                     return;
                 default:
                     sendJson(ex, 404, Map.of("ok", false, "message", "未知 API: " + path));
@@ -267,6 +359,707 @@ public final class WebAdmin {
     @FunctionalInterface
     private interface ActionInvoker {
         String run(Map<String, Object> params) throws Exception;
+    }
+
+    // ============================================================
+    // 调试专区：模拟 OCSP / 时间戳请求（RFC 6960 / RFC 3161 标准构造与解析）
+    // ============================================================
+
+    /** 哈希名称 → 算法 OID。 */
+    private static String hashOidOf(String name) {
+        if (name == null) {
+            return "2.16.840.1.101.3.4.2.1";
+        }
+        switch (name.toLowerCase()) {
+            case "sha1":
+                return "1.3.14.3.2.26";
+            case "sha384":
+                return "2.16.840.1.101.3.4.2.2";
+            case "sha512":
+                return "2.16.840.1.101.3.4.2.3";
+            case "sm3":
+                return Sm2Util.OID_SM3;
+            case "sha256":
+            default:
+                return "2.16.840.1.101.3.4.2.1";
+        }
+    }
+
+    /** 哈希名称 → JCA 摘要算法名。 */
+    private static String jcaHashOf(String name) {
+        if (name == null) {
+            return "SHA-256";
+        }
+        switch (name.toLowerCase()) {
+            case "sha1":
+                return "SHA-1";
+            case "sha384":
+                return "SHA-384";
+            case "sha512":
+                return "SHA-512";
+            case "sm3":
+                return "SM3";
+            default:
+                return "SHA-256";
+        }
+    }
+
+    /** 哈希名称 → 展示名。 */
+    private static String hashLabel(String name) {
+        return (name == null ? "sha256" : name).toUpperCase();
+    }
+
+    /** hex 编码。 */
+    private static String hexOf(byte[] b) {
+        if (b == null) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder();
+        for (byte x : b) {
+            sb.append(String.format("%02x", x));
+        }
+        return sb.toString();
+    }
+
+    /** POST DER 到本机 MAIN 端点（WEBPORT），返回响应字节。 */
+    private static byte[] postMain(String path, String contentType, byte[] body) throws Exception {
+        String port = readConfigWebPort();
+        if (port == null || port.isEmpty() || "未配置".equals(port)) {
+            port = "80";
+        }
+        URL url = new URL("http://127.0.0.1:" + port + path);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("POST");
+        conn.setRequestProperty("Content-Type", contentType);
+        conn.setDoOutput(true);
+        conn.setConnectTimeout(5000);
+        conn.setReadTimeout(10000);
+        try (OutputStream os = conn.getOutputStream()) {
+            os.write(body);
+        }
+        int code = conn.getResponseCode();
+        byte[] respBody;
+        try (InputStream is = code >= 400 ? conn.getErrorStream() : conn.getInputStream()) {
+            if (is == null) {
+                respBody = new byte[0];
+            } else {
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                byte[] buf = new byte[4096];
+                int n;
+                while ((n = is.read(buf)) > 0) {
+                    bos.write(buf, 0, n);
+                }
+                respBody = bos.toByteArray();
+            }
+        }
+        if (code >= 400) {
+            String errText = new String(respBody, StandardCharsets.UTF_8).trim();
+            if (errText.length() > 300) {
+                errText = errText.substring(0, 300);
+            }
+            throw new IOException("MAIN 返回 HTTP " + code + (errText.isEmpty() ? "" : ": " + errText));
+        }
+        return respBody;
+    }
+
+    /** 模拟 OCSP 请求（RFC 6960）：标准 CertID + Nonce → POST /OCSP → 解析响应并验签。 */
+    private static String debugOcsp(String serial, String hash) throws Exception {
+        StringBuilder log = new StringBuilder();
+        String hashName = (hash == null || hash.isEmpty()) ? "sha256" : hash.toLowerCase();
+        String hashOid = hashOidOf(hashName);
+        String jcaHash = jcaHashOf(hashName);
+
+        // 1. 目标证书（未指定序列号时自动选第一个终端证书）
+        CertsDB db = new CertsDB();
+        db.load(baseDir);
+        CertsDB.CertEntry entry;
+        if (serial != null && !serial.isEmpty()) {
+            entry = db.findBySerial(serial.trim().toLowerCase());
+        } else {
+            entry = db.getAll().stream().filter(e -> e.type == 'E').findFirst().orElse(null);
+        }
+        if (entry == null) {
+            return "未找到目标证书（序列号 " + serial + "），无法构造 OCSP 请求";
+        }
+        String issuerId = entry.issuerId;
+        log.append("== 模拟 OCSP 请求（RFC 6960）==\n");
+        log.append("[1] 目标证书\n");
+        log.append("    序列号: ").append(entry.serial).append("  类型: ").append(entry.type)
+                .append("  状态: ").append(entry.status).append("  颁发者: ").append(issuerId).append('\n');
+
+        // 2. 加载颁发者证书（CertID 的 issuerNameHash/issuerKeyHash 基于真正颁发者）
+        Path issuerPath = null;
+        for (String p : new String[]{"PKI/ROOT/" + issuerId + ".crt", "PKI/CA/" + issuerId + ".crt"}) {
+            if (Files.exists(Paths.get(baseDir, p))) {
+                issuerPath = Paths.get(baseDir, p);
+                break;
+            }
+        }
+        if (issuerPath == null) {
+            return "未找到颁发者证书: " + issuerId + "（ROOT/CA 目录均无）";
+        }
+        java.security.cert.X509Certificate issuerCert = PemIO.readCert(issuerPath.toString());
+
+        // 3. 构造标准 OCSP 请求（RFC 6960 4.1.1：CertID + Nonce 扩展）
+        AlgorithmIdentifier algId = new AlgorithmIdentifier(new ASN1ObjectIdentifier(hashOid));
+        DigestCalculatorProvider dcp = new JcaDigestCalculatorProviderBuilder()
+                .setProvider("BC").build();
+        DigestCalculator dc = dcp.get(algId);
+        CertificateID cid = new CertificateID(dc,
+                new JcaX509CertificateHolder(issuerCert),
+                new java.math.BigInteger(entry.serial, 16));
+        OCSPReqBuilder gen = new OCSPReqBuilder();
+        gen.addRequest(cid);
+        byte[] nonce = new byte[8];
+        new SecureRandom().nextBytes(nonce);
+        gen.setRequestExtensions(new Extensions(new Extension(
+                OCSPObjectIdentifiers.id_pkix_ocsp_nonce, false, new DEROctetString(nonce))));
+        OCSPReq ocspReq = gen.build();
+        byte[] reqDer = ocspReq.getEncoded();
+
+        log.append("[2] 构造请求\n");
+        log.append("    CertID 哈希算法: ").append(hashLabel(hashName)).append(" (").append(hashOid).append(")\n");
+        log.append("    issuerNameHash: ").append(hexOf(cid.getIssuerNameHash())).append('\n');
+        log.append("    issuerKeyHash: ").append(hexOf(cid.getIssuerKeyHash())).append('\n');
+        log.append("    Nonce: ").append(hexOf(nonce)).append('\n');
+        log.append("    请求 DER 长度: ").append(reqDer.length).append(" 字节\n");
+
+        // 4. POST 到本机 MAIN
+        String port = readConfigWebPort();
+        log.append("[3] POST http://127.0.0.1:").append(port).append("/OCSP\n");
+        byte[] respDer;
+        try {
+            respDer = postMain("/OCSP", "application/ocsp-request", reqDer);
+            log.append("    响应长度: ").append(respDer.length).append(" 字节\n");
+        } catch (Exception e) {
+            log.append("    请求失败: ").append(e).append('\n');
+            log.append("    （请确认 MAIN 服务已启动且 WEBPORT 配置正确）\n");
+            return log.toString();
+        }
+
+        // 5. 解析响应
+        log.append("[4] 响应解析（RFC 6960 OCSPResp）\n");
+        OCSPResp resp = new OCSPResp(respDer);
+        int st = resp.getStatus();
+        log.append("    responseStatus: ").append(ocspStatusName(st)).append('\n');
+        if (st != 0) {
+            log.append("    （非 successful，无 responseBytes）\n");
+            return log.toString();
+        }
+        Object obj = resp.getResponseObject();
+        if (!(obj instanceof BasicOCSPResp)) {
+            log.append("    responseBytes 不是 BasicOCSPResp\n");
+            return log.toString();
+        }
+        BasicOCSPResp basic = (BasicOCSPResp) obj;
+        org.bouncycastle.asn1.ocsp.ResponderID rid =
+                basic.getResponderId().toASN1Primitive();
+        if (rid.getKeyHash() != null) {
+            log.append("    responderID: byKey ").append(hexOf(rid.getKeyHash())).append('\n');
+        } else if (rid.getName() != null) {
+            log.append("    responderID: byName ").append(rid.getName()).append('\n');
+        } else {
+            log.append("    responderID: (空)\n");
+        }
+        log.append("    producedAt: ").append(basic.getProducedAt()).append('\n');
+        SingleResp[] singles = basic.getResponses();
+        for (int i = 0; i < singles.length; i++) {
+            SingleResp sr = singles[i];
+            log.append("    [单条响应 ").append(i + 1).append("]\n");
+            log.append("       CertID 序列号: ")
+                    .append(sr.getCertID().getSerialNumber().toString(16)).append('\n');
+            Object cs = sr.getCertStatus();
+            if (cs == CertificateStatus.GOOD) {
+                log.append("       证书状态: good（正常）\n");
+            } else if (cs instanceof RevokedStatus) {
+                RevokedStatus rs = (RevokedStatus) cs;
+                log.append("       证书状态: revoked（已吊销） 时间=").append(rs.getRevocationTime())
+                        .append(" 原因=").append(rs.getRevocationReason()).append('\n');
+            } else if (cs instanceof UnknownStatus) {
+                log.append("       证书状态: unknown（未知）\n");
+            }
+            log.append("       thisUpdate: ").append(sr.getThisUpdate()).append('\n');
+            if (sr.getNextUpdate() != null) {
+                log.append("       nextUpdate: ").append(sr.getNextUpdate()).append('\n');
+            }
+        }
+        // Nonce 回显比对
+        Extension ne = basic.getExtension(OCSPObjectIdentifiers.id_pkix_ocsp_nonce);
+        if (ne != null) {
+            byte[] echo = org.bouncycastle.asn1.ASN1OctetString.getInstance(
+                    ne.getExtnValue()).getOctets();
+            log.append("    Nonce 回显: ").append(hexOf(echo))
+                    .append(java.util.Arrays.equals(echo, nonce)
+                            ? "  （与请求一致）" : "  （与请求不一致！）").append('\n');
+        } else {
+            log.append("    Nonce 回显: 无\n");
+        }
+
+        // 6. 签名验证
+        log.append("[5] 签名验证\n");
+        X509CertificateHolder[] certs = basic.getCerts();
+        if (certs == null || certs.length == 0) {
+            log.append("    响应未携带响应者证书（byName 时客户端可从受信库加载）\n");
+        } else {
+            java.security.cert.X509Certificate responder =
+                    new JcaX509CertificateConverter().setProvider("BC")
+                            .getCertificate(certs[0]);
+            log.append("    响应者证书: ").append(responder.getSubjectX500Principal())
+                    .append("（序列号 ").append(responder.getSerialNumber().toString(16)).append("）\n");
+            ContentVerifierProvider cvp = new JcaContentVerifierProviderBuilder()
+                    .setProvider("BC").build(responder);
+            boolean ok = basic.isSignatureValid(cvp);
+            log.append("    签名验证: ").append(ok ? "通过" : "失败").append('\n');
+        }
+        return log.toString();
+    }
+
+    /** 模拟时间戳请求（RFC 3161）：随机消息 → messageImprint → POST /rfc3161 → 解析响应并验签。 */
+    private static String debugTsa(String hash) throws Exception {
+        StringBuilder log = new StringBuilder();
+        String hashName = (hash == null || hash.isEmpty()) ? "sha256" : hash.toLowerCase();
+        String hashOid = hashOidOf(hashName);
+        String jcaHash = jcaHashOf(hashName);
+
+        log.append("== 模拟时间戳请求（RFC 3161）==\n");
+        // 1. 随机数据 + 摘要
+        byte[] msg = new byte[32];
+        new SecureRandom().nextBytes(msg);
+        byte[] digest = MessageDigest.getInstance(jcaHash).digest(msg);
+        log.append("[1] 随机数据\n");
+        log.append("    数据内容: ").append(hexOf(msg)).append('\n');
+        log.append("    摘要算法: ").append(hashLabel(hashName)).append(" (").append(hashOid).append(")\n");
+        log.append("    消息摘要: ").append(hexOf(digest)).append('\n');
+
+        // 2. 构造 RFC 3161 请求（messageImprint + nonce + certReq=true）
+        byte[] nonce = new byte[8];
+        new SecureRandom().nextBytes(nonce);
+        TimeStampRequestGenerator gen = new TimeStampRequestGenerator();
+        gen.setCertReq(true);
+        TimeStampRequest tsReq = gen.generate(
+                new ASN1ObjectIdentifier(hashOid), digest,
+                new java.math.BigInteger(1, nonce));
+        byte[] reqDer = tsReq.getEncoded();
+        log.append("[2] 构造请求\n");
+        log.append("    version: ").append(tsReq.getVersion()).append('\n');
+        log.append("    messageImprint: {alg=")
+                .append(tsReq.getMessageImprintAlgID().getAlgorithm().getId())
+                .append(", digest=").append(hexOf(tsReq.getMessageImprintDigest())).append("}\n");
+        log.append("    nonce: ").append(hexOf(nonce)).append('\n');
+        log.append("    certReq: true\n");
+        log.append("    请求 DER 长度: ").append(reqDer.length).append(" 字节\n");
+
+        // 3. POST 到本机 MAIN
+        String port = readConfigWebPort();
+        log.append("[3] POST http://127.0.0.1:").append(port).append("/rfc3161\n");
+        byte[] respDer;
+        try {
+            respDer = postMain("/rfc3161", "application/timestamp-query", reqDer);
+            log.append("    响应长度: ").append(respDer.length).append(" 字节\n");
+        } catch (Exception e) {
+            log.append("    请求失败: ").append(e).append('\n');
+            log.append("    （请确认 MAIN 服务已启动、WEBPORT 配置正确，且存在对应的 TSA 证书：")
+                    .append("SHA1→rsa_sha1/ecc_sha1，SHA256→rsa_sha256/ecc_sha256，SM3→sm2_sm3）\n");
+            return log.toString();
+        }
+
+        // 4. 解析响应
+        log.append("[4] 响应解析（RFC 3161 TimeStampResp）\n");
+        TimeStampResponse resp = new TimeStampResponse(respDer);
+        int st = resp.getStatus();
+        log.append("    status: ").append(tsStatusName(st)).append('\n');
+        String statusStr = resp.getStatusString();
+        if (statusStr != null && !statusStr.isEmpty()) {
+            log.append("    statusString: ").append(statusStr).append('\n');
+        }
+        if (st != 0) {
+            log.append("    （非 granted，无 TimeStampToken）\n");
+            return log.toString();
+        }
+        TimeStampToken token = resp.getTimeStampToken();
+        if (token == null) {
+            log.append("    （未返回 TimeStampToken）\n");
+            return log.toString();
+        }
+        TimeStampTokenInfo info = token.getTimeStampInfo();
+        log.append("    [TimeStampToken]\n");
+        log.append("       serialNumber: ").append(info.getSerialNumber().toString(16)).append('\n');
+        log.append("       genTime: ").append(info.getGenTime()).append('\n');
+        if (info.getPolicy() != null) {
+            log.append("       policy: ").append(info.getPolicy().getId()).append('\n');
+        }
+        byte[] echoDigest = info.getMessageImprintDigest();
+        log.append("       messageImprint 回显: ").append(hexOf(echoDigest))
+                .append(java.util.Arrays.equals(echoDigest, digest)
+                        ? "  （与请求一致）" : "  （与请求不一致！）").append('\n');
+
+        // 5. 签名验证（RFC 3161 5.3.2）
+        log.append("[5] 签名验证\n");
+        java.util.Collection<X509CertificateHolder> certs =
+                token.getCertificates().getMatches(null);
+        if (certs == null || certs.isEmpty()) {
+            log.append("    token 未携带证书链\n");
+        } else {
+            boolean anyOk = false;
+            for (X509CertificateHolder h : certs) {
+                java.security.cert.X509Certificate c =
+                        new JcaX509CertificateConverter().setProvider("BC").getCertificate(h);
+                try {
+                    org.bouncycastle.cms.SignerInformationVerifier siv =
+                            new org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoVerifierBuilder()
+                                    .setProvider("BC").build(c);
+                    token.validate(siv); // 校验 messageImprint 匹配 + 数字签名（失败抛异常）
+                    log.append("    签名者证书: ").append(c.getSubjectX500Principal())
+                            .append("（序列号 ").append(c.getSerialNumber().toString(16)).append("）\n");
+                    anyOk = true;
+                    break;
+                } catch (Exception ignore) {
+                    // 链中非签名者证书不匹配 ESSCertID，跳过继续尝试
+                }
+            }
+            log.append("    签名验证: ").append(anyOk
+                    ? "通过（messageImprint 匹配、数字签名有效）"
+                    : "失败（无匹配签名者证书）").append('\n');
+        }
+        return log.toString();
+    }
+
+    private static String ocspStatusName(int st) {
+        switch (st) {
+            case 0: return "successful (0)";
+            case 1: return "malformedRequest (1)";
+            case 2: return "internalError (2)";
+            case 3: return "tryLater (3)";
+            case 5: return "sigRequired (5)";
+            case 6: return "unauthorized (6)";
+            default: return "未知 (" + st + ")";
+        }
+    }
+
+    private static String tsStatusName(int st) {
+        switch (st) {
+            case 0: return "granted (0)";
+            case 1: return "grantedWithMods (1)";
+            case 2: return "rejection (2)";
+            case 3: return "waiting (3)";
+            case 4: return "revocationWarning (4)";
+            case 5: return "revocationNotification (5)";
+            default: return "未知 (" + st + ")";
+        }
+    }
+
+    // ============================================================
+    // 密钥更换（证书库「操作」按钮 → 密钥更换分组）
+    // ============================================================
+
+    /**
+     * 密钥更换：按当前证书序列号识别公钥类型 → 生成同类型新密钥对 →
+     * 随机数据测试（加解密 / 数字签名 / 签名验证）→ 加载颁发者 CA 证书与私钥 →
+     * 对替换公钥后的 JSON 重建 TBS 并用 CA 私钥重签 → 新证书与私钥写回原位置替换。
+     */
+    private static String rekeyAction(String serial) throws Exception {
+        if (serial == null || serial.trim().isEmpty()) {
+            throw new IllegalArgumentException("缺少证书序列号");
+        }
+        serial = serial.trim().toLowerCase();
+
+        // 1) 登记表
+        CertsDB db = new CertsDB();
+        db.load(baseDir);
+        CertsDB.CertEntry entry = db.findBySerial(serial);
+        if (entry == null) {
+            throw new IllegalArgumentException("CERTS.txt 中未找到序列号 " + serial);
+        }
+
+        // 2) 读原证书（WebPublic/CRT 是全部证书的统一对外目录）
+        String certPath = baseDir + "/PKI/WebPublic/CRT/" + serial + ".crt";
+        if (!Files.exists(Paths.get(certPath))) {
+            throw new IllegalArgumentException("缺少证书文件: " + certPath);
+        }
+        byte[] pemBytes = Files.readAllBytes(Paths.get(certPath));
+        String json = X509JsonConverter.certToJson(pemBytes);
+
+        // 3) 识别公钥算法 → 生成同类型新密钥对
+        KeyPair kp = X509JsonConverter.generateKeyPairFromJson(json);
+        String keyType = X509JsonConverter.keyTypeFromJson(json);
+
+        // 4) 随机数据密钥测试
+        String tests = testKeyPair(kp, keyType);
+
+        // 5) 加载颁发者 CA 证书与私钥（R→ROOT，C→CA）
+        if (entry.issuerId == null || entry.issuerId.isEmpty()) {
+            throw new IllegalArgumentException("登记表缺少颁发者序列号（" + serial + "）");
+        }
+        CertsDB.CertEntry issuer = db.findBySerial(entry.issuerId);
+        if (issuer == null) {
+            throw new IllegalArgumentException("CERTS.txt 中未找到颁发者 " + entry.issuerId);
+        }
+        String issuerDir = issuer.type == 'R' ? "ROOT" : (issuer.type == 'C' ? "CA" : null);
+        if (issuerDir == null) {
+            throw new IllegalArgumentException("颁发者类型必须为 R(根) 或 C(CA)，实际为 " + issuer.type);
+        }
+        String issuerKeyPath = baseDir + "/PKI/" + issuerDir + "/" + entry.issuerId + ".key";
+        if (!Files.exists(Paths.get(issuerKeyPath))) {
+            throw new IllegalArgumentException("缺少颁发者私钥: " + issuerKeyPath);
+        }
+        PrivateKey issuerKey = CertUtil.readJcaPrivateKey(issuerKeyPath);
+        String issuerKeyType = PemIO.detectKeyType(issuerKeyPath);
+
+        // 6) CA 重签：换公钥 → 重建 TBS → 颁发者私钥签名 → 新证书 PEM
+        byte[] newCertPem = X509JsonConverter.rekeyJsonToPemByIssuer(
+                json, kp, issuerKey, issuerKeyType);
+
+        // 7) 写回原位置（按证书身份定位 OCSP / TSA / 登记类型目录），替换旧文件
+        String saved = saveRekeyFiles(serial, entry, newCertPem, kp, keyType);
+
+        String msg = "密钥更换完成\n"
+                + "证书算法: " + keyType + "（已按原算法生成同类型新密钥对）\n"
+                + "密钥测试结果:\n" + tests
+                + "重签算法: " + issuerKeyType + "（颁发者 " + entry.issuerId + " 签名）\n"
+                + saved;
+        MLog.append(baseDir, "WebAdmin /api/rekey 详细",
+                "密钥更换 序列号=" + serial + " 新密钥=" + keyType
+                        + " 颁发者=" + entry.issuerId,
+                msg.replace("\n", " | "));
+        return msg;
+    }
+
+    /**
+     * 续签证书：按当前证书序列号读取证书 → 更新 validity 的生效/失效时间 →
+     * 加载颁发者 CA 证书与私钥 → 对 JSON 重建 TBS 并用 CA 私钥重签 →
+     * 新证书写回原位置（公钥与扩展保持不变，仅时间更新）。
+     */
+    private static String renewAction(String serial, String notBeforeStr, String notAfterStr) throws Exception {
+        if (serial == null || serial.trim().isEmpty()) {
+            throw new IllegalArgumentException("缺少证书序列号");
+        }
+        serial = serial.trim().toLowerCase();
+        Date notBefore = parseLocalDateTime(notBeforeStr);
+        Date notAfter = parseLocalDateTime(notAfterStr);
+        if (!notAfter.after(notBefore)) {
+            throw new IllegalArgumentException("失效时间必须晚于生效时间");
+        }
+
+        // 1) 登记表
+        CertsDB db = new CertsDB();
+        db.load(baseDir);
+        CertsDB.CertEntry entry = db.findBySerial(serial);
+        if (entry == null) {
+            throw new IllegalArgumentException("CERTS.txt 中未找到序列号 " + serial);
+        }
+
+        // 2) 读原证书（WebPublic/CRT 是全部证书的统一对外目录）
+        String certPath = baseDir + "/PKI/WebPublic/CRT/" + serial + ".crt";
+        if (!Files.exists(Paths.get(certPath))) {
+            throw new IllegalArgumentException("缺少证书文件: " + certPath);
+        }
+        byte[] pemBytes = Files.readAllBytes(Paths.get(certPath));
+        String json = X509JsonConverter.certToJson(pemBytes);
+
+        // 3) 加载颁发者 CA 证书与私钥（R→ROOT，C→CA）
+        if (entry.issuerId == null || entry.issuerId.isEmpty()) {
+            throw new IllegalArgumentException("登记表缺少颁发者序列号（" + serial + "）");
+        }
+        CertsDB.CertEntry issuer = db.findBySerial(entry.issuerId);
+        if (issuer == null) {
+            throw new IllegalArgumentException("CERTS.txt 中未找到颁发者 " + entry.issuerId);
+        }
+        String issuerDir = issuer.type == 'R' ? "ROOT" : (issuer.type == 'C' ? "CA" : null);
+        if (issuerDir == null) {
+            throw new IllegalArgumentException("颁发者类型必须为 R(根) 或 C(CA)，实际为 " + issuer.type);
+        }
+        String issuerKeyPath = baseDir + "/PKI/" + issuerDir + "/" + entry.issuerId + ".key";
+        if (!Files.exists(Paths.get(issuerKeyPath))) {
+            throw new IllegalArgumentException("缺少颁发者私钥: " + issuerKeyPath);
+        }
+        PrivateKey issuerKey = CertUtil.readJcaPrivateKey(issuerKeyPath);
+        String issuerKeyType = PemIO.detectKeyType(issuerKeyPath);
+
+        // 4) CA 重签：更新有效期 → 重建 TBS → 颁发者私钥签名 → 新证书 PEM
+        byte[] newCertPem = X509JsonConverter.renewJsonToPemByIssuer(
+                json, notBefore, notAfter, issuerKey, issuerKeyType);
+
+        // 5) 写回原位置（按证书身份定位 OCSP / TSA / 登记类型目录），替换旧文件
+        String saved = saveRekeyFiles(serial, entry, newCertPem, null, null);
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+        String msg = "续签完成\n"
+                + "新生效时间: " + sdf.format(notBefore) + " UTC\n"
+                + "新失效时间: " + sdf.format(notAfter) + " UTC\n"
+                + "重签算法: " + issuerKeyType + "（颁发者 " + entry.issuerId + " 签名）\n"
+                + "公钥与扩展保持不变，仅更新时间\n"
+                + saved;
+        MLog.append(baseDir, "WebAdmin /api/renew 详细",
+                "续签 序列号=" + serial + " 生效=" + notBeforeStr + " 失效=" + notAfterStr,
+                msg.replace("\n", " | "));
+        return msg;
+    }
+
+    /** 解析前端 datetime-local 的本地时间（yyyy-MM-ddTHH:mm[:ss]），转 UTC Date。 */
+    private static Date parseLocalDateTime(String s) throws Exception {
+        if (s == null || s.trim().isEmpty()) {
+            throw new IllegalArgumentException("缺少时间");
+        }
+        String v = s.trim().replace(' ', 'T');
+        if (v.endsWith("Z")) {
+            v = v.substring(0, v.length() - 1); // 兼容 UTC 后缀
+        }
+        LocalDateTime ldt = LocalDateTime.parse(
+                v.length() == 16 ? v + ":00" : v,
+                DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        return Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant());
+    }
+
+    /** 随机数据密钥对测试：RSA（加解密+签名验签）/ ECC（签名验签）/ SM2（SM2加解密+签名验签）。 */    private static String testKeyPair(KeyPair kp, String keyType) throws Exception {
+        StringBuilder sb = new StringBuilder();
+        byte[] data = new byte[64];
+        new SecureRandom().nextBytes(data);
+        if ("RSA".equalsIgnoreCase(keyType)) {
+            Cipher c = Cipher.getInstance("RSA/ECB/PKCS1Padding", "BC");
+            c.init(Cipher.ENCRYPT_MODE, kp.getPublic());
+            byte[] enc = c.doFinal(data);
+            c.init(Cipher.DECRYPT_MODE, kp.getPrivate());
+            byte[] dec = c.doFinal(enc);
+            sb.append("    RSA 加解密     : ")
+                    .append(Arrays.equals(data, dec) ? "通过 ✓" : "失败 ✗")
+                    .append("（64 字节随机数据）\n");
+            sb.append("    RSA 签名/验签  : ")
+                    .append(signAndVerify(kp, "SHA256withRSA", data) ? "通过 ✓" : "失败 ✗")
+                    .append("（SHA256）\n");
+        } else if ("ECC".equalsIgnoreCase(keyType)) {
+            sb.append("    ECC 签名/验签  : ")
+                    .append(signAndVerify(kp, "SHA256withECDSA", data) ? "通过 ✓" : "失败 ✗")
+                    .append("（SHA256；ECC 为签名算法，无传统公钥加解密）\n");
+        } else if ("SM2".equalsIgnoreCase(keyType)) {
+            ECPublicKeyParameters pub = Sm2Util.toEcPublicParams(kp.getPublic());
+            ECPrivateKeyParameters priv = Sm2Util.toEcPrivateParams(kp.getPrivate());
+            SM2Engine eng = new SM2Engine(SM2Engine.Mode.C1C3C2);
+            eng.init(true, new ParametersWithRandom(pub, new SecureRandom()));
+            byte[] enc = eng.processBlock(data, 0, data.length);
+            SM2Engine dEng = new SM2Engine(SM2Engine.Mode.C1C3C2);
+            dEng.init(false, priv);
+            byte[] dec = dEng.processBlock(enc, 0, enc.length);
+            sb.append("    SM2 加解密     : ")
+                    .append(Arrays.equals(data, dec) ? "通过 ✓" : "失败 ✗")
+                    .append("（64 字节随机数据，C1C3C2）\n");
+            byte[] sig = Sm2Util.sm2Sign(priv, data);
+            sb.append("    SM2 签名/验签  : ")
+                    .append(Sm2Util.sm2Verify(pub, data, sig) ? "通过 ✓" : "失败 ✗")
+                    .append("（SM3withSM2，含 ZA）\n");
+        } else {
+            throw new IllegalArgumentException("不支持的密钥类型: " + keyType);
+        }
+        return sb.toString();
+    }
+
+    /** 用 JCA Signature 对随机数据做签名并验证。 */
+    private static boolean signAndVerify(KeyPair kp, String jcaAlg, byte[] data) throws Exception {
+        Signature s = Signature.getInstance(jcaAlg, "BC");
+        s.initSign(kp.getPrivate());
+        s.update(data);
+        byte[] sig = s.sign();
+        Signature v = Signature.getInstance(jcaAlg, "BC");
+        v.initVerify(kp.getPublic());
+        v.update(data);
+        return v.verify(sig);
+    }
+
+    /**
+     * 按证书身份定位保存位置并替换旧文件：
+     * OCSP 证书（OCSP/{颁发者ID}_ocsp.crt 序列号匹配）→ OCSP 目录；
+     * TSA 证书（TIMSTAMP 目录内证书序列号匹配）→ TIMSTAMP 目录；
+     * 否则按登记类型 R→ROOT、C→CA、E→CERT/KEY。始终同步 WebPublic/CRT。
+     */
+    private static String saveRekeyFiles(String serial, CertsDB.CertEntry entry,
+                                         byte[] certPem, KeyPair kp, String keyType) throws Exception {
+        StringBuilder sb = new StringBuilder();
+        Path base = Paths.get(baseDir, "PKI");
+        String syncDir = "PKI/WebPublic/CRT/" + serial + ".crt";
+
+        // 1) 统一对外目录（所有证书类型）
+        Files.write(Paths.get(baseDir, "PKI", "WebPublic", "CRT", serial + ".crt"), certPem);
+        sb.append("证书已同步: ").append(syncDir).append("\n");
+
+        // 2) 定位主位置
+        Path certOut = null;
+        Path keyOut = null;
+        String kind = null;
+
+        // 2a) OCSP 签名证书：OCSP/{颁发者ID}_ocsp.crt 的序列号 == 目标序列号
+        Path ocspCert = Paths.get(base.toString(), "OCSP", entry.issuerId + "_ocsp.crt");
+        if (Files.exists(ocspCert) && certSerialOf(ocspCert).equals(serial)) {
+            certOut = ocspCert;
+            keyOut = Paths.get(base.toString(), "OCSP", entry.issuerId + "_ocsp.key");
+            kind = "OCSP 签名证书";
+        }
+
+        // 2b) TSA 时间戳证书：TIMSTAMP 目录内证书序列号匹配
+        if (certOut == null) {
+            Path tsDir = Paths.get(base.toString(), "TIMSTAMP");
+            if (Files.isDirectory(tsDir)) {
+                try (Stream<Path> stream = Files.list(tsDir)) {
+                    List<Path> crts = stream.filter(p -> p.toString().toLowerCase().endsWith(".crt"))
+                            .collect(Collectors.toList());
+                    for (Path p : crts) {
+                        if (certSerialOf(p).equals(serial)) {
+                            certOut = p;
+                            keyOut = Paths.get(p.toString().replace(".crt", ".key"));
+                            kind = "TSA 时间戳证书";
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        // 2c) 按登记类型
+        if (certOut == null) {
+            switch (entry.type) {
+                case 'R':
+                    certOut = Paths.get(base.toString(), "ROOT", serial + ".crt");
+                    keyOut = Paths.get(base.toString(), "ROOT", serial + ".key");
+                    kind = "根证书(R)";
+                    break;
+                case 'C':
+                    certOut = Paths.get(base.toString(), "CA", serial + ".crt");
+                    keyOut = Paths.get(base.toString(), "CA", serial + ".key");
+                    kind = "CA证书(C)";
+                    break;
+                case 'E':
+                    certOut = Paths.get(base.toString(), "CERT", serial + ".crt");
+                    keyOut = Paths.get(base.toString(), "KEY", serial + ".key");
+                    kind = "终端证书(E)";
+                    break;
+                default:
+                    throw new IllegalArgumentException("不支持的证书类型: " + entry.type);
+            }
+        }
+
+        // 3) 写证书 + 私钥（续签场景 kp 为 null，仅更新证书、私钥保持不变）
+        Files.write(certOut, certPem);
+        sb.append("证书类型: ").append(kind).append("\n");
+        sb.append("证书已替换: ").append(relPath(certOut)).append("\n");
+        if (kp != null && keyType != null) {
+            PemIO.writePrivateKey(keyOut.toString(), kp.getPrivate(), keyType);
+            sb.append("私钥已替换: ").append(relPath(keyOut)).append("\n");
+        } else {
+            sb.append("私钥保持不变（续签不更换密钥）\n");
+        }
+        return sb.toString();
+    }
+
+    /** 读取证书文件的序列号（hex 小写）。 */
+    private static String certSerialOf(Path certPath) throws Exception {
+        return PemIO.readCert(certPath.toString()).getSerialNumber()
+                .toString(16).toLowerCase();
+    }
+
+    /** 相对 baseDir 的路径显示。 */
+    private static String relPath(Path p) {
+        String abs = p.toString().replace('\\', '/');
+        String b = baseDir.replace('\\', '/') + "/";
+        return abs.startsWith(b) ? abs.substring(b.length()) : abs;
     }
 
     // ============================================================
@@ -948,6 +1741,230 @@ public final class WebAdmin {
         return out.toByteArray();
     }
 
+    // ============================================================
+    // 签名专区：微软代码签名 / PDF 文档签名（multipart 上传 → SignTool）
+    // ============================================================
+
+    /** 解析 multipart/form-data 请求体，返回 字段名 → 字节。 */
+    private static Map<String, byte[]> readMultipart(HttpExchange ex) throws Exception {
+        String ct = ex.getRequestHeaders().getFirst("Content-Type");
+        if (ct == null || !ct.startsWith("multipart/form-data")) {
+            throw new IllegalArgumentException("需要 multipart/form-data 上传");
+        }
+        String boundary = null;
+        for (String part : ct.split(";")) {
+            String t = part.trim();
+            if (t.startsWith("boundary=")) {
+                boundary = t.substring("boundary=".length()).replace("\"", "").trim();
+            }
+        }
+        if (boundary == null || boundary.isEmpty()) {
+            throw new IllegalArgumentException("缺少 multipart boundary");
+        }
+        byte[] body = readAll(ex.getRequestBody());
+        byte[] delim = ("--" + boundary).getBytes(StandardCharsets.ISO_8859_1);
+        Map<String, byte[]> fields = new LinkedHashMap<>();
+        int pos = 0;
+        while (true) {
+            int start = indexOfBytes(body, delim, pos);
+            if (start < 0) {
+                break;
+            }
+            int after = start + delim.length;
+            // 结束标记 "--"
+            if (after + 1 < body.length && body[after] == '-' && body[after + 1] == '-') {
+                break;
+            }
+            if (after < body.length && body[after] == '\r') {
+                after++;
+            }
+            if (after < body.length && body[after] == '\n') {
+                after++;
+            }
+            // part 头（到空行 \r\n\r\n 或 \n\n）
+            int headerEnd = indexOfBytes(body, new byte[]{'\r', '\n', '\r', '\n'}, after);
+            int lf = indexOfBytes(body, new byte[]{'\n', '\n'}, after);
+            int dataStart;
+            if (headerEnd >= 0 && (lf < 0 || headerEnd <= lf)) {
+                dataStart = headerEnd + 4;
+            } else if (lf >= 0) {
+                headerEnd = lf;
+                dataStart = lf + 2;
+            } else {
+                break;
+            }
+            String headers = new String(body, after, headerEnd - after,
+                    StandardCharsets.ISO_8859_1);
+            String name = null;
+            java.util.regex.Matcher m = java.util.regex.Pattern
+                    .compile("name=\"([^\"]*)\"").matcher(headers);
+            if (m.find()) {
+                name = m.group(1);
+            }
+            // 数据区到下一个 boundary
+            int next = indexOfBytes(body, delim, dataStart);
+            if (next < 0) {
+                break;
+            }
+            int dataEnd = next;
+            if (dataEnd >= 2 && body[dataEnd - 2] == '\r' && body[dataEnd - 1] == '\n') {
+                dataEnd -= 2;
+            } else if (dataEnd >= 1 && body[dataEnd - 1] == '\n') {
+                dataEnd -= 1;
+            }
+            if (name != null) {
+                fields.put(name, Arrays.copyOfRange(body, dataStart, dataEnd));
+            }
+            pos = next;
+        }
+        return fields;
+    }
+
+    /** 字节数组查找。 */
+    private static int indexOfBytes(byte[] hay, byte[] needle, int from) {
+        outer:
+        for (int i = from; i <= hay.length - needle.length; i++) {
+            for (int j = 0; j < needle.length; j++) {
+                if (hay[i + j] != needle[j]) {
+                    continue outer;
+                }
+            }
+            return i;
+        }
+        return -1;
+    }
+
+    /** 签名动作（pdf=true 时走 PDF 签名，否则 EXE Authenticode 签名）。 */
+    private static void signAction(HttpExchange ex, boolean pdf) {
+        String path = ex.getRequestURI().getPath();
+        try {
+            Map<String, byte[]> f = readMultipart(ex);
+            String serial = new String(f.getOrDefault("serial", new byte[0]),
+                    StandardCharsets.UTF_8).trim();
+            byte[] fileBytes = f.get("file");
+            String fileName = f.containsKey("name")
+                    ? new String(f.get("name"), StandardCharsets.UTF_8).trim() : "";
+            if (fileBytes == null || fileBytes.length == 0) {
+                throw new IllegalArgumentException("未上传文件");
+            }
+            if (serial.isEmpty()) {
+                throw new IllegalArgumentException("未选择签名证书序列号");
+            }
+            String base = AppPaths.baseDir();
+            CertsDB db = new CertsDB();
+            db.load(base);
+            CertsDB.CertEntry e = db.findBySerial(serial);
+            if (e == null) {
+                throw new IllegalArgumentException("CERTS.txt 无序列号 " + serial);
+            }
+            String keyType = e.algo;
+            java.security.cert.X509Certificate cert = SignTool.loadCertBySerial(base, serial);
+            PrivateKey key = SignTool.loadKeyBySerial(base, serial);
+            List<java.security.cert.X509Certificate> chain = SignTool.loadChain(base, serial);
+
+            byte[] result;
+            String op;
+            if (pdf) {
+                byte[] image = f.get("image");
+                result = SignTool.signPdf(fileBytes, keyType, cert, key, chain, image);
+                op = "PDF 文档签名\n"
+                        + "  签章: " + (image != null && image.length > 0
+                        ? "已附加可见签章（" + image.length + "B 图片）" : "无（不可见签名）");
+            } else {
+                if (fileName.isEmpty()) {
+                    fileName = "file.bin";
+                }
+                SignTool.lastTsInfo = "未请求";
+                result = SignTool.signExe(fileBytes, keyType, cert, key, chain, base);
+                op = "微软代码签名（Authenticode）\n"
+                        + "  时间戳: " + SignTool.lastTsInfo;
+            }
+            String out = op + "\n"
+                    + "  输入: " + fileName + "（" + fileBytes.length + " 字节）\n"
+                    + "  证书: " + cert.getSubjectX500Principal() + "\n"
+                    + "  序列号: " + serial + "   算法: " + keyType
+                    + "   摘要: " + SignTool.digestName(keyType) + "\n"
+                    + "  输出: " + result.length + " 字节";
+            MLog.append(base, "WebAdmin " + path,
+                    "POST " + path + " serial=" + serial + " file=" + fileName
+                            + " size=" + fileBytes.length,
+                    out);
+            Map<String, Object> r = new LinkedHashMap<>();
+            r.put("ok", true);
+            r.put("message", out);
+            r.put("b64", Base64.getEncoder().encodeToString(result));
+            r.put("name", (pdf ? "signed_" : "signed_") + fileName);
+            sendJson(ex, 200, r);
+        } catch (Exception ex2) {
+            try {
+                MLog.appendErr(AppPaths.baseDir(), "WebAdmin " + path + " 异常",
+                        "POST " + path, String.valueOf(ex2));
+                sendJson(ex, 500, Map.of("ok", false, "message", String.valueOf(ex2)));
+            } catch (Exception ignored) {
+            }
+        }
+    }
+
+    /** 验证动作（pdf=true 走 PDF 验证，否则 EXE Authenticode 验证）。 */
+    private static void verifyAction(HttpExchange ex, boolean pdf) {
+        String path = ex.getRequestURI().getPath();
+        try {
+            Map<String, byte[]> f = readMultipart(ex);
+            byte[] fileBytes = f.get("file");
+            if (fileBytes == null || fileBytes.length == 0) {
+                throw new IllegalArgumentException("未上传文件");
+            }
+            String out = pdf ? SignTool.verifyPdf(fileBytes) : SignTool.verifyExe(fileBytes);
+            MLog.append(AppPaths.baseDir(), "WebAdmin " + path,
+                    "POST " + path + " size=" + fileBytes.length, out);
+            sendJson(ex, 200, Map.of("ok", true, "message", out));
+        } catch (Exception ex2) {
+            try {
+                MLog.appendErr(AppPaths.baseDir(), "WebAdmin " + path + " 异常",
+                        "POST " + path, String.valueOf(ex2));
+                sendJson(ex, 500, Map.of("ok", false, "message", String.valueOf(ex2)));
+            } catch (Exception ignored) {
+            }
+        }
+    }
+
+    /** 可签名证书列表：kind=exe 筛代码签名 EKU；kind=pdf 筛文档签名/代码签名 EKU。 */
+    private static Map<String, Object> signCertsJson(HttpExchange ex) {
+        String kind = ex.getRequestURI().getQuery() == null ? "exe"
+                : (ex.getRequestURI().getQuery().contains("kind=pdf") ? "pdf" : "exe");
+        String base = AppPaths.baseDir();
+        CertsDB db = new CertsDB();
+        db.load(base);
+        List<Map<String, Object>> list = new ArrayList<>();
+        for (CertsDB.CertEntry e : db.getAll()) {
+            if (e.type != 'E') {
+                continue;
+            }
+            try {
+                java.security.cert.X509Certificate c = SignTool.loadCertBySerial(base, e.serial);
+                boolean usable = "pdf".equals(kind)
+                        ? SignTool.isDocSignCert(c) : SignTool.isCodeSignCert(c);
+                if (!usable) {
+                    continue;
+                }
+                Map<String, Object> m = new LinkedHashMap<>();
+                m.put("serial", e.serial);
+                m.put("dn", c.getSubjectX500Principal().toString());
+                m.put("issuer", c.getIssuerX500Principal().toString());
+                m.put("algo", e.algo);
+                m.put("bits", SignTool.keyBits(c));
+                m.put("validFrom", c.getNotBefore().toString());
+                m.put("validTo", c.getNotAfter().toString());
+                m.put("status", String.valueOf(e.status));
+                m.put("ekus", new ArrayList<>(SignTool.ekusOf(c)));
+                list.add(m);
+            } catch (Exception ignored) {
+                // 证书文件缺失或损坏则跳过
+            }
+        }
+        return Map.of("ok", true, "data", list);
+    }
+
     /** JSON 字符串转义。 */
     static String jsonEscape(String s) {
         if (s == null) {
@@ -1207,6 +2224,7 @@ public final class WebAdmin {
           button:hover { filter: brightness(1.15); }
           button.ghost { background: var(--panel2); color: var(--text); border: 1px solid var(--border); }
           button.danger { background: #7f1d1d; color: #fecaca; }
+          button.success { background: #14532d; color: #bbf7d0; }
           button:disabled { opacity: .5; cursor: not-allowed; }
           table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 12.5px; }
           th, td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap; }
@@ -1281,6 +2299,8 @@ public final class WebAdmin {
             <a data-page="ocsp">OCSP 签发</a>
             <a data-page="timestamp">时间戳签发</a>
             <a data-page="verify">证书验证</a>
+            <a data-page="debug">调试专区</a>
+            <a data-page="sign">签名专区</a>
             <a data-page="init">初始化环境</a>
             <a data-page="config">系统配置</a>
             <a data-page="logs">操作日志</a>
@@ -1518,6 +2538,68 @@ public final class WebAdmin {
               </div>
             </div>
 
+            <!-- 调试专区 -->
+            <div class="page" id="page-debug">
+              <div class="card">
+                <h2>模拟 OCSP 请求（RFC 6960）</h2>
+                <div class="hint">按标准构造 CertID（issuerNameHash/issuerKeyHash 基于真正颁发者证书）+ Nonce 扩展，POST 本机 MAIN 的 /OCSP，解析响应并验证签名与 Nonce 回显。</div>
+                <div class="row">
+                  <div><label>目标证书序列号（留空自动选第一个终端证书）</label><input id="dbgOcspSerial" placeholder="例如 1135228a2"></div>
+                  <div><label>CertID 哈希算法</label><select id="dbgOcspHash">
+                    <option value="sha256" selected>SHA256</option>
+                    <option value="sha1">SHA1</option>
+                    <option value="sha384">SHA384</option>
+                    <option value="sha512">SHA512</option>
+                    <option value="sm3">SM3</option>
+                  </select></div>
+                  <div style="align-self:end"><button onclick="sendDebugOcsp()">发送模拟请求</button></div>
+                </div>
+                <pre class="out" id="dbgOcspOut" style="max-height:56vh;overflow:auto;white-space:pre;font-family:var(--mono);font-size:12px;line-height:1.55"></pre>
+              </div>
+              <div class="card" style="margin-top:16px">
+                <h2>模拟时间戳请求（RFC 3161）</h2>
+                <div class="hint">随机生成 32 字节数据 → 按所选摘要算法计算 messageImprint → 构造 TimeStampReq（含 Nonce、certReq=true）→ POST 本机 MAIN 的 /rfc3161 → 解析 TimeStampResp 并验证签名。</div>
+                <div class="row">
+                  <div><label>摘要算法</label><select id="dbgTsaHash">
+                    <option value="sha256" selected>SHA256</option>
+                    <option value="sha1">SHA1</option>
+                    <option value="sha384">SHA384</option>
+                    <option value="sha512">SHA512</option>
+                    <option value="sm3">SM3</option>
+                  </select></div>
+                  <div style="align-self:end"><button onclick="sendDebugTsa()">对随机数据签名</button></div>
+                </div>
+                <pre class="out" id="dbgTsaOut" style="max-height:56vh;overflow:auto;white-space:pre;font-family:var(--mono);font-size:12px;line-height:1.55"></pre>
+              </div>
+            </div>
+
+            <!-- 签名专区 -->
+            <div class="page" id="page-sign">
+              <div class="card">
+                <h2>微软代码签名（Authenticode）</h2>
+                <div class="hint">选择 PE 可执行文件（exe / dll / sys）与带代码签名 EKU 的证书进行签名，或验证已签名文件。支持 RSA / ECC / SM2（摘要分别用 SHA256 / SHA256 / SM3），证书表按 Microsoft PE/COFF 规范嵌入。</div>
+                <div class="row">
+                  <div style="grid-column:1/2"><label>选择文件</label><input type="file" id="sgExeFile" accept=".exe,.dll,.sys,.cab,.cat,.msi,application/octet-stream"></div>
+                  <div><label>签名证书（代码签名 EKU）</label><select id="sgExeCert" title="鼠标悬停查看证书简介"><option value="">（加载中...）</option></select></div>
+                  <div style="align-self:end"><button onclick="signExeDo()">签名</button></div>
+                  <div style="align-self:end"><button class="ghost" onclick="verifyExeDo()">验证签名</button></div>
+                </div>
+                <pre class="out" id="sgExeOut" style="max-height:52vh;overflow:auto;white-space:pre;font-family:var(--mono);font-size:12px;line-height:1.55"></pre>
+              </div>
+              <div class="card" style="margin-top:16px">
+                <h2>PDF 文档签名</h2>
+                <div class="hint">选择 PDF 文件与带文档签名 EKU 的证书进行签名，或验证已签名 PDF。证书筛选：微软文档签名 OID（1.3.6.1.4.1.311.10.3.12）或通用文档签名 OID（1.3.6.1.5.5.7.3.36）任一即可。标准 PKCS#7 detached（adbe.pkcs7.detached），支持 RSA / ECC / SM2。</div>
+                <div class="row">
+                  <div><label>选择文件</label><input type="file" id="sgPdfFile" accept=".pdf,application/pdf"></div>
+                  <div><label>签章图片（可选，png/jpg/bmp/gif）</label><input type="file" id="sgPdfImage" accept="image/png,image/jpeg,image/bmp,image/gif"></div>
+                  <div><label>签名证书（文档签名 EKU）</label><select id="sgPdfCert" title="鼠标悬停查看证书简介"><option value="">（加载中...）</option></select></div>
+                  <div style="align-self:end"><button onclick="signPdfDo()">签名</button></div>
+                  <div style="align-self:end"><button class="ghost" onclick="verifyPdfDo()">验证签名</button></div>
+                </div>
+                <pre class="out" id="sgPdfOut" style="max-height:52vh;overflow:auto;white-space:pre;font-family:var(--mono);font-size:12px;line-height:1.55"></pre>
+              </div>
+            </div>
+
             <!-- 初始化环境 -->
             <div class="page" id="page-init">
               <div class="card">
@@ -1571,7 +2653,7 @@ public final class WebAdmin {
                   <div class="cfg-field cfg-field-wide">
                     <label>CPS_Nonice <span class="cfg-tag">用户通告文本（支持多行）</span></label>
                     <textarea id="cfgCpsNonice" rows="5" spellcheck="false" placeholder="http://example.com/nonice"></textarea>
-                    <p class="cfg-hint">多行输入；保存到 CONFIG.txt 时换行自动以 \n 代替（单行存储）。</p>
+                    <p class="cfg-hint">多行输入；保存到 CONFIG.txt 时换行自动以 \\n 代替（单行存储）。</p>
                   </div>
                 </div>
                 <div style="margin-top:18px;display:flex;gap:10px;align-items:center">
@@ -1642,17 +2724,38 @@ public final class WebAdmin {
                 <select id="opReason"></select>
                 <pre class="out" id="opOut" style="margin-top:14px"></pre>
               </div>
-              <!-- 续签证书（占位） -->
+              <!-- 续签证书：保持公钥与扩展，仅更新生效/失效时间并 CA 重签 -->
               <div class="op-pane" id="opPaneRenew" style="display:none">
-                <p class="cfg-hint">续签证书功能开发中：将基于当前证书信息（相同 DN、相同密钥）重新签发一张新证书并自动吊销旧证书。</p>
+                <label>证书序列号（可输入，也可从下拉中选择）</label>
+                <input id="renewSerial" list="opSerialList" placeholder="输入或选择证书序列号" oninput="renewInfo()">
+                <div class="op-serial-info" id="renewInfoBox">未选择证书</div>
+                <div style="display:flex;gap:12px;margin-top:12px">
+                  <div style="flex:1">
+                    <label>生效时间（本地时间）</label>
+                    <input type="datetime-local" id="renewNotBefore" step="1">
+                  </div>
+                  <div style="flex:1">
+                    <label>失效时间（本地时间）</label>
+                    <input type="datetime-local" id="renewNotAfter" step="1">
+                  </div>
+                </div>
+                <div id="renewTests" style="margin-top:10px;font-size:13px;line-height:1.9"></div>
+                <pre class="out" id="renewOut" style="margin-top:14px"></pre>
               </div>
-              <!-- 密钥更换（占位） -->
+              <!-- 密钥更换：生成同类型新密钥对 → 测试 → CA 重签 → 替换旧文件 -->
               <div class="op-pane" id="opPaneKey" style="display:none">
-                <p class="cfg-hint">密钥更换功能开发中：将生成新密钥对并以相同 DN 重签证书，同时吊销旧证书。</p>
+                <label>证书序列号（可输入，也可从下拉中选择）</label>
+                <input id="keySerial" list="opSerialList" placeholder="输入或选择证书序列号" oninput="keyInfo()">
+                <div class="op-serial-info" id="keyInfoBox">未选择证书</div>
+                <div id="keyTests" style="margin-top:10px;font-size:13px;line-height:1.9"></div>
+                <pre class="out" id="keyOut" style="margin-top:14px"></pre>
               </div>
             </div>
             <div class="modal-foot" id="opFoot">
-              <button class="danger" onclick="doOpRevoke()">确认吊销</button>
+              <button class="danger" id="opFootRevoke" onclick="doOpRevoke()">确认吊销</button>
+              <button class="success" id="opFootRestore" onclick="doOpRestore()" style="display:none">恢复证书</button>
+              <button class="primary" id="opFootRenew" onclick="doOpRenew()" style="display:none">确认续签</button>
+              <button class="primary" id="opFootKey" onclick="doOpKey()" style="display:none">确认密钥更换</button>
               <button class="ghost" onclick="closeOp()">取消</button>
             </div>
           </div>
@@ -1722,11 +2825,13 @@ public final class WebAdmin {
           </div>
         </div>
 
+""";
+    private static final String PAGE_P2 = """
         <script>
         // ===== 工具 =====
         const $ = id => document.getElementById(id);
         const v = id => $(id).value.trim();
-        const TITLES = { dashboard:'仪表盘', certs:'证书库', makeroot:'签发根证书', signcert:'签发证书', revoke:'吊销证书', crl:'CRL 刷新', ocsp:'OCSP 签发', timestamp:'时间戳签发', verify:'证书验证', init:'初始化环境', config:'系统配置', logs:'操作日志' };
+        const TITLES = { dashboard:'仪表盘', certs:'证书库', makeroot:'签发根证书', signcert:'签发证书', revoke:'吊销证书', crl:'CRL 刷新', ocsp:'OCSP 签发', timestamp:'时间戳签发', verify:'证书验证', debug:'调试专区', sign:'签名专区', init:'初始化环境', config:'系统配置', logs:'操作日志' };
 
         async function api(path, body) {
           const opt = { method: body ? 'POST' : 'GET', headers: {} };
@@ -1760,6 +2865,123 @@ public final class WebAdmin {
           postForm(path, {}, 'dashOut');
         }
 
+        // ===== 调试专区：模拟 OCSP / 时间戳请求 =====
+        async function sendDebugOcsp() {
+          const out = $('dbgOcspOut');
+          out.hidden = false; out.className = 'out'; out.textContent = '正在构造标准 OCSP 请求并发送...';
+          try {
+            const r = await api('/api/debug/ocsp', {
+              serial: $('dbgOcspSerial').value.trim(),
+              hash: $('dbgOcspHash').value
+            });
+            out.className = 'out ' + (r.ok ? 'ok' : 'err');
+            out.textContent = r.message || '(无输出)';
+          } catch (e) {
+            out.className = 'out err';
+            out.textContent = '请求失败: ' + e;
+          }
+        }
+        async function sendDebugTsa() {
+          const out = $('dbgTsaOut');
+          out.hidden = false; out.className = 'out'; out.textContent = '正在构造标准 RFC3161 请求并发送...';
+          try {
+            const r = await api('/api/debug/tsa', { hash: $('dbgTsaHash').value });
+            out.className = 'out ' + (r.ok ? 'ok' : 'err');
+            out.textContent = r.message || '(无输出)';
+          } catch (e) {
+            out.className = 'out err';
+            out.textContent = '请求失败: ' + e;
+          }
+        }
+
+        // ===== 签名专区：微软代码签名 / PDF 文档签名 =====
+        async function loadSignCerts() {
+          try {
+            const re = await api('/api/signcerts?kind=exe');
+            const rp = await api('/api/signcerts?kind=pdf');
+            fillSignSel($('sgExeCert'), (re.data || []).length ? re.data : null, 'exe');
+            fillSignSel($('sgPdfCert'), (rp.data || []).length ? rp.data : null, 'pdf');
+          } catch (e) {
+            $('sgExeCert').innerHTML = '<option value="">（加载失败: ' + e + '）</option>';
+            $('sgPdfCert').innerHTML = '<option value="">（加载失败: ' + e + '）</option>';
+          }
+        }
+        function fillSignSel(sel, list, kind) {
+          if (!list) {
+            sel.innerHTML = '<option value="">（无可用证书）</option>';
+            return;
+          }
+          const hint = kind === 'exe' ? '代码签名 EKU' : '文档签名 EKU';
+          sel.innerHTML = '<option value="">（请选择 ' + hint + ' 证书）</option>';
+          list.forEach(c => {
+            const o = document.createElement('option');
+            o.value = c.serial;
+            o.textContent = c.serial + ' ｜ ' + (c.algo || '') + (c.bits ? ' ' + c.bits : '') + ' ｜ ' + c.dn;
+            o.title = '序列号: ' + c.serial + '\\n算法: ' + (c.algo || '') + (c.bits ? ' ' + c.bits + ' 位' : '') +
+              '\\n颁发者: ' + (c.issuer || '') + '\\n有效期: ' + (c.validFrom || '') + ' ~ ' + (c.validTo || '') +
+              '\\n状态: ' + (c.status === 'V' ? '正常' : c.status === 'R' ? '已吊销' : '未知') +
+              '\\nEKU: ' + ((c.ekus || []).join(', ') || '（无）') +
+              '\\nDN: ' + c.dn;
+            sel.appendChild(o);
+          });
+        }
+        async function signDo(url, fileInput, certSel, outId, isPdf) {
+          const f = fileInput.files[0];
+          const serial = certSel.value;
+          const out = $(outId);
+          if (!f) { out.hidden = false; out.className = 'out err'; out.textContent = '请先选择文件'; return; }
+          if (!serial) { out.hidden = false; out.className = 'out err'; out.textContent = '请先选择签名证书'; return; }
+          out.hidden = false; out.className = 'out'; out.textContent = '正在签名 ' + f.name + ' ...';
+          const fd = new FormData();
+          fd.append('serial', serial);
+          fd.append('name', f.name);
+          fd.append('file', f);
+          if (isPdf) {
+            const imgInput = $('sgPdfImage');
+            if (imgInput && imgInput.files && imgInput.files[0]) {
+              fd.append('image', imgInput.files[0]);
+            }
+          }
+          try {
+            const resp = await fetch(url, { method: 'POST', body: fd });
+            const r = await resp.json();
+            out.className = 'out ' + (r.ok ? 'ok' : 'err');
+            out.textContent = r.message || '(无输出)';
+            if (r.ok && r.b64) {
+              const a = document.createElement('a');
+              a.href = 'data:application/octet-stream;base64,' + r.b64;
+              a.download = r.name || ('signed_' + f.name);
+              a.textContent = ' ⬇ 下载签名后文件';
+              a.style.marginLeft = '12px'; a.style.fontWeight = '700';
+              out.appendChild(a);
+            }
+          } catch (e) {
+            out.className = 'out err';
+            out.textContent = '请求失败: ' + e;
+          }
+        }
+        async function verifyDo(url, fileInput, outId) {
+          const f = fileInput.files[0];
+          const out = $(outId);
+          if (!f) { out.hidden = false; out.className = 'out err'; out.textContent = '请先选择文件'; return; }
+          out.hidden = false; out.className = 'out'; out.textContent = '正在验证 ' + f.name + ' ...';
+          const fd = new FormData();
+          fd.append('file', f);
+          try {
+            const resp = await fetch(url, { method: 'POST', body: fd });
+            const r = await resp.json();
+            out.className = 'out ' + (r.ok ? 'ok' : 'err');
+            out.textContent = r.message || '(无输出)';
+          } catch (e) {
+            out.className = 'out err';
+            out.textContent = '请求失败: ' + e;
+          }
+        }
+        function signExeDo() { signDo('/api/sign/exe', $('sgExeFile'), $('sgExeCert'), 'sgExeOut', false); }
+        function verifyExeDo() { verifyDo('/api/verify/exe', $('sgExeFile'), 'sgExeOut'); }
+        function signPdfDo() { signDo('/api/sign/pdf', $('sgPdfFile'), $('sgPdfCert'), 'sgPdfOut', true); }
+        function verifyPdfDo() { verifyDo('/api/verify/pdf', $('sgPdfFile'), 'sgPdfOut'); }
+
         // ===== 页面切换 =====
         document.querySelectorAll('#nav a').forEach(a => {
           a.onclick = () => {
@@ -1772,7 +2994,8 @@ public final class WebAdmin {
             if (p === 'dashboard') loadStatus();
             if (p === 'certs') { loadCerts(); loadIssuers(); }
             if (p === 'config') loadConfig();
-            if (p === 'logs') loadLogs();          };
+            if (p === 'logs') loadLogs();
+            if (p === 'sign') loadSignCerts();          };
         });
 
         // ===== 仪表盘 =====
@@ -1924,30 +3147,62 @@ public final class WebAdmin {
         const OP_REASONS = [['0','未指定'],['1','密钥泄露'],['2','CA泄露'],['3','从属关系变更'],['4','证书超期'],['5','停止运营'],['6','证书吊销'],['8','从CRL移除'],['9','其他']];
         function openOp(serial) {
           $('opSerial').value = serial || '';
+          $('keySerial').value = serial || '';
+          $('renewSerial').value = serial || '';
+          // 续签默认：生效=当前时间，失效=一年后（可自行修改）
+          const now = new Date();
+          const pad = n => String(n).padStart(2, '0');
+          const fmt = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+          const oneYear = new Date(now.getTime());
+          oneYear.setFullYear(oneYear.getFullYear() + 1);
+          $('renewNotBefore').value = fmt(now);
+          $('renewNotAfter').value = fmt(oneYear);
           $('opSerialList').innerHTML = certData.map(e => '<option value="' + esc(e.serial) + '"></option>').join('');
           const sel = $('opReason');
           sel.innerHTML = OP_REASONS.map(r => '<option value="' + r[0] + '">' + r[0] + ' - ' + r[1] + '</option>').join('');
           sel.value = '0';
           $('opOut').textContent = '';
           $('opOut').hidden = true;
+          $('keyOut').textContent = '';
+          $('keyOut').hidden = true;
+          $('keyTests').innerHTML = '';
+          $('renewOut').textContent = '';
+          $('renewOut').hidden = true;
+          $('renewTests').innerHTML = '';
           switchOp('revoke');
           $('opModal').style.display = 'flex';
           opInfo();
+          keyInfo();
+          renewInfo();
         }
         function closeOp() { $('opModal').style.display = 'none'; }
-        // 分组切换：吊销有实际功能；续签/密钥更换仅前端占位
+        // 分组切换：吊销（含恢复）/ 续签 / 密钥更换均有实际功能
         function switchOp(tab) {
           ['revoke', 'renew', 'key'].forEach(t => {
             const cap = t[0].toUpperCase() + t.slice(1);
             $('opTab' + cap).classList.toggle('active', t === tab);
             $('opPane' + cap).style.display = t === tab ? '' : 'none';
           });
-          $('opFoot').style.display = tab === 'revoke' ? '' : 'none';
+          $('opFootRevoke').style.display = tab === 'revoke' ? '' : 'none';
+          $('opFootRestore').style.display = tab === 'revoke' ? '' : 'none';
+          $('opFootRenew').style.display = tab === 'renew' ? '' : 'none';
+          $('opFootKey').style.display = tab === 'key' ? '' : 'none';
+          if (tab === 'key') keyInfo();
+          if (tab === 'renew') renewInfo();
         }
         // 序列号输入/选择后：显示证书简要信息（同仪表盘证书链悬浮窗数据）
         function opInfo() {
-          const s = $('opSerial').value.trim().toLowerCase();
-          const box = $('opSerialInfo');
+          renderCertInfo($('opSerialInfo'), $('opSerial').value.trim().toLowerCase());
+        }
+        // 密钥更换分组的序列号简要信息
+        function keyInfo() {
+          renderCertInfo($('keyInfoBox'), $('keySerial').value.trim().toLowerCase());
+        }
+        // 续签分组的序列号简要信息
+        function renewInfo() {
+          renderCertInfo($('renewInfoBox'), $('renewSerial').value.trim().toLowerCase());
+        }
+        function renderCertInfo(box, s) {
           if (!s) { box.innerHTML = '<span style="color:var(--dim)">未选择证书</span>'; return; }
           const n = issuerMap[s];
           if (n) {
@@ -1974,6 +3229,38 @@ public final class WebAdmin {
           const s = $('opSerial').value.trim();
           if (!s) { $('opOut').hidden = false; showOut('opOut', '请先输入证书序列号', false); return; }
           await postForm('/api/revoke', { serial: s, reason: $('opReason').value }, 'opOut');
+          loadCerts();
+          loadIssuers();
+        }
+        // 恢复证书：调用 /api/restore（R→V、原因 0，同步刷新 CRL）
+        async function doOpRestore() {
+          const s = $('opSerial').value.trim();
+          if (!s) { $('opOut').hidden = false; showOut('opOut', '请先输入证书序列号', false); return; }
+          $('opOut').hidden = false;
+          $('opOut').textContent = '正在恢复证书并刷新 CRL...';
+          await postForm('/api/restore', { serial: s }, 'opOut');
+          loadCerts();
+          loadIssuers();
+        }
+        // 确认密钥更换：调用 /api/rekey（生成新密钥对 → 测试 → CA 重签 → 替换文件）
+        async function doOpKey() {
+          const s = $('keySerial').value.trim();
+          if (!s) { $('keyOut').hidden = false; showOut('keyOut', '请先输入证书序列号', false); return; }
+          $('keyTests').innerHTML = '<div class="kv" style="color:var(--dim)">正在生成新密钥对并执行加解密 / 签名验签测试...</div>';
+          await postForm('/api/rekey', { serial: s }, 'keyOut');
+          loadCerts();
+          loadIssuers();
+        }
+        // 确认续签：调用 /api/renew（更新生效/失效时间 → CA 重签 → 替换文件）
+        async function doOpRenew() {
+          const s = $('renewSerial').value.trim();
+          if (!s) { $('renewOut').hidden = false; showOut('renewOut', '请先输入证书序列号', false); return; }
+          const nb = $('renewNotBefore').value;
+          const na = $('renewNotAfter').value;
+          if (!nb || !na) { $('renewOut').hidden = false; showOut('renewOut', '请选择生效时间和失效时间', false); return; }
+          if (nb >= na) { $('renewOut').hidden = false; showOut('renewOut', '失效时间必须晚于生效时间', false); return; }
+          $('renewTests').innerHTML = '<div class="kv" style="color:var(--dim)">正在按新时间重建 TBS 并由颁发者 CA 重签...</div>';
+          await postForm('/api/renew', { serial: s, notBefore: nb, notAfter: na }, 'renewOut');
           loadCerts();
           loadIssuers();
         }
@@ -2051,8 +3338,6 @@ public final class WebAdmin {
           }
           h += '<span class="t-box" data-tip="' + esc(tipHtml(n)) + '"><span class="t-badge ' + n.type + '">' + n.type + '</span>' +
             '<span class="t-kind">' + typeName(n.type) + kind + '</span>' + esc(n.dn || n.serial) +
-""";
-    private static final String PAGE_P2 = """
             ' <span class="t-st ' + n.status + '">' + (n.status === 'V' ? '● 正常' : n.status === 'R' ? '● 已吊销' : '● 未知') + '</span></span>';
           h += '</div>';
           h += '</div>';

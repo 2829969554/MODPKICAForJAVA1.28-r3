@@ -112,8 +112,7 @@ public class CertsDB {
         load(baseDir);
     }
 
-    /**
-     * 按序列号查找条目。
+    /** 按序列号查找条目。
      *
      * @param serial 证书序列号
      * @return 命中的条目，未命中返回 null

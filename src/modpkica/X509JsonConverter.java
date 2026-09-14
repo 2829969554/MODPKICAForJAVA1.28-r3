@@ -15,6 +15,7 @@ import java.nio.file.*;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.KeyFactory;
+import java.security.MessageDigest;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
@@ -1026,6 +1027,188 @@ public class X509JsonConverter {
         Map<String, Object> root = (Map<String, Object>) new JsonParser(json).parse();
         KeyPair kp = hexToKeyPair(privKeyHex, pubKeyHex);
         return doRekey(root, kp);
+    }
+
+    /**
+     * 密钥更换（CA 重签版，WebAdmin 证书库「密钥更换」使用）：
+     * 用新公钥替换 subjectPublicKeyInfo.publicKey → 重建 TBSCertificate →
+     * 用<b>颁发者（CA/根）私钥</b>对 TBS 签名 → 写回 signatureValue →
+     * 组装 Certificate → 输出 PEM。
+     *
+     * <p>签名算法保持 JSON 中 signature.algorithm 的 OID（即原颁发者的签名算法）。
+     * RSA / ECC 走 JCA {@link Signature}；SM2 走 {@link Sm2Util#sm2Sign}
+     * （GB/T 32918 含 ZA 计算，避免 JCA "SM3withSM2" 对 ZA 的处理差异）。
+     *
+     * @param json           证书 JSON（X509JsonConverter 格式）
+     * @param newKp          新生成的同类型密钥对
+     * @param issuerKey      颁发者（CA/根）私钥
+     * @param issuerKeyType  "RSA" / "ECC" / "SM2"
+     * @return 新证书 PEM（byte[]）
+     */
+    @SuppressWarnings("unchecked")
+    public static byte[] rekeyJsonToPemByIssuer(String json, KeyPair newKp,
+                                                PrivateKey issuerKey, String issuerKeyType) throws Exception {
+        Map<String, Object> root = (Map<String, Object>) new JsonParser(json).parse();
+        Map<String, Object> spkiMap = (Map<String, Object>) root.get("subjectPublicKeyInfo");
+
+        // 1) 新公钥 BIT STRING 写回 JSON
+        SubjectPublicKeyInfo newSpki = SubjectPublicKeyInfo.getInstance(newKp.getPublic().getEncoded());
+        spkiMap.put("publicKey", toHex(newSpki.getPublicKeyData().getBytes()));
+
+        // 1.5) SubjectKeyIdentifier(2.5.29.14) 基于新公钥重算（RFC 5280 4.2.1.2 方法一：
+        //      SHA-1 哈希 subjectPublicKey BIT STRING 内容），否则扩展仍是旧公钥的 SKI。
+        Map<String, Object> exts = (Map<String, Object>) root.get("extensions");
+        if (exts != null) {
+            Object skiObj = exts.get("2.5.29.14");
+            if (skiObj instanceof Map) {
+                byte[] skiHash = MessageDigest.getInstance("SHA-1")
+                        .digest(newSpki.getPublicKeyData().getBytes());
+                ((Map<String, Object>) skiObj).put("keyIdentifier", toHex(skiHash));
+            }
+        }
+
+        // 2) 重建 TBS → 用颁发者私钥签名 → 组装 Certificate → PEM
+        return buildAndSignCert(root, issuerKey, issuerKeyType);
+    }
+
+    /**
+     * 续签证书（CA 重签版，WebAdmin 证书库「续签」使用）：
+     * 保持原公钥与原扩展，仅将 validity 的 notBefore / notAfter 更新为新时间，
+     * 重建 TBSCertificate → 用<b>颁发者（CA/根）私钥</b>签名 → 写回 signatureValue →
+     * 组装 Certificate → 输出 PEM。
+     *
+     * @param json           证书 JSON（X509JsonConverter 格式）
+     * @param notBefore      新生效时间（UTC）
+     * @param notAfter       新失效时间（UTC）
+     * @param issuerKey      颁发者（CA/根）私钥
+     * @param issuerKeyType  "RSA" / "ECC" / "SM2"
+     * @return 续签后证书 PEM（byte[]）
+     */
+    public static byte[] renewJsonToPemByIssuer(String json, Date notBefore, Date notAfter,
+                                                PrivateKey issuerKey, String issuerKeyType) throws Exception {
+        Map<String, Object> root = (Map<String, Object>) new JsonParser(json).parse();
+
+        // 1) 更新有效期（同时更新 value / type / raw，buildTime 优先使用 raw）
+        Map<String, Object> validity = (Map<String, Object>) root.get("validity");
+        if (validity == null) {
+            throw new IllegalArgumentException("JSON 缺少 validity 字段");
+        }
+        updateValidityTime((Map<String, Object>) validity.get("notBefore"), notBefore);
+        updateValidityTime((Map<String, Object>) validity.get("notAfter"), notAfter);
+
+        // 2) 重建 TBS → 用颁发者私钥签名 → 组装 Certificate → PEM
+        return buildAndSignCert(root, issuerKey, issuerKeyType);
+    }
+
+    /**
+     * 将 JSON 中某个 Time 节点更新为新时间：同步刷新 value（ISO）、type 与 raw（DER hex）。
+     * 新时间跨过 2049 年时强制转 GeneralizedTime（UTCTime 仅能表示 1950-2049）。
+     */
+    static void updateValidityTime(Map<String, Object> tm, Date date) throws Exception {
+        if (tm == null || date == null) {
+            return;
+        }
+        SimpleDateFormat sdfIso = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+        sdfIso.setTimeZone(TimeZone.getTimeZone("UTC"));
+        tm.put("value", sdfIso.format(date));
+        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+        cal.setTime(date);
+        boolean gen = cal.get(Calendar.YEAR) >= 2050
+                || "GeneralizedTime".equals(tm.get("type"));
+        ASN1Primitive node = gen ? new ASN1GeneralizedTime(date) : new ASN1UTCTime(date);
+        tm.put("type", gen ? "GeneralizedTime" : "UTCTime");
+        tm.put("raw", toHex(node.getEncoded()));
+    }
+
+    /** 共用：重建 TBSCertificate → 颁发者私钥签名 → 写回 signatureValue → 组装 Certificate → PEM。 */
+    @SuppressWarnings("unchecked")
+    private static byte[] buildAndSignCert(Map<String, Object> root,
+                                           PrivateKey issuerKey, String issuerKeyType) throws Exception {
+        DERSequence tbsSeq = buildTBSCertificate(root);
+        byte[] tbsDer = tbsSeq.getEncoded(ASN1Encoding.DER);
+
+        // 用颁发者私钥签名（保持原签名算法 OID；SM2 走国密 ZA 流程）
+        String sigAlgOid = (String) ((Map<String, Object>) root.get("signature")).get("algorithm");
+        byte[] signature;
+        if ("SM2".equalsIgnoreCase(issuerKeyType)) {
+            signature = Sm2Util.sm2Sign(Sm2Util.toEcPrivateParams(issuerKey), tbsDer);
+        } else {
+            Signature sig = Signature.getInstance(
+                    sigAlgOidToJcaName(sigAlgOid), BouncyCastleProvider.PROVIDER_NAME);
+            sig.initSign(issuerKey, new SecureRandom());
+            sig.update(tbsDer);
+            signature = sig.sign();
+        }
+
+        // 写回 signatureValue（unusedBits 恒为 0）
+        root.put("signatureValue", toHex(signature));
+        root.remove("signatureValueUnusedBits");
+
+        // 组装 Certificate 并输出 PEM
+        AlgorithmIdentifier sigAlgId = buildAlgId((Map<String, Object>) root.get("signatureAlgorithm"));
+        DERBitString sigValue = new DERBitString(signature, 0);
+        ASN1EncodableVector cv = new ASN1EncodableVector();
+        cv.add(tbsSeq);
+        cv.add(sigAlgId);
+        cv.add(sigValue);
+        byte[] certDer = new DERSequence(cv).getEncoded(ASN1Encoding.DER);
+        return derToPem(certDer).getBytes(StandardCharsets.UTF_8);
+    }
+
+    /**
+     * 从证书 JSON 生成同类型新密钥对（供 WebAdmin 密钥更换调用）。
+     * 算法识别自 subjectPublicKeyInfo.algorithm.algorithm 的 OID。
+     */
+    @SuppressWarnings("unchecked")
+    public static KeyPair generateKeyPairFromJson(String json) throws Exception {
+        Map<String, Object> root = (Map<String, Object>) new JsonParser(json).parse();
+        Map<String, Object> spkiMap = (Map<String, Object>) root.get("subjectPublicKeyInfo");
+        Map<String, Object> algMap = (Map<String, Object>) spkiMap.get("algorithm");
+        String keyAlgOid = (String) algMap.get("algorithm");
+        return generateKeyPair(keyAlgOid, spkiMap);
+    }
+
+    /**
+     * 从证书 JSON 识别密钥算法类型名：RSA / ECC / SM2（供 WebAdmin 密钥更换调用）。
+     * 注意：SM2 证书的 SPKI 算法 OID 是 ecPublicKey(1.2.840.10045.2.1)，
+     * SM2 曲线在 algorithm.parameters（hex 编码的 OID 1.2.156.10197.1.301）里，
+     * 必须按曲线判定，否则会把 SM2 误判为普通 ECC。
+     */
+    @SuppressWarnings("unchecked")
+    public static String keyTypeFromJson(String json) throws Exception {
+        Map<String, Object> root = (Map<String, Object>) new JsonParser(json).parse();
+        Map<String, Object> spkiMap = (Map<String, Object>) root.get("subjectPublicKeyInfo");
+        Map<String, Object> algMap = (Map<String, Object>) spkiMap.get("algorithm");
+        String oid = (String) algMap.get("algorithm");
+        if ("1.2.840.10045.2.1".equals(oid)) { // ecPublicKey：看曲线参数
+            String curve = curveOidFromParams(algMap.get("parameters"));
+            if (curve != null && (curve.contains("1.2.156.10197.1.301")
+                    || "sm2p256v1".equalsIgnoreCase(curve))) {
+                return "SM2";
+            }
+            return "ECC";
+        }
+        switch (oid) {
+            case "1.2.840.113549.1.1.1": return "RSA";
+            case "1.2.156.10197.1.301":  return "SM2";
+            default: return keyAlgOidToJcaName(oid);
+        }
+    }
+
+    /** 从 SPKI algorithm.parameters 提取曲线 OID（parameters 为 DER OID 的 hex 或名称）。 */
+    private static String curveOidFromParams(Object params) {
+        if (params == null) {
+            return null;
+        }
+        String s = String.valueOf(params);
+        if (s.isEmpty() || "NULL".equalsIgnoreCase(s)) {
+            return null;
+        }
+        try {
+            return ASN1ObjectIdentifier.getInstance(fromHex(s)).getId();
+        } catch (Exception e) {
+            return s; // 可能是曲线名称文本
+        }
     }
 
     /** rekey 内部共用逻辑：替换公钥 → 构建 TBS → 签名 → 组装证书 */

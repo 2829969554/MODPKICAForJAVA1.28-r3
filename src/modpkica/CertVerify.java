@@ -453,46 +453,81 @@ public final class CertVerify {
         System.out.println((isCritical ? "(关键) " : "") + oid + ":\n        " + hex(value) + "\n");
     }
 
-    /** 解析并打印 SCT 列表（结构对齐 Go 版 internal/ct SCT2ParseSCTList）。 */
+    /**
+     * 解析并打印 SCT 列表（RFC 6962 TLS 编码）。
+     *
+     * <p>结构（与权威解析工具 X509JsonConverter.parseSCTList/parseSCT 一致）：
+     * SCTList = uint16 totalLen + [uint16 sctLen + SerializedSCT]*；
+     * SerializedSCT = version(1) + log_id(32) + timestamp(8) +
+     * extensions(uint16+data) + hash_alg(1) + sig_alg(1) + signature(uint16+data)。
+     */
     private static void printSctList(byte[] value) {
-        // 跳过 ASN.1 的 OCTET STRING 外层：找 0x82 长度头，取其后数据
-        int idx = indexOf(value, new byte[]{(byte) 0x82});
-        if (idx < 0) {
+        // 扩展值是双重 OCTET STRING（BC addExtension 会再包一层；权威工具
+        // X509JsonConverter 用 ext.getParsedValue() 解内层）。循环解开 0x04 外壳（最多 2 层）
+        byte[] tls = value;
+        for (int i = 0; i < 2 && tls != null && tls.length > 0 && (tls[0] & 0xff) == 0x04; i++) {
+            byte[] inner = unwrapOctets(tls);
+            if (inner == tls) {
+                break;
+            }
+            tls = inner;
+        }
+        if (tls == null || tls.length < 2) {
             System.out.println(hex(value));
             return;
         }
-        byte[] data = java.util.Arrays.copyOfRange(value, idx + 3, value.length);
-        int pos = 0;
+        int totalLen = ((tls[0] & 0xff) << 8) | (tls[1] & 0xff);
+        int pos = 2;
+        int end = Math.min(pos + totalLen, tls.length);
         int no = 1;
-        while (pos + 4 <= data.length) {
-            int len = ((data[pos] & 0xff) << 8) | (data[pos + 1] & 0xff);
-            if (pos + 2 + len > data.length) {
+        boolean parsedAny = false;
+        while (pos + 2 <= end) {
+            int sctLen = ((tls[pos] & 0xff) << 8) | (tls[pos + 1] & 0xff);
+            pos += 2;
+            if (sctLen < 47 || pos + sctLen > end) {
+                break; // 结构异常，退出循环
+            }
+            int s = pos;
+            int version = tls[s] & 0xff;
+            byte[] logId = java.util.Arrays.copyOfRange(tls, s + 1, s + 33);
+            long timestamp = 0;
+            for (int i = 0; i < 8; i++) {
+                timestamp = (timestamp << 8) | (tls[s + 33 + i] & 0xff);
+            }
+            int p = s + 41; // extensions 字段
+            int extLen = ((tls[p] & 0xff) << 8) | (tls[p + 1] & 0xff);
+            p += 2;
+            byte[] extensions = extLen > 0
+                    ? java.util.Arrays.copyOfRange(tls, p, p + extLen) : new byte[0];
+            p += extLen;
+            if (p + 4 > s + sctLen) {
                 break;
             }
-            int start = pos + 2;
-            if (data[start] == 0) {
-                // version V1
-                int version = data[start] & 0xff;
-                byte[] logId = java.util.Arrays.copyOfRange(data, start + 1, start + 33);
-                long timestamp = 0;
-                for (int i = 0; i < 8; i++) {
-                    timestamp = (timestamp << 8) | (data[start + 33 + i] & 0xff);
-                }
-                int hash = data[start + 43] & 0xff;
-                int sigType = data[start + 44] & 0xff;
-                int sigLen = data[start + 45] & 0xff;
-                byte[] signature = java.util.Arrays.copyOfRange(
-                        data, start + 46, start + 46 + sigLen);
-                System.out.println("      第 " + no + " 条 SCT:");
-                System.out.println("        日志版本:  V" + (version + 1));
-                System.out.println("      日志标识符:  " + hex(logId));
-                System.out.println("          时间戳:  " + new Date(timestamp));
-                System.out.println("        签名类型:  " + sigName(hash, sigType));
-                System.out.println("            签名:  " + hex(signature));
-                System.out.println("");
+            int hash = tls[p++] & 0xff;
+            int sigType = tls[p++] & 0xff;
+            int sigLen = ((tls[p] & 0xff) << 8) | (tls[p + 1] & 0xff);
+            p += 2;
+            if (p + sigLen > s + sctLen) {
+                break;
             }
-            pos = start + len;
+            byte[] signature = java.util.Arrays.copyOfRange(tls, p, p + sigLen);
+            System.out.println("      第 " + no + " 条 SCT:");
+            System.out.println("        日志版本:  V" + (version + 1));
+            System.out.println("      日志标识符:  " + hex(logId));
+            System.out.println("          时间戳:  " + new Date(timestamp));
+            if (extLen > 0) {
+                System.out.println("        扩展数据:  " + hex(extensions));
+            }
+            System.out.println("        签名类型:  " + sigName(hash, sigType));
+            System.out.println("            签名:  " + hex(signature));
+            System.out.println("");
+            pos = s + sctLen;
+            parsedAny = true;
             no++;
+        }
+        if (!parsedAny) {
+            // 一条都未解析出来（格式异常）：退回打印原始 hex
+            System.out.println(hex(value));
         }
     }
 
