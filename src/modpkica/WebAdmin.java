@@ -1866,17 +1866,41 @@ public final class WebAdmin {
             String op;
             if (pdf) {
                 byte[] image = f.get("image");
-                result = SignTool.signPdf(fileBytes, keyType, cert, key, chain, image);
+                String sealType = new String(f.getOrDefault("sealType", new byte[0]),
+                        StandardCharsets.UTF_8).trim();
+                if (sealType.isEmpty()) {
+                    sealType = "ADOBE";
+                }
+                String tsUrl = new String(f.getOrDefault("tsUrl", new byte[0]),
+                        StandardCharsets.UTF_8).trim();
+                result = SignTool.signPdf(fileBytes, keyType, cert, key, chain, image,
+                        sealType, tsUrl);
+                String sealLabel = "ADOBE".equalsIgnoreCase(sealType) ? "Adobe 标准文档签名"
+                        : "GM38540".equalsIgnoreCase(sealType) ? "国密 GB/T 38540-2020"
+                        : "GM0031".equalsIgnoreCase(sealType) ? "国密 GM/T 0031-2025"
+                        : "国密 GB/T 35275-2017";
                 op = "PDF 文档签名\n"
+                        + "  签章类型: " + sealLabel + "\n"
                         + "  签章: " + (image != null && image.length > 0
-                        ? "已附加可见签章（" + image.length + "B 图片）" : "无（不可见签名）");
+                        ? "已附加可见签章（" + image.length + "B 图片）" : "无（不可见签名）") + "\n"
+                        + "  时间戳地址: " + (tsUrl.isEmpty() ? "（本机 MAIN /rfc3161 默认）" : tsUrl);
             } else {
                 if (fileName.isEmpty()) {
                     fileName = "file.bin";
                 }
+                String tsType = new String(f.getOrDefault("tsType", new byte[0]),
+                        StandardCharsets.UTF_8).trim();
+                if (tsType.isEmpty()) {
+                    tsType = "RFC3161";
+                }
+                String tsUrl = new String(f.getOrDefault("tsUrl", new byte[0]),
+                        StandardCharsets.UTF_8).trim();
                 SignTool.lastTsInfo = "未请求";
-                result = SignTool.signExe(fileBytes, keyType, cert, key, chain, base);
+                result = SignTool.signExe(fileBytes, keyType, cert, key, chain, base,
+                        tsType, tsUrl);
                 op = "微软代码签名（Authenticode）\n"
+                        + "  时间戳类型: " + tsType + "\n"
+                        + "  时间戳地址: " + (tsUrl.isEmpty() ? "（本机 MAIN 默认）" : tsUrl) + "\n"
                         + "  时间戳: " + SignTool.lastTsInfo;
             }
             String out = op + "\n"
@@ -2577,10 +2601,23 @@ public final class WebAdmin {
             <div class="page" id="page-sign">
               <div class="card">
                 <h2>微软代码签名（Authenticode）</h2>
-                <div class="hint">选择 PE 可执行文件（exe / dll / sys）与带代码签名 EKU 的证书进行签名，或验证已签名文件。支持 RSA / ECC / SM2（摘要分别用 SHA256 / SHA256 / SM3），证书表按 Microsoft PE/COFF 规范嵌入。</div>
+                <div class="hint">选择 PE 可执行文件（exe / dll / sys）与带代码签名 EKU 的证书进行签名，或验证已签名文件。支持 RSA / ECC / SM2（摘要分别用 SHA256 / SHA256 / SM3），证书表按 Microsoft PE/COFF 规范嵌入。时间戳类型可选 RFC3161（标准 TimeStampToken）或 Authenticode（微软老式 PKCS#7）；地址可指向本机 MAIN（留空）或任意外部 TSA。</div>
                 <div class="row">
                   <div style="grid-column:1/2"><label>选择文件</label><input type="file" id="sgExeFile" accept=".exe,.dll,.sys,.cab,.cat,.msi,application/octet-stream"></div>
                   <div><label>签名证书（代码签名 EKU）</label><select id="sgExeCert" title="鼠标悬停查看证书简介"><option value="">（加载中...）</option></select></div>
+                  <div><label>时间戳类型</label><select id="sgExeTsType">
+                    <option value="RFC3161" selected>RFC3161（标准）</option>
+                    <option value="AUTHENTICODE">Authenticode（老式 PKCS#7）</option>
+                  </select></div>
+                  <div style="grid-column:1/2"><label>时间戳请求地址（留空 = 本机 MAIN）</label>
+                    <input id="sgExeTsUrl" list="tsUrlList" placeholder="http://timestamp.digicert.com" spellcheck="false">
+                    <datalist id="tsUrlList">
+                      <option value="http://timestamp.digicert.com">
+                      <option value="http://sha256timestamp.ws.symantec.com/sha256/">
+                      <option value="http://timestamp.comodoca.com">
+                      <option value="http://time.certum.pl">
+                    </datalist>
+                  </div>
                   <div style="align-self:end"><button onclick="signExeDo()">签名</button></div>
                   <div style="align-self:end"><button class="ghost" onclick="verifyExeDo()">验证签名</button></div>
                 </div>
@@ -2588,11 +2625,26 @@ public final class WebAdmin {
               </div>
               <div class="card" style="margin-top:16px">
                 <h2>PDF 文档签名</h2>
-                <div class="hint">选择 PDF 文件与带文档签名 EKU 的证书进行签名，或验证已签名 PDF。证书筛选：微软文档签名 OID（1.3.6.1.4.1.311.10.3.12）或通用文档签名 OID（1.3.6.1.5.5.7.3.36）任一即可。标准 PKCS#7 detached（adbe.pkcs7.detached），支持 RSA / ECC / SM2。</div>
+                <div class="hint">选择 PDF 文件与带文档签名 EKU 的证书进行签名，或验证已签名 PDF。证书筛选：微软文档签名 OID（1.3.6.1.4.1.311.10.3.12）或通用文档签名 OID（1.3.6.1.5.5.7.3.36）任一即可。<br>签章类型：Adobe 标准文档签名（adbe.pkcs7.detached，RSA/ECC/SM2 均可）；国密 GB/T 35275-2017（GM.sm2cms.detached，仅 SM2 证书）；国密 GB/T 38540-2020（GM.sm2seal SES_Signature，仅 SM2 证书，需签章图片）；国密 GM/T 0031-2025（安全电子签章密码技术规范，GM.sm2seal 两层 SES_Signature，仅 SM2 证书，需签章图片）。</div>
                 <div class="row">
                   <div><label>选择文件</label><input type="file" id="sgPdfFile" accept=".pdf,application/pdf"></div>
-                  <div><label>签章图片（可选，png/jpg/bmp/gif）</label><input type="file" id="sgPdfImage" accept="image/png,image/jpeg,image/bmp,image/gif"></div>
+                  <div><label>签章图片（png/jpg/bmp/gif）</label><input type="file" id="sgPdfImage" accept="image/png,image/jpeg,image/bmp,image/gif"></div>
                   <div><label>签名证书（文档签名 EKU）</label><select id="sgPdfCert" title="鼠标悬停查看证书简介"><option value="">（加载中...）</option></select></div>
+                  <div><label>签章类型</label><select id="sgPdfSeal">
+                    <option value="ADOBE" selected>Adobe 标准文档签名</option>
+                    <option value="GM35275">国密 GB/T 35275-2017</option>
+                    <option value="GM38540">国密 GB/T 38540-2020</option>
+                    <option value="GM0031">国密 GM/T 0031-2025</option>
+                  </select></div>
+                  <div style="grid-column:1/3"><label>时间戳请求地址（留空 = 本机 MAIN；国密 38540 无标准时间戳扩展）</label>
+                    <input id="sgPdfTsUrl" list="tsUrlListPdf" placeholder="http://timestamp.digicert.com" spellcheck="false">
+                    <datalist id="tsUrlListPdf">
+                      <option value="http://timestamp.digicert.com">
+                      <option value="http://sha256timestamp.ws.symantec.com/sha256/">
+                      <option value="http://timestamp.comodoca.com">
+                      <option value="http://time.certum.pl">
+                    </datalist>
+                  </div>
                   <div style="align-self:end"><button onclick="signPdfDo()">签名</button></div>
                   <div style="align-self:end"><button class="ghost" onclick="verifyPdfDo()">验证签名</button></div>
                 </div>
@@ -2925,7 +2977,7 @@ public final class WebAdmin {
             sel.appendChild(o);
           });
         }
-        async function signDo(url, fileInput, certSel, outId, isPdf) {
+        async function signDo(url, fileInput, certSel, outId, isPdf, tsTypeId, tsUrlId, sealId) {
           const f = fileInput.files[0];
           const serial = certSel.value;
           const out = $(outId);
@@ -2941,7 +2993,11 @@ public final class WebAdmin {
             if (imgInput && imgInput.files && imgInput.files[0]) {
               fd.append('image', imgInput.files[0]);
             }
+            if (sealId) fd.append('sealType', $(sealId).value);
+          } else if (tsTypeId) {
+            fd.append('tsType', $(tsTypeId).value);
           }
+          if (tsUrlId) fd.append('tsUrl', $(tsUrlId).value);
           try {
             const resp = await fetch(url, { method: 'POST', body: fd });
             const r = await resp.json();
@@ -2977,9 +3033,9 @@ public final class WebAdmin {
             out.textContent = '请求失败: ' + e;
           }
         }
-        function signExeDo() { signDo('/api/sign/exe', $('sgExeFile'), $('sgExeCert'), 'sgExeOut', false); }
+        function signExeDo() { signDo('/api/sign/exe', $('sgExeFile'), $('sgExeCert'), 'sgExeOut', false, 'sgExeTsType', 'sgExeTsUrl', null); }
         function verifyExeDo() { verifyDo('/api/verify/exe', $('sgExeFile'), 'sgExeOut'); }
-        function signPdfDo() { signDo('/api/sign/pdf', $('sgPdfFile'), $('sgPdfCert'), 'sgPdfOut', true); }
+        function signPdfDo() { signDo('/api/sign/pdf', $('sgPdfFile'), $('sgPdfCert'), 'sgPdfOut', true, null, 'sgPdfTsUrl', 'sgPdfSeal'); }
         function verifyPdfDo() { verifyDo('/api/verify/pdf', $('sgPdfFile'), 'sgPdfOut'); }
 
         // ===== 页面切换 =====

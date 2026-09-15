@@ -1,6 +1,9 @@
 package modpkica;
 
+import org.bouncycastle.asn1.ASN1Boolean;
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1GeneralizedTime;
+import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
@@ -9,26 +12,38 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERBitString;
+import org.bouncycastle.asn1.DERGeneralizedTime;
+import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.asn1.DERUTCTime;
+import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.cms.Attribute;
+import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.CMSAttributes;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.Extensions;
+import org.bouncycastle.asn1.ocsp.OCSPObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaCertStore;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
+import org.bouncycastle.cert.ocsp.CertificateID;
+import org.bouncycastle.cert.ocsp.OCSPReqBuilder;
 import org.bouncycastle.cms.CMSProcessableByteArray;
 import org.bouncycastle.cms.CMSSignedData;
 import org.bouncycastle.cms.CMSSignedDataGenerator;
 import org.bouncycastle.cms.CMSTypedData;
+import org.bouncycastle.cms.DefaultSignedAttributeTableGenerator;
 import org.bouncycastle.cms.SignerInformation;
 import org.bouncycastle.cms.SignerInformationStore;
 import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoVerifierBuilder;
+import org.bouncycastle.cms.jcajce.JcaSignerInfoGeneratorBuilder;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.cms.SignerInfoGenerator;
@@ -40,6 +55,7 @@ import org.bouncycastle.tsp.TimeStampRequestGenerator;
 import org.bouncycastle.tsp.TimeStampResponse;
 import org.bouncycastle.tsp.TimeStampToken;
 import org.bouncycastle.util.encoders.Hex;
+import org.apache.pdfbox.pdmodel.interactive.digitalsignature.SignatureInterface;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
@@ -48,7 +64,13 @@ import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
+import org.apache.pdfbox.cos.COSArray;
+import org.apache.pdfbox.cos.COSDictionary;
+import org.apache.pdfbox.cos.COSDocument;
 import org.apache.pdfbox.cos.COSName;
+import org.apache.pdfbox.cos.COSObject;
+import org.apache.pdfbox.cos.COSObjectKey;
+import org.apache.pdfbox.cos.COSStream;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationWidget;
 import org.apache.pdfbox.pdmodel.interactive.digitalsignature.ExternalSigningSupport;
 import org.apache.pdfbox.pdmodel.interactive.digitalsignature.PDSignature;
@@ -73,16 +95,20 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.PrivateKey;
+import java.security.SecureRandom;
 import java.security.Signature;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * SignTool —— 签名专区（微软代码签名 + PDF 文档签名）。
@@ -123,6 +149,20 @@ public final class SignTool {
     public static final String OID_SPC_PE_IMAGE_DATA = "1.3.6.1.4.1.311.2.1.15";
     /** Authenticode 时间戳属性（RFC3161 timestamp） */
     public static final String OID_SPC_RFC3161_TS = "1.3.6.1.4.1.311.3.3.1";
+
+    // ---- 国密 PDF 电子签章（GB/T 35275-2017 / GB/T 38540-2020）----
+    /** SM3 摘要算法 OID */
+    public static final String OID_SM3 = "1.2.156.10197.1.401";
+    /** SM2withSM3 签名算法 OID */
+    public static final String OID_SM2 = "1.2.156.10197.1.501";
+    /** 政务体系私有扩展 OID（SESeal / 印章承载，GB/T 38540 extDatas / 35275 signedAttrs） */
+    public static final String OID_GOV_EXT = "1.2.156.112600.8.1";
+    /** id-aa-timeStampToken（PDF 签名 signedAttrs 时间戳属性） */
+    public static final String OID_TSA_TOKEN = "1.2.840.113549.1.9.16.2.14";
+    /** PDF 国密签章 SubFilter（GB/T 38540-2020：SES_Signature 结构） */
+    public static final String SUBFILTER_GM_SEAL = "GM.sm2seal";
+    /** PDF 国密签章 SubFilter（GB/T 35275-2017：CMS SignedData + 私有 OID 印章） */
+    public static final String SUBFILTER_GM_CMS = "GM.sm2cms.detached";
 
     /** 最近一次 EXE 签名的时间戳状态（供上层展示日志）。 */
     public static volatile String lastTsInfo = "未请求";
@@ -367,7 +407,7 @@ public final class SignTool {
     /**
      * 对 PE 文件（exe/dll/sys）做 Windows Authenticode 代码签名。
      * 结构对齐 signtool 标准：手动 ASN.1（直接 SEQUENCE eContent、signedAttrs={contentType,messageDigest}、
-     * DigestInfo 带 NULL、SpcPeImageData 空 SpcLink），并自动请求本机 MAIN /rfc3161 时间戳嵌入。
+     * DigestInfo 带 NULL、SpcPeImageData 空 SpcLink），并自动请求时间戳嵌入。
      *
      * @param file     原始 PE 字节
      * @param keyType  RSA / ECC / SM2
@@ -380,6 +420,19 @@ public final class SignTool {
     public static byte[] signExe(byte[] file, String keyType,
                                  X509Certificate cert, PrivateKey key,
                                  List<X509Certificate> chain, String baseDir) throws Exception {
+        return signExe(file, keyType, cert, key, chain, baseDir, "RFC3161", null);
+    }
+
+    /**
+     * 对 PE 文件做 Authenticode 签名（可指定时间戳类型与地址）。
+     *
+     * @param tsType RFC3161（标准 TimeStampToken，默认）/ AUTHENTICODE（微软老式 PKCS#7 时间戳）
+     * @param tsUrl  时间戳请求地址；null/空 = 默认本机 MAIN（RFC3161→/rfc3161，Authenticode→/timestamp）
+     */
+    public static byte[] signExe(byte[] file, String keyType,
+                                 X509Certificate cert, PrivateKey key,
+                                 List<X509Certificate> chain, String baseDir,
+                                 String tsType, String tsUrl) throws Exception {
         if (file.length < 0x40 || file[0] != 'M' || file[1] != 'Z') {
             throw new IllegalArgumentException("不是有效 PE 文件（缺 MZ 头）");
         }
@@ -410,7 +463,8 @@ public final class SignTool {
         byte[] spcIndirectData = buildSpcIndirectData(fileHash, digestOid(keyType));
 
         // 手写 CMS SignedData（对齐 signtool，eContent 直接 SEQUENCE）
-        byte[] signedData = buildExeCms(spcIndirectData, keyType, cert, key, chain, baseDir);
+        byte[] signedData = buildExeCms(spcIndirectData, keyType, cert, key, chain,
+                baseDir, tsType, tsUrl);
 
         // WIN_CERTIFICATE 表：头 8 字节 + CMS，8 字节对齐
         long certHeaderLen = 8;
@@ -485,11 +539,12 @@ public final class SignTool {
      * SignedData v1, digestAlgorithms={摘要+NULL}, encapContentInfo={spcIndirectDataContext,
      * [0] EXPLICIT SpcIndirectData}, certificates[0]={根在前}, signerInfos=1(
      * signedAttrs={contentType, messageDigest}, signatureAlgorithm=算法+NULL, 签名 over signedAttrs)。
-     * 自动请求 RFC3161 时间戳（messageImprint=SHA-256(签名值)）嵌入 unsignedAttrs，失败降级。
+     * 自动请求时间戳（RFC3161 或 Authenticode，地址可配置）嵌入 unsignedAttrs，失败降级。
      */
     private static byte[] buildExeCms(byte[] spcDer, String keyType,
                                       X509Certificate cert, PrivateKey key,
-                                      List<X509Certificate> chain, String baseDir) throws Exception {
+                                      List<X509Certificate> chain, String baseDir,
+                                      String tsType, String tsUrl) throws Exception {
         String digestOid = digestOid(keyType);
         String sigAlgOid = sigAlgOid(keyType);
         String jcaSig = jcaSigAlg(keyType);
@@ -512,15 +567,25 @@ public final class SignTool {
         sigEngine.update(signedAttrsDer);
         byte[] sig = sigEngine.sign();
 
-        // RFC3161 时间戳：messageImprint = SHA-256(签名值)；失败降级不影响签名
+        // 时间戳：失败降级不影响签名
+        //   RFC3161（/tr 风格）：messageImprint = SHA-256(签名值) → 标准 TimeStampToken，嵌入 SPC_RFC3161_TS
+        //   Authenticode（/t 风格）：请求体 = ContentInfo{SPC_TIME_STAMP_REQUEST, id-data + 主签名值}，
+        //     响应 token 提取 SignerInfo 后以 countersignature 嵌入（对齐 signtool /t 与 Go 版 MAIN 协议）
         byte[] tsToken = null;
         String tsInfo = null;
+        boolean authTs = "AUTHENTICODE".equalsIgnoreCase(tsType);
+        String tsLabel = authTs ? "Authenticode" : "RFC3161";
         try {
-            byte[] imprint = MessageDigest.getInstance("SHA-256").digest(sig);
-            tsToken = requestTimestamp(imprint, baseDir);
-            tsInfo = "已附加 RFC3161 时间戳 (" + tsToken.length + "B)";
+            if (authTs) {
+                tsToken = requestAuthenticodeTimestamp(sig, baseDir, tsUrl);
+            } else {
+                byte[] imprint = MessageDigest.getInstance("SHA-256").digest(sig);
+                tsToken = requestTimestamp(imprint, baseDir, "RFC3161", tsUrl);
+            }
+            tsInfo = "已附加 " + tsLabel + " 时间戳 (" + tsToken.length + "B)"
+                    + (tsUrl != null && !tsUrl.trim().isEmpty() ? " @ " + tsUrl : " @ 本机MAIN");
         } catch (Exception ex) {
-            tsInfo = "时间戳请求失败，跳过（不影响签名）: " + ex.getMessage();
+            tsInfo = tsLabel + " 时间戳请求失败，跳过（不影响签名）: " + ex.getMessage();
         }
         lastTsInfo = tsInfo;
 
@@ -538,8 +603,14 @@ public final class SignTool {
         si.add(new DEROctetString(sig));
         if (tsToken != null) {
             ASN1EncodableVector uattrs = new ASN1EncodableVector();
-            uattrs.add(new Attribute(new ASN1ObjectIdentifier(OID_SPC_RFC3161_TS),
-                    new DERSet(ASN1Primitive.fromByteArray(tsToken))));
+            if (authTs) {
+                // Authenticode 老式时间戳：countersignature（1.2.840.113549.1.9.6），值为 token 内首个 SignerInfo
+                uattrs.add(new Attribute(new ASN1ObjectIdentifier("1.2.840.113549.1.9.6"),
+                        new DERSet(ASN1Primitive.fromByteArray(extractFirstSignerInfo(tsToken)))));
+            } else {
+                uattrs.add(new Attribute(new ASN1ObjectIdentifier(OID_SPC_RFC3161_TS),
+                        new DERSet(ASN1Primitive.fromByteArray(tsToken))));
+            }
             si.add(new DERTaggedObject(false, 1, new DERSet(uattrs)));
         }
         byte[] signerInfoDer = new DERSequence(si).getEncoded();
@@ -558,6 +629,22 @@ public final class SignTool {
         for (int i = ordered.size() - 1; i >= 0; i--) {   // 根在前
             certs.add(ASN1Primitive.fromByteArray(ordered.get(i).getEncoded()));
         }
+        // Authenticode：把时间戳 token 内的 TSA 证书（及上级）合并进证书集合，
+        // 否则 Windows 无法验证 countersignature 的签名（0x80096003）
+        if (authTs && tsToken != null) {
+            try {
+                java.util.Set<String> seen = new java.util.HashSet<>();
+                for (int i = 0; i < certs.size(); i++) {
+                    seen.add(serialOf(certs.get(i).toASN1Primitive().getEncoded("DER")));
+                }
+                for (byte[] tc : extractCertificates(tsToken)) {
+                    if (seen.add(serialOf(tc))) {
+                        certs.add(ASN1Primitive.fromByteArray(tc));
+                    }
+                }
+            } catch (Exception ignored) {
+            }
+        }
         sd.add(new DERTaggedObject(false, 0, new DERSet(certs)));
         sd.add(new DERSet(ASN1Primitive.fromByteArray(signerInfoDer)));
 
@@ -568,48 +655,60 @@ public final class SignTool {
     }
 
     /**
-     * RFC3161 时间戳请求：POST 本机 MAIN /rfc3161（WEBPORT 从 PKI/CONFIG.txt 读取，默认 80）。
-     * messageImprint 用 SHA-256。校验 PKIStatus，返回 TimeStampToken 的 ContentInfo DER。
+     * Authenticode 老式时间戳请求（对齐 signtool /t 与 Go 版 MAIN /timestamp 协议）：
+     * 请求体 = base64( ContentInfo{ 1.3.6.1.4.1.311.3.2.1, SEQUENCE{ id-data, [0] OCTET STRING(主签名值) } } )，
+     * 响应 = base64( PKCS#7 ContentInfo )，解码后返回 token DER。
+     *
+     * @param signatureValue 主签名值（被签名内容，TSA 直接对其签名）
      */
-    static byte[] requestTimestamp(byte[] messageImprint, String baseDir) throws Exception {
-        String port = "80";
-        try {
-            Path cfg = Paths.get(baseDir, "PKI", "CONFIG.txt");
-            if (Files.exists(cfg)) {
-                for (String line : Files.readAllLines(cfg, StandardCharsets.UTF_8)) {
-                    String t = line.trim();
-                    if (t.startsWith("WEBPORT=")) {
-                        String v = t.substring("WEBPORT=".length()).trim();
-                        if (!v.isEmpty()) {
-                            port = v;
+    static byte[] requestAuthenticodeTimestamp(byte[] signatureValue, String baseDir,
+                                               String tsUrl) throws Exception {
+        String url = (tsUrl == null || tsUrl.trim().isEmpty()) ? null : tsUrl.trim();
+        if (url == null) {
+            String port = "80";
+            if (baseDir != null) {
+                try {
+                    Path cfg = Paths.get(baseDir, "PKI", "CONFIG.txt");
+                    if (Files.exists(cfg)) {
+                        for (String line : Files.readAllLines(cfg, StandardCharsets.UTF_8)) {
+                            String t = line.trim();
+                            if (t.startsWith("WEBPORT=")) {
+                                String v = t.substring("WEBPORT=".length()).trim();
+                                if (!v.isEmpty()) {
+                                    port = v;
+                                }
+                            }
                         }
                     }
+                } catch (Exception ignored) {
                 }
             }
-        } catch (Exception ignored) {
+            url = "http://127.0.0.1:" + port + "/timestamp";
         }
-        String tsaUrl = "http://127.0.0.1:" + port + "/rfc3161";
 
-        TimeStampRequestGenerator reqGen = new TimeStampRequestGenerator();
-        reqGen.setCertReq(true);
-        AlgorithmIdentifier hashAlg = new AlgorithmIdentifier(
-                new ASN1ObjectIdentifier("2.16.840.1.101.3.4.2.1"), DERNull.INSTANCE); // SHA-256
-        TimeStampRequest tsReq = reqGen.generate(hashAlg, messageImprint);
-        byte[] reqDer = tsReq.getEncoded();
+        // ContentInfo{ 1.3.6.1.4.1.311.3.2.1, SEQUENCE{ OID id-data, [0] EXPLICIT OCTET STRING(sig) } }
+        ASN1EncodableVector inner = new ASN1EncodableVector();
+        inner.add(new ASN1ObjectIdentifier("1.2.840.113549.1.7.1")); // id-data
+        inner.add(new DERTaggedObject(true, 0, new DEROctetString(signatureValue)));
+        ASN1EncodableVector ci = new ASN1EncodableVector();
+        ci.add(new ASN1ObjectIdentifier("1.3.6.1.4.1.311.3.2.1"));   // SPC_TIME_STAMP_REQUEST
+        ci.add(new DERSequence(inner));
+        byte[] reqDer = new DERSequence(ci).getEncoded("DER");
+        byte[] payload = Base64.getEncoder().encodeToString(reqDer).getBytes(StandardCharsets.UTF_8);
 
-        HttpURLConnection conn = (HttpURLConnection) new URL(tsaUrl).openConnection();
+        HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
         conn.setRequestMethod("POST");
         conn.setDoOutput(true);
         conn.setConnectTimeout(10000);
-        conn.setReadTimeout(20000);
-        conn.setRequestProperty("Content-Type", "application/timestamp-query");
-        conn.setRequestProperty("Content-Length", String.valueOf(reqDer.length));
+        conn.setReadTimeout(30000);
+        conn.setRequestProperty("Content-Type", "application/octet-stream");
+        conn.setRequestProperty("Content-Length", String.valueOf(payload.length));
         try (OutputStream os = conn.getOutputStream()) {
-            os.write(reqDer);
+            os.write(payload);
         }
         int code = conn.getResponseCode();
         if (code != HttpURLConnection.HTTP_OK) {
-            throw new IOException("TSA HTTP 状态码 " + code);
+            throw new IOException("Authenticode TSA HTTP 状态码 " + code + " @ " + url);
         }
         ByteArrayOutputStream resp = new ByteArrayOutputStream();
         try (InputStream is = conn.getInputStream()) {
@@ -619,14 +718,172 @@ public final class SignTool {
                 resp.write(buf, 0, n);
             }
         }
-        TimeStampResponse tsResp = new TimeStampResponse(resp.toByteArray());
+        byte[] respBytes = resp.toByteArray();
+        // 响应：本机 MAIN 返回 PKCS#7 DER 的 base64 PEM 正文；外部 TSA 可能直接回 DER
+        try {
+            ASN1Primitive.fromByteArray(respBytes);
+            return respBytes;
+        } catch (Exception derFail) {
+            String b64 = new String(respBytes, StandardCharsets.UTF_8)
+                    .replaceAll("[^A-Za-z0-9+/=]", "");
+            if (b64.isEmpty()) {
+                throw new IOException("Authenticode TSA 响应既非 DER 也非 base64（@ " + url + "）");
+            }
+            return Base64.getDecoder().decode(b64);
+        }
+    }
+
+    /** 从 CMS ContentInfo 中提取第一个 SignerInfo 的 DER（countersignature 嵌入用）。 */
+    static byte[] extractFirstSignerInfo(byte[] cmsDer) throws Exception {
+        ASN1Sequence ci = ASN1Sequence.getInstance(ASN1Primitive.fromByteArray(cmsDer));
+        if (ci.size() < 2) {
+            throw new IOException("时间戳 token 结构异常（缺 SignedData）");
+        }
+        ASN1TaggedObject tagged = ASN1TaggedObject.getInstance(ci.getObjectAt(1));
+        ASN1Sequence sd = ASN1Sequence.getInstance(
+                tagged.getBaseUniversal(true, org.bouncycastle.asn1.BERTags.SEQUENCE));
+        ASN1Set signerInfos = ASN1Set.getInstance(sd.getObjectAt(sd.size() - 1));
+        if (signerInfos.size() == 0) {
+            throw new IOException("时间戳 token 无 SignerInfo");
+        }
+        return ASN1Sequence.getInstance(signerInfos.getObjectAt(0)).getEncoded("DER");
+    }
+
+    /** 从 CMS ContentInfo 中提取证书集合（每个证书的 DER）。 */
+    static java.util.List<byte[]> extractCertificates(byte[] cmsDer) throws Exception {
+        java.util.List<byte[]> out = new java.util.ArrayList<>();
+        ASN1Sequence ci = ASN1Sequence.getInstance(ASN1Primitive.fromByteArray(cmsDer));
+        if (ci.size() < 2) {
+            return out;
+        }
+        ASN1TaggedObject tagged = ASN1TaggedObject.getInstance(ci.getObjectAt(1));
+        ASN1Sequence sd = ASN1Sequence.getInstance(
+                tagged.getBaseUniversal(true, org.bouncycastle.asn1.BERTags.SEQUENCE));
+        for (int i = 0; i < sd.size(); i++) {
+            if (sd.getObjectAt(i) instanceof ASN1TaggedObject) {
+                ASN1TaggedObject tt = (ASN1TaggedObject) sd.getObjectAt(i);
+                if (tt.getTagNo() == 0) {
+                    // SignedData.certificates 是 IMPLICIT [0] SET OF Certificate
+                    ASN1Set certs = ASN1Set.getInstance(tt, false);
+                    for (int j = 0; j < certs.size(); j++) {
+                        out.add(certs.getObjectAt(j).toASN1Primitive().getEncoded("DER"));
+                    }
+                }
+            }
+        }
+        return out;
+    }
+
+    /** 证书 DER → 十六进制序列号（证书集合去重用）。 */
+    static String serialOf(byte[] certDer) throws Exception {
+        java.security.cert.CertificateFactory cf =
+                java.security.cert.CertificateFactory.getInstance("X.509");
+        X509Certificate c = (X509Certificate) cf.generateCertificate(
+                new java.io.ByteArrayInputStream(certDer));
+        return c.getSerialNumber().toString(16);
+    }
+
+    /**
+     * RFC3161 时间戳请求（默认本机 MAIN /rfc3161）。messageImprint 用 SHA-256。
+     * 校验 PKIStatus，返回 TimeStampToken 的 ContentInfo DER。
+     */
+    static byte[] requestTimestamp(byte[] messageImprint, String baseDir) throws Exception {
+        return requestTimestamp(messageImprint, baseDir, "RFC3161", null);
+    }
+
+    /**
+     * 时间戳请求（RFC3161 / Authenticode 两种类型，地址可配置）。
+     *
+     * @param messageImprint 消息摘要（SHA-256 计算后）
+     * @param baseDir        PKI 基目录（tsUrl 为空时读 CONFIG.txt 的 WEBPORT 定位本机 MAIN）
+     * @param tsType         RFC3161（默认，标准 TimeStampToken）/ AUTHENTICODE（微软老式 PKCS#7）
+     * @param tsUrl          时间戳服务地址；null/空 = 默认本机 MAIN
+     * @return RFC3161 → TimeStampToken ContentInfo DER；Authenticode → 服务端 PKCS#7 CMS 字节
+     */
+    static byte[] requestTimestamp(byte[] messageImprint, String baseDir,
+                                   String tsType, String tsUrl) throws Exception {
+        boolean auth = "AUTHENTICODE".equalsIgnoreCase(tsType);
+        String url = (tsUrl == null || tsUrl.trim().isEmpty()) ? null : tsUrl.trim();
+        if (url == null) {
+            String port = "80";
+            if (baseDir != null) {
+                try {
+                    Path cfg = Paths.get(baseDir, "PKI", "CONFIG.txt");
+                    if (Files.exists(cfg)) {
+                        for (String line : Files.readAllLines(cfg, StandardCharsets.UTF_8)) {
+                            String t = line.trim();
+                            if (t.startsWith("WEBPORT=")) {
+                                String v = t.substring("WEBPORT=".length()).trim();
+                                if (!v.isEmpty()) {
+                                    port = v;
+                                }
+                            }
+                        }
+                    }
+                } catch (Exception ignored) {
+                }
+            }
+            url = "http://127.0.0.1:" + port + (auth ? "/timestamp" : "/rfc3161");
+        }
+
+        TimeStampRequestGenerator reqGen = new TimeStampRequestGenerator();
+        reqGen.setCertReq(true);
+        AlgorithmIdentifier hashAlg = new AlgorithmIdentifier(
+                new ASN1ObjectIdentifier("2.16.840.1.101.3.4.2.1"), DERNull.INSTANCE); // SHA-256
+        TimeStampRequest tsReq = reqGen.generate(hashAlg, messageImprint);
+        byte[] reqDer = tsReq.getEncoded();
+
+        // Authenticode：请求体 = base64(TimeStampReq) 文本（对齐本机 MAIN /timestamp 与 signtool /t 旧格式）
+        byte[] payload = auth
+                ? Base64.getEncoder().encodeToString(reqDer).getBytes(StandardCharsets.UTF_8) : reqDer;
+
+        HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+        conn.setRequestMethod("POST");
+        conn.setDoOutput(true);
+        conn.setConnectTimeout(10000);
+        conn.setReadTimeout(30000);
+        conn.setRequestProperty("Content-Type",
+                auth ? "application/octet-stream" : "application/timestamp-query");
+        conn.setRequestProperty("Content-Length", String.valueOf(payload.length));
+        try (OutputStream os = conn.getOutputStream()) {
+            os.write(payload);
+        }
+        int code = conn.getResponseCode();
+        if (code != HttpURLConnection.HTTP_OK) {
+            throw new IOException("TSA HTTP 状态码 " + code + " @ " + url);
+        }
+        ByteArrayOutputStream resp = new ByteArrayOutputStream();
+        try (InputStream is = conn.getInputStream()) {
+            byte[] buf = new byte[8192];
+            int n;
+            while ((n = is.read(buf)) != -1) {
+                resp.write(buf, 0, n);
+            }
+        }
+        byte[] respBytes = resp.toByteArray();
+        if (auth) {
+            // Authenticode 响应：本机 MAIN 返回 PKCS#7 DER 的 base64 PEM 正文（对齐 Go 版），
+            // 外部 TSA 可能直接回 DER。先试 DER，失败再按 base64 解码。
+            try {
+                ASN1Primitive.fromByteArray(respBytes);
+                return respBytes;
+            } catch (Exception derFail) {
+                String b64 = new String(respBytes, StandardCharsets.UTF_8)
+                        .replaceAll("[^A-Za-z0-9+/=]", "");
+                if (b64.isEmpty()) {
+                    throw new IOException("Authenticode TSA 响应既非 DER 也非 base64（@ " + url + "）");
+                }
+                return Base64.getDecoder().decode(b64);
+            }
+        }
+        TimeStampResponse tsResp = new TimeStampResponse(respBytes);
         int st = tsResp.getStatus();
         if (st != PKIStatus.GRANTED && st != PKIStatus.GRANTED_WITH_MODS) {
-            throw new IOException("TSA 拒绝时间戳, PKIStatus=" + st);
+            throw new IOException("TSA 拒绝时间戳, PKIStatus=" + st + " @ " + url);
         }
         TimeStampToken token = tsResp.getTimeStampToken();
         if (token == null) {
-            throw new IOException("TSA 响应缺少时间戳令牌");
+            throw new IOException("TSA 响应缺少时间戳令牌 @ " + url);
         }
         return token.getEncoded();
     }
@@ -854,6 +1111,25 @@ public final class SignTool {
     public static byte[] signPdf(byte[] pdf, String keyType, X509Certificate cert,
                                  PrivateKey key, List<X509Certificate> chain,
                                  byte[] imageBytes) throws Exception {
+        return signPdf(pdf, keyType, cert, key, chain, imageBytes, "ADOBE", "");
+    }
+
+    /**
+     * 对 PDF 签名（可选签章类型与时间戳地址）。
+     *
+     * @param sealType ADOBE（标准 PKCS#7 detached，默认）/ GM38540（GB/T 38540-2020 SES_Signature）/
+     *                 GM35275（GB/T 35275-2017 CMS+私有OID印章）/ GM0031（GM/T 0031-2025 两层 SES_Signature）
+     * @param tsUrl    PDF 时间戳地址（RFC3161）；null/空 = 本机 MAIN /rfc3161。
+     *                 仅 ADOBE 与 GM35275 嵌入时间戳；GM38540/GM0031 的 SES_Signature 无标准时间戳扩展，忽略。
+     */
+    public static byte[] signPdf(byte[] pdf, String keyType, X509Certificate cert,
+                                 PrivateKey key, List<X509Certificate> chain,
+                                 byte[] imageBytes, String sealType, String tsUrl) throws Exception {
+        if (sealType != null && ("GM38540".equalsIgnoreCase(sealType)
+                || "GM35275".equalsIgnoreCase(sealType)
+                || "GM0031".equalsIgnoreCase(sealType))) {
+            return signPdfGm(pdf, sealType, keyType, cert, key, chain, imageBytes);
+        }
         try (PDDocument doc = Loader.loadPDF(pdf)) {
             if (doc.isEncrypted()) {
                 throw new IllegalArgumentException("加密 PDF 暂不支持签名");
@@ -884,9 +1160,16 @@ public final class SignTool {
             }
             // PDF 签名：eContentType = id-data，分离签名，messageDigest = ByteRange 数据哈希
             byte[] cms = buildCms(toSign, "1.2.840.113549.1.7.1", false,
-                    keyType, cert, key, chain);
+                    keyType, cert, key, chain, tsUrl);
             es.setSignature(cms);
-            return out.toByteArray();
+            byte[] signed = out.toByteArray();
+            // PAdES LTV：增量追加 DSS/VRI 字典，嵌入证书链 + OCSP 响应 + CRL（失败不影响签名）
+            try {
+                signed = applyLtvPdf(signed, chain, AppPaths.baseDir());
+            } catch (Exception ignoredLtv) {
+                // LTV 为增强能力：任何异常（含 MAIN 未启动）都保留原始签名结果
+            }
+            return signed;
         }
     }
 
@@ -961,13 +1244,442 @@ public final class SignTool {
         }
     }
 
+    // ============================ 国密 PDF 电子签章（GB/T 35275-2017 / GB/T 38540-2020 / GM/T 0031-2025） ============================
+
+    /**
+     * 国密 PDF 电子签章。
+     * <ul>
+     *   <li>GM38540：Contents = GB/T 38540-2020 SES_Signature（toSign TBS_Sign 内嵌 SESeal 电子印章），
+     *       Filter=Adobe.SM2，SubFilter=GM.sm2seal，DM=SM3 OID，SM=SM2 OID</li>
+     *   <li>GM0031：Contents = GM/T 0031-2025 两层 SES_Signature（SESeal={SES_SealInfo, SES_SignInfo}，
+     *       TBS_Sign 7 字段含 cert/signatureAlgorithm），SubFilter=GM.sm2seal，Filter/DM/SM 同上</li>
+     *   <li>GM35275：Contents = 标准 CMS SignedData（detached），SESeal 挂在 signedAttrs 私有 OID
+     *       1.2.156.112600.8.1，SubFilter=GM.sm2cms.detached</li>
+     * </ul>
+     * 仅支持 SM2 证书；必须提供签章图片（印章数据嵌入签名结构，同时作为可见签章）。
+     */
+    private static byte[] signPdfGm(byte[] pdf, String sealType, String keyType,
+                                    X509Certificate cert, PrivateKey key,
+                                    List<X509Certificate> chain,
+                                    byte[] imageBytes) throws Exception {
+        if (!"SM2".equalsIgnoreCase(keyType)) {
+            throw new IllegalArgumentException(
+                    "国密 PDF 签章（" + sealType + "）需要 SM2 证书，当前证书算法: " + keyType);
+        }
+        if (imageBytes == null || imageBytes.length == 0) {
+            throw new IllegalArgumentException("国密 PDF 签章需要选择签章图片（png/jpg/bmp/gif）");
+        }
+        BufferedImage bi = ImageIO.read(new ByteArrayInputStream(imageBytes));
+        if (bi == null) {
+            throw new IllegalArgumentException("无法解码签章图片（支持 png/jpg/bmp/gif）");
+        }
+        final int imgW = bi.getWidth();
+        final int imgH = bi.getHeight();
+        final boolean is38540 = sealType.contains("38540");
+        final boolean is0031 = sealType.contains("0031");
+        final String gmStd = is38540 ? "38540-2020" : is0031 ? "0031-2025" : "35275-2017";
+        final boolean isSeal = is38540 || is0031; // 独立 SES_Signature 结构（GM.sm2seal）
+
+        // 预先构建印章信息 SES_SealInfo 与制章签名（避免在签名回调里重复构建）
+        byte[] eSealInfo = is38540
+                ? buildGmSealInfo38540(cert, chain, imageBytes, imgW, imgH)
+                : is0031
+                ? buildGmSealInfo0031(cert, chain, imageBytes, imgW, imgH)
+                : buildGmSealInfo35275(cert, chain, imageBytes, imgW, imgH);
+        byte[] sealSigned;
+        if (is0031) {
+            // GM/T 0031 制章签名对象 = SEQUENCE{ SES_SealInfo, 制章人证书, 签名算法标识 }
+            ASN1EncodableVector sealTbs = new ASN1EncodableVector();
+            sealTbs.add(new ASN1InputStream(eSealInfo).readObject());
+            sealTbs.add(new DEROctetString(cert.getEncoded()));
+            sealTbs.add(new ASN1ObjectIdentifier(OID_SM2));
+            sealSigned = sm2Sign(key, new DERSequence(sealTbs).getEncoded("DER"));
+        } else {
+            sealSigned = sm2Sign(key, eSealInfo);
+        }
+        byte[] certChainBytes = buildGmCertChainBytes(cert, chain);
+
+        try (PDDocument doc = Loader.loadPDF(pdf)) {
+            if (doc.isEncrypted()) {
+                throw new IllegalArgumentException("加密 PDF 暂不支持签名");
+            }
+            PDSignature sig = new PDSignature();
+            sig.setFilter(COSName.getPDFName("Adobe.SM2"));
+            sig.setSubFilter(COSName.getPDFName(isSeal ? SUBFILTER_GM_SEAL : SUBFILTER_GM_CMS));
+            sig.setName(shortDn(cert.getSubjectX500Principal().toString()));
+            sig.setLocation("MODPKICA");
+            sig.setReason("GM/T " + gmStd + " 国密电子签章");
+            sig.setSignDate(Calendar.getInstance());
+            sig.getCOSObject().setString("DM", OID_SM3);
+            sig.getCOSObject().setString("SM", OID_SM2);
+
+            SignatureOptions sigOptions = buildVisibleSignatureOptions(doc, imageBytes);
+            // 动态预留签名空间：签名 Contents = 印章图片字节 + 证书链 + ASN.1 结构/签名值开销
+            // 固定 65536 在印章图较大时（> ~55KB）会导致
+            // "Can't write signature, not enough space"，故按实际输入估算并留 1.5x 余量
+            int estContents = imageBytes.length;
+            List<X509Certificate> allCerts = (chain == null || chain.isEmpty())
+                    ? Collections.singletonList(cert) : chain;
+            for (X509Certificate c : allCerts) {
+                estContents += c.getEncoded().length;
+            }
+            estContents += 8192; // 结构头 / 摘要 / 签名值 / 属性
+            int pref = Math.max(65536, (int) (estContents * 1.5) + 32768);
+            sigOptions.setPreferredSignatureSize(pref);
+            doc.addSignature(sig, new SignatureInterface() {
+                @Override
+                public byte[] sign(InputStream content) throws IOException {
+                    try {
+                        byte[] rangeData = readAllBytes(content);
+                        MessageDigest sm3 = MessageDigest.getInstance("SM3", "BC");
+                        byte[] docHash = sm3.digest(rangeData);
+                        if (is38540) {
+                            return buildGm38540Signature(docHash, cert, key, eSealInfo, sealSigned);
+                        }
+                        if (is0031) {
+                            return buildGm0031Signature(docHash, cert, key, eSealInfo, sealSigned);
+                        }
+                        return buildGm35275Signature(rangeData, docHash, cert, key,
+                                chain, eSealInfo, sealSigned, certChainBytes);
+                    } catch (Exception e) {
+                        throw new IOException("国密签名构造失败: " + e, e);
+                    }
+                }
+            }, sigOptions);
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            doc.saveIncremental(out);
+            return out.toByteArray();
+        }
+    }
+
+    /** GB/T 38540-2020：构建 SES_SealInfo 印章信息（header + esID + property + picture + extDatas）。 */
+    private static byte[] buildGmSealInfo38540(X509Certificate cert, List<X509Certificate> chain,
+                                               byte[] imageBytes, int w, int h) throws Exception {
+        ASN1EncodableVector v = new ASN1EncodableVector();
+        // [0] header SES_Header { ID="ES", version=4, Vid }
+        ASN1EncodableVector header = new ASN1EncodableVector();
+        header.add(new DERIA5String("ES"));
+        header.add(new ASN1Integer(4));
+        header.add(new DERIA5String("MODPKICA"));
+        v.add(new DERSequence(header));
+        // [1] esID 印章标识
+        v.add(new DERIA5String(UUID.randomUUID().toString()));
+        // [2] property SES_ESPropertyInfo { type, name, certListType, certList, createDate, validStart, validEnd }
+        ASN1EncodableVector property = new ASN1EncodableVector();
+        property.add(new ASN1Integer(1));                         // type=1 单位印章
+        property.add(new DERUTF8String("MODPKICA 电子印章"));
+        property.add(new ASN1Integer(1));                         // certListType=1 证书列表
+        ASN1EncodableVector certList = new ASN1EncodableVector(); // SEQUENCE OF Cert（一张证书一个 OCTET STRING）
+        List<X509Certificate> all = (chain == null || chain.isEmpty())
+                ? Collections.singletonList(cert) : chain;
+        for (X509Certificate c : all) {
+            certList.add(new DEROctetString(c.getEncoded()));
+        }
+        property.add(new DERSequence(certList));
+        Date now = new Date();
+        property.add(new ASN1GeneralizedTime(now));               // createDate
+        property.add(new ASN1GeneralizedTime(cert.getNotBefore())); // validStart
+        property.add(new ASN1GeneralizedTime(cert.getNotAfter()));  // validEnd
+        v.add(new DERSequence(property));
+        // [3] picture SES_ESPictureInfo { type, data, width, height }
+        ASN1EncodableVector picture = new ASN1EncodableVector();
+        picture.add(new DERIA5String("PNG"));
+        picture.add(new DEROctetString(imageBytes));
+        picture.add(new ASN1Integer(w));
+        picture.add(new ASN1Integer(h));
+        v.add(new DERSequence(picture));
+        // [4] extDatas ExtensionDatas（政务私有 OID 扩展）
+        ASN1EncodableVector ext = new ASN1EncodableVector();
+        ext.add(new ASN1ObjectIdentifier(OID_GOV_EXT));           // extnID
+        ext.add(ASN1Boolean.FALSE);                               // critical
+        ext.add(new DEROctetString(
+                "sealMakingUnitInfo=MODPKICA".getBytes(StandardCharsets.UTF_8))); // extnValue
+        ASN1EncodableVector extDatas = new ASN1EncodableVector();
+        extDatas.add(new DERSequence(ext));
+        v.add(new DERSequence(extDatas));
+        return new DERSequence(v).getEncoded("DER");
+    }
+
+    /**
+     * GM/T 0031-2025：构建 SES_SealInfo 印章信息。
+     * 结构：header{ID="ES",version=11,Vid} + esID + property{type,name,certList(SEQUENCE OF certID),
+     * createDate,validStart,validEnd} + picture{type,data,width,height} + extDatas(可选)。
+     * 与 GB/T 38540 的差异：property 无 certListType；certList 为 SEQUENCE OF IA5String(certID=证书序列号)；
+     * 时间字段为 UTCTIME（非 GeneralizedTime）。
+     */
+    private static byte[] buildGmSealInfo0031(X509Certificate cert, List<X509Certificate> chain,
+                                              byte[] imageBytes, int w, int h) throws Exception {
+        ASN1EncodableVector v = new ASN1EncodableVector();
+        // [0] header SES_Header { ID="ES", version=11, Vid="MODPKICA" }
+        ASN1EncodableVector header = new ASN1EncodableVector();
+        header.add(new DERIA5String("ES"));
+        header.add(new ASN1Integer(11));
+        header.add(new DERIA5String("MODPKICA"));
+        v.add(new DERSequence(header));
+        // [1] esID 电子印章标识（唯一）
+        v.add(new DERIA5String(UUID.randomUUID().toString()));
+        // [2] property SES_ESPropertyInfo { type, name, certList, createDate, validStart, validEnd }
+        ASN1EncodableVector property = new ASN1EncodableVector();
+        property.add(new ASN1Integer(1));                          // type=1 单位印章
+        property.add(new DERUTF8String("MODPKICA 电子印章"));       // name
+        ASN1EncodableVector certList = new ASN1EncodableVector();  // SEQUENCE OF certID（IA5String=证书序列号）
+        List<X509Certificate> all = (chain == null || chain.isEmpty())
+                ? Collections.singletonList(cert) : chain;
+        for (X509Certificate c : all) {
+            certList.add(new DERIA5String(c.getSerialNumber().toString(16)));
+        }
+        property.add(new DERSequence(certList));
+        Date now = new Date();
+        property.add(new DERUTCTime(now));                        // createDate
+        property.add(new DERUTCTime(cert.getNotBefore()));        // validStart
+        property.add(new DERUTCTime(cert.getNotAfter()));         // validEnd
+        v.add(new DERSequence(property));
+        // [3] picture SES_ESPictureInfo { type, data, width, height }
+        ASN1EncodableVector picture = new ASN1EncodableVector();
+        picture.add(new DERIA5String("PNG"));
+        picture.add(new DEROctetString(imageBytes));
+        picture.add(new ASN1Integer(w));
+        picture.add(new ASN1Integer(h));
+        v.add(new DERSequence(picture));
+        // [4] extDatas ExtensionDatas（可选，政务私有 OID 扩展，与 38540 保持一致）
+        ASN1EncodableVector ext = new ASN1EncodableVector();
+        ext.add(new ASN1ObjectIdentifier(OID_GOV_EXT));            // extID
+        ext.add(ASN1Boolean.FALSE);                                // critical
+        ext.add(new DEROctetString(
+                "sealMakingUnitInfo=MODPKICA".getBytes(StandardCharsets.UTF_8))); // extnValue
+        ASN1EncodableVector extDatas = new ASN1EncodableVector();
+        extDatas.add(new DERSequence(ext));
+        v.add(new DERSequence(extDatas));
+        return new DERSequence(v).getEncoded("DER");
+    }
+
+    /** GB/T 35275-2017：构建 eSealInfo（sealId + UUID + certInfo + imgInfo + 扩展）。 */
+    private static byte[] buildGmSealInfo35275(X509Certificate cert, List<X509Certificate> chain,
+                                               byte[] imageBytes, int w, int h) throws Exception {
+        ASN1EncodableVector v = new ASN1EncodableVector();
+        // [0] 印章头 SEQUENCE { IA5String, INTEGER, IA5String }
+        ASN1EncodableVector sealId = new ASN1EncodableVector();
+        sealId.add(new DERIA5String("ES"));
+        sealId.add(new ASN1Integer(4));
+        sealId.add(new DERIA5String("MODPKICA"));
+        v.add(new DERSequence(sealId));
+        // [1] 印章 UUID
+        v.add(new DERIA5String(UUID.randomUUID().toString()));
+        // [2] 印章证书信息 SEQUENCE(7)：type / issuer / certListType / certWrap(链字节) / 时间 x3
+        ASN1EncodableVector certInfo = new ASN1EncodableVector();
+        certInfo.add(new ASN1Integer(1));
+        certInfo.add(new DERUTF8String(cert.getIssuerX500Principal().getName()));
+        certInfo.add(new ASN1Integer(1));
+        ASN1EncodableVector certWrap = new ASN1EncodableVector();
+        certWrap.add(new DEROctetString(buildGmCertChainBytes(cert, chain)));
+        certInfo.add(new DERSequence(certWrap));
+        Date now = new Date();
+        certInfo.add(new ASN1GeneralizedTime(now));
+        certInfo.add(new ASN1GeneralizedTime(cert.getNotBefore()));
+        certInfo.add(new ASN1GeneralizedTime(cert.getNotAfter()));
+        v.add(new DERSequence(certInfo));
+        // [3] 印章图片 SEQUENCE(4) { IA5String, OCTET STRING, INTEGER, INTEGER }
+        ASN1EncodableVector imgInfo = new ASN1EncodableVector();
+        imgInfo.add(new DERIA5String("PNG"));
+        imgInfo.add(new DEROctetString(imageBytes));
+        imgInfo.add(new ASN1Integer(w));
+        imgInfo.add(new ASN1Integer(h));
+        v.add(new DERSequence(imgInfo));
+        // [4] 扩展属性 SEQUENCE { SEQUENCE { OID, BOOLEAN, OCTET STRING } }
+        ASN1EncodableVector extItem = new ASN1EncodableVector();
+        extItem.add(new ASN1ObjectIdentifier("1.2.840.113549.1.9.15"));
+        extItem.add(ASN1Boolean.TRUE);
+        extItem.add(new DEROctetString("<colour>0</colour>".getBytes(StandardCharsets.UTF_8)));
+        ASN1EncodableVector ext = new ASN1EncodableVector();
+        ext.add(new DERSequence(extItem));
+        v.add(new DERSequence(ext));
+        return new DERSequence(v).getEncoded("DER");
+    }
+
+    /** GB/T 38540-2020：构造 SES_Signature（toSign TBS_Sign + cert + signatureAlgID + signature）。 */
+    private static byte[] buildGm38540Signature(byte[] docHash, X509Certificate cert,
+                                                PrivateKey key, byte[] eSealInfo,
+                                                byte[] sealSigned) throws Exception {
+        // SESeal：eSealInfo + 制章者证书 + 签名算法 + 制章签名
+        ASN1EncodableVector sesEal = new ASN1EncodableVector();
+        sesEal.add(new ASN1InputStream(eSealInfo).readObject());
+        sesEal.add(new DEROctetString(cert.getEncoded()));
+        sesEal.add(new ASN1ObjectIdentifier(OID_SM2));
+        sesEal.add(new DERBitString(sealSigned));
+        byte[] sesEalDer = new DERSequence(sesEal).getEncoded("DER");
+
+        // TBS_Sign：version=4 + eseal + timeInfo + dataHash + propertyInfo
+        ASN1EncodableVector tbs = new ASN1EncodableVector();
+        tbs.add(new ASN1Integer(4));
+        tbs.add(new ASN1InputStream(sesEalDer).readObject());
+        tbs.add(new ASN1GeneralizedTime(new Date()));
+        tbs.add(new DERBitString(docHash));
+        tbs.add(new DERIA5String("PDF-SM2-SEAL"));
+        DERSequence tbsSeq = new DERSequence(tbs);
+        byte[] tbsDer = tbsSeq.getEncoded("DER");
+
+        // 签章签名：SM2 对 TBS_Sign 签名
+        byte[] signature = sm2Sign(key, tbsDer);
+
+        // SES_Signature
+        ASN1EncodableVector sesSig = new ASN1EncodableVector();
+        sesSig.add(tbsSeq);
+        sesSig.add(new DEROctetString(cert.getEncoded()));
+        sesSig.add(new ASN1ObjectIdentifier(OID_SM2));
+        sesSig.add(new DERBitString(signature));
+        return new DERSequence(sesSig).getEncoded("DER");
+    }
+
+    /**
+     * GM/T 0031-2025：构造 SES_Signature（两层结构）。
+     * SESeal = SEQUENCE{ SES_SealInfo, SES_SignInfo{cert, signatureAlgorithm, signData} }；
+     * TBS_Sign = SEQUENCE{ version=4, eseal, timeInfo(BIT STRING=UTCTime DER), dataHash(BIT STRING),
+     * propertyInfo(IA5String), cert(OCTET STRING), signatureAlgorithm(OID) }；
+     * SES_Signature = SEQUENCE{ toSign(TBS_Sign), signature(BIT STRING) }；
+     * signature = SM2 对 TBS_Sign 完整 DER 的签名。
+     */
+    private static byte[] buildGm0031Signature(byte[] docHash, X509Certificate cert,
+                                               PrivateKey key, byte[] eSealInfo,
+                                               byte[] sealSigned) throws Exception {
+        // SESeal = SEQUENCE { SES_SealInfo, SES_SignInfo }
+        ASN1EncodableVector signInfo = new ASN1EncodableVector();
+        signInfo.add(new DEROctetString(cert.getEncoded()));        // 制章人证书
+        signInfo.add(new ASN1ObjectIdentifier(OID_SM2));            // 签名算法标识
+        signInfo.add(new DERBitString(sealSigned));                 // 制章签名值
+        ASN1EncodableVector sesEal = new ASN1EncodableVector();
+        sesEal.add(new ASN1InputStream(eSealInfo).readObject());    // SES_SealInfo
+        sesEal.add(new DERSequence(signInfo));                      // SES_SignInfo
+        byte[] sesEalDer = new DERSequence(sesEal).getEncoded("DER");
+
+        // TBS_Sign（7 字段：version/eseal/timeInfo/dataHash/propertyInfo/cert/signatureAlgorithm）
+        ASN1EncodableVector tbs = new ASN1EncodableVector();
+        tbs.add(new ASN1Integer(4));
+        tbs.add(new ASN1InputStream(sesEalDer).readObject());
+        // timeInfo：BIT STRING，内容为 UTCTime 的 DER 编码（标准允许时间戳或 UTCTIME）
+        tbs.add(new DERBitString(new DERUTCTime(new Date()).getEncoded("DER")));
+        tbs.add(new DERBitString(docHash));
+        tbs.add(new DERIA5String("PDF-SM2-SEAL"));
+        tbs.add(new DEROctetString(cert.getEncoded()));
+        tbs.add(new ASN1ObjectIdentifier(OID_SM2));
+        DERSequence tbsSeq = new DERSequence(tbs);
+        byte[] tbsDer = tbsSeq.getEncoded("DER");
+
+        // 签章签名：SM2 对 TBS_Sign 签名
+        byte[] signature = sm2Sign(key, tbsDer);
+
+        // SES_Signature = SEQUENCE { toSign, signature }
+        ASN1EncodableVector sesSig = new ASN1EncodableVector();
+        sesSig.add(tbsSeq);
+        sesSig.add(new DERBitString(signature));
+        return new DERSequence(sesSig).getEncoded("DER");
+    }
+
+    /**
+     * GB/T 35275-2017：构造 CMS SignedData（detached）。
+     * signedAttrs = { contentType, messageDigest, signingTime, 私有OID(SESeal-DER) }，
+     * 签名算法 SM3withSM2；证书链完整写入 CMS certificates。
+     */
+    private static byte[] buildGm35275Signature(byte[] rangeData, byte[] docHash,
+                                                X509Certificate cert, PrivateKey key,
+                                                List<X509Certificate> chain,
+                                                byte[] eSealInfo, byte[] sealSigned,
+                                                byte[] certChainBytes) throws Exception {
+        // SESeal：eSealInfo + 印章证书块 + signAlgID + 制章签名
+        ASN1EncodableVector sesEalV = new ASN1EncodableVector();
+        sesEalV.add(new ASN1InputStream(eSealInfo).readObject());
+        sesEalV.add(new DEROctetString(certChainBytes));
+        sesEalV.add(new ASN1ObjectIdentifier(OID_SM2));
+        sesEalV.add(new DERBitString(sealSigned));
+        byte[] sesEalDer = new DERSequence(sesEalV).getEncoded("DER");
+
+        // signedAttrs：contentType / messageDigest / signingTime / 私有OID(SESeal)
+        ASN1EncodableVector attrs = new ASN1EncodableVector();
+        attrs.add(new Attribute(CMSAttributes.contentType,
+                new DERSet(new ASN1ObjectIdentifier("1.2.840.113549.1.7.1"))));
+        attrs.add(new Attribute(CMSAttributes.messageDigest, new DERSet(new DEROctetString(docHash))));
+        attrs.add(new Attribute(CMSAttributes.signingTime, new DERSet(new DERUTCTime(new Date()))));
+        attrs.add(new Attribute(new ASN1ObjectIdentifier(OID_GOV_EXT),
+                new DERSet(new DEROctetString(sesEalDer))));
+        AttributeTable signedAttrTable = new AttributeTable(attrs);
+
+        // CMS SignedData 生成
+        CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
+        JcaDigestCalculatorProviderBuilder dcBuilder =
+                new JcaDigestCalculatorProviderBuilder().setProvider("BC");
+        JcaSignerInfoGeneratorBuilder siBuilder =
+                new JcaSignerInfoGeneratorBuilder(dcBuilder.build());
+        siBuilder.setSignedAttributeGenerator(
+                new DefaultSignedAttributeTableGenerator(signedAttrTable));
+        ContentSigner cs = CertUtil.createContentSigner(key, "SM2", "SM3");
+        gen.addSignerInfoGenerator(siBuilder.build(cs, cert));
+        List<X509Certificate> all = (chain == null || chain.isEmpty())
+                ? Collections.singletonList(cert) : chain;
+        gen.addCertificates(new JcaCertStore(all));
+
+        CMSSignedData cms = gen.generate(new CMSProcessableByteArray(rangeData), false); // detached
+        return cms.getEncoded("DER");
+    }
+
+    /** 证书链字节块：叶子在前、根在后顺序拼接（对齐参考项目 sm2sign||ca）。 */
+    private static byte[] buildGmCertChainBytes(X509Certificate cert,
+                                                List<X509Certificate> chain) throws Exception {
+        List<X509Certificate> all = (chain == null || chain.isEmpty())
+                ? Collections.singletonList(cert) : chain;
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        for (X509Certificate c : all) {
+            out.write(c.getEncoded());
+        }
+        return out.toByteArray();
+    }
+
+    /** SM2 签名（SM3withSM2，BC 实现含 ZA 计算，符合 GB/T 32918）。 */
+    private static byte[] sm2Sign(PrivateKey privateKey, byte[] data) throws Exception {
+        Signature sig = Signature.getInstance("SM3WITHSM2", "BC");
+        sig.initSign(privateKey);
+        sig.update(data);
+        return sig.sign();
+    }
+
     /** 生成 CMS SignedData（PDF detached 用 BC 生成器即可，标准 id-data 结构）。 */
     private static byte[] buildCms(byte[] content, String contentType, boolean encapsulate,
                                    String keyType, X509Certificate cert, PrivateKey key,
                                    List<X509Certificate> chain) throws Exception {
+        return buildCms(content, contentType, encapsulate, keyType, cert, key, chain, null);
+    }
+
+    /**
+     * 生成 CMS SignedData（PDF detached 用 BC 生成器即可，标准 id-data 结构）。
+     *
+     * @param tsUrl PDF 时间戳地址（RFC3161）；<b>null = 不嵌时间戳</b>；
+     *              非 null（含空串）= 嵌入，空串 = 本机 MAIN /rfc3161。
+     *              嵌入方式：signedAttrs 增加 id-aa-timeStampToken（1.2.840.113549.1.9.16.2.14）。
+     */
+    private static byte[] buildCms(byte[] content, String contentType, boolean encapsulate,
+                                   String keyType, X509Certificate cert, PrivateKey key,
+                                   List<X509Certificate> chain, String tsUrl) throws Exception {
         ContentSigner signer = CertUtil.createContentSigner(key, keyType, digestName(keyType));
         DigestCalculatorProvider dcp = new JcaDigestCalculatorProviderBuilder().setProvider("BC").build();
         SignerInfoGeneratorBuilder b = new SignerInfoGeneratorBuilder(dcp);
+        if (tsUrl != null) {
+            try {
+                // messageImprint = 摘要(ByteRange 待签数据)（与 CMS messageDigest 同算法）
+                byte[] imprint = MessageDigest.getInstance(digestJca(keyType)).digest(content);
+                byte[] tok = requestTimestamp(imprint, AppPaths.baseDir(), "RFC3161", tsUrl);
+                ASN1EncodableVector attrs = new ASN1EncodableVector();
+                attrs.add(new Attribute(CMSAttributes.signingTime,
+                        new DERSet(new DERUTCTime(new Date()))));
+                attrs.add(new Attribute(new ASN1ObjectIdentifier(OID_TSA_TOKEN),
+                        new DERSet(ASN1Primitive.fromByteArray(tok))));
+                // BC 会自动补充 contentType 与 messageDigest
+                b.setSignedAttributeGenerator(
+                        new DefaultSignedAttributeTableGenerator(new AttributeTable(attrs)));
+            } catch (Exception tsEx) {
+                // 时间戳失败降级：不带时间戳继续签名（与 EXE 一致，不阻断签名）
+                MLog.append(AppPaths.baseDir(), "PDF 时间戳降级",
+                        "请求 " + (tsUrl.trim().isEmpty() ? "本机 MAIN /rfc3161" : tsUrl)
+                                + " 失败: " + tsEx);
+            }
+        }
         SignerInfoGenerator sigGen = b.build(signer, new JcaX509CertificateHolder(cert));
 
         CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
@@ -995,6 +1707,318 @@ public final class SignTool {
         return signed.getEncoded("DER");
     }
 
+    // ============================ PAdES LTV（DSS / VRI） ============================
+
+    /**
+     * PAdES LTV 长期验证：对已签名 PDF 增量追加 DSS（Document Security Store）+ VRI 字典，
+     * 嵌入签名证书链、链上各证书的 OCSP 响应与链上 CA/根证书的 CRL，
+     * 使验证器可离线长期验证（Acrobat 显示"签名有效，已启用 LTV"）。
+     *
+     * <p>实现要点：
+     * <ul>
+     *   <li>VRI 字典 key = ByteRange 覆盖内容 SHA-1 十六进制大写（PAdES 规定，兼容 Acrobat）</li>
+     *   <li>DSS /OCSPs 元素为完整 OCSPResp DER（RFC 6960，含响应者签名）</li>
+     *   <li>DSS /CRLs 元素为颁发者 CRL DER（优先 CONFIG CRL URL 的 .der.crl 变体，回退原 URL 与本地文件）</li>
+     *   <li>OCSP / CRL 来源：CONFIG.txt 的 OCSP= / CRL=（缺省 http://127.0.0.1:WEBPORT/...）</li>
+     *   <li>所有对象为新增间接对象 + catalog 加 /DSS，PDFBox 增量保存，不触碰原签名区（ByteRange 不变）</li>
+     * </ul>
+     *
+     * @param signedPdf 已签名 PDF 字节
+     * @param chain     签名证书链（叶子在前，根在后）
+     * @param baseDir   PKI 基目录（读 CONFIG.txt；null/空 或任一采集失败均返回原 PDF，不阻断签名）
+     * @return 追加 LTV 数据后的 PDF
+     */
+    public static byte[] applyLtvPdf(byte[] signedPdf, List<X509Certificate> chain, String baseDir) {
+        if (signedPdf == null || chain == null || chain.isEmpty()
+                || baseDir == null || baseDir.trim().isEmpty()) {
+            return signedPdf;
+        }
+        try (PDDocument doc = Loader.loadPDF(signedPdf)) {
+            List<PDSignature> sigs = doc.getSignatureDictionaries();
+            if (sigs == null || sigs.isEmpty()) {
+                return signedPdf;
+            }
+            PDSignature sig = sigs.get(0);
+            int[] br = sig.getByteRange();
+            if (br == null || br.length != 4 || br[1] <= 0 || br[3] <= 0) {
+                return signedPdf;
+            }
+            // VRI key：ByteRange 覆盖内容 SHA-1 十六进制大写
+            MessageDigest md = MessageDigest.getInstance("SHA-1");
+            md.update(signedPdf, (int) br[0], (int) br[1]);
+            md.update(signedPdf, (int) br[2], (int) br[3]);
+            String vriKey = Hex.toHexString(md.digest()).toUpperCase();
+
+            // 1) 证书链 DER（去重）
+            List<byte[]> certs = new ArrayList<>();
+            Set<String> seenCerts = new HashSet<>();
+            for (X509Certificate c : chain) {
+                byte[] der = c.getEncoded();
+                if (seenCerts.add(Hex.toHexString(der))) {
+                    certs.add(der);
+                }
+            }
+
+            // 2) OCSP 响应：链上每张证书（叶子的颁发者为上一级，自签根用自己）
+            List<byte[]> ocspList = new ArrayList<>();
+            for (int i = 0; i < chain.size(); i++) {
+                X509Certificate target = chain.get(i);
+                X509Certificate issuer = (i + 1 < chain.size()) ? chain.get(i + 1) : chain.get(i);
+                byte[] resp = requestOcspResponse(target, issuer, baseDir);
+                if (resp != null) {
+                    ocspList.add(resp);
+                }
+            }
+
+            // 3) CRL：链上每个 CA/根（chain[1..size-1]，CRL 文件名 = 颁发者序列号）
+            List<byte[]> crlList = new ArrayList<>();
+            for (int i = 1; i < chain.size(); i++) {
+                byte[] crl = fetchIssuerCrl(chain.get(i), baseDir);
+                if (crl != null) {
+                    crlList.add(crl);
+                }
+            }
+
+            if (certs.isEmpty() && ocspList.isEmpty() && crlList.isEmpty()) {
+                return signedPdf; // 无任何 LTV 数据
+            }
+
+            // 4) 构造 DSS / VRI 字典（全部新增间接对象，catalog 增量修订）
+            COSDocument cosDoc = doc.getDocument();
+            long nextNum = cosDoc.getHighestXRefObjectNumber() + 1;
+            COSArray certArr = new COSArray();
+            for (byte[] b : certs) {
+                certArr.add(new COSObject(newLtvStream(b), new COSObjectKey(nextNum++, 0)));
+            }
+            COSArray ocspArr = new COSArray();
+            for (byte[] b : ocspList) {
+                ocspArr.add(new COSObject(newLtvStream(b), new COSObjectKey(nextNum++, 0)));
+            }
+            COSArray crlArr = new COSArray();
+            for (byte[] b : crlList) {
+                crlArr.add(new COSObject(newLtvStream(b), new COSObjectKey(nextNum++, 0)));
+            }
+
+            COSDictionary dss = new COSDictionary();
+            dss.setItem(COSName.TYPE, COSName.getPDFName("DSS"));
+            if (certArr.size() > 0) {
+                dss.setItem(COSName.getPDFName("Certs"), certArr);
+            }
+            if (ocspArr.size() > 0) {
+                dss.setItem(COSName.getPDFName("OCSPs"), ocspArr);
+            }
+            if (crlArr.size() > 0) {
+                dss.setItem(COSName.getPDFName("CRLs"), crlArr);
+            }
+
+            COSDictionary vri = new COSDictionary();
+            vri.setItem(COSName.TYPE, COSName.getPDFName("VRI"));
+            if (ocspArr.size() > 0) {
+                vri.setItem(COSName.getPDFName("OCSP"), ocspArr);
+            }
+            if (crlArr.size() > 0) {
+                vri.setItem(COSName.getPDFName("CRL"), crlArr);
+            }
+            if (certArr.size() > 0) {
+                vri.setItem(COSName.getPDFName("Cert"), certArr);
+            }
+            COSDictionary vris = new COSDictionary();
+            vris.setItem(COSName.getPDFName(vriKey), vri);
+            dss.setItem(COSName.getPDFName("VRI"), vris);
+            COSObject dssRef = new COSObject(dss, new COSObjectKey(nextNum++, 0));
+
+            // catalog 加 /DSS 并标记修订（saveIncremental 只追加增量，不触碰原签名区）
+            COSDictionary catalog = doc.getDocumentCatalog().getCOSObject();
+            catalog.setItem(COSName.getPDFName("DSS"), dssRef);
+            Set<COSDictionary> updated = new HashSet<>();
+            updated.add(catalog);
+
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            doc.saveIncremental(out, updated);
+            return out.toByteArray();
+        } catch (Exception e) {
+            return signedPdf; // LTV 失败不影响签名
+        }
+    }
+
+    /** 创建承载 LTV 数据的流对象（字节写入，保存时由 COSObject 包装为间接对象）。 */
+    private static COSStream newLtvStream(byte[] data) throws IOException {
+        COSStream s = new COSStream();
+        try (OutputStream os = s.createRawOutputStream()) {
+            os.write(data);
+        }
+        return s;
+    }
+
+    /** RFC 6960 OCSP 请求（SHA-1 CertID + Nonce）→ 完整 OCSPResp DER；失败返回 null。 */
+    private static byte[] requestOcspResponse(X509Certificate target, X509Certificate issuer,
+                                              String baseDir) {
+        try {
+            AlgorithmIdentifier algId = new AlgorithmIdentifier(
+                    new ASN1ObjectIdentifier("1.3.14.3.2.26")); // SHA-1
+            DigestCalculatorProvider dcp = new JcaDigestCalculatorProviderBuilder()
+                    .setProvider("BC").build();
+            CertificateID cid = new CertificateID(dcp.get(algId),
+                    new JcaX509CertificateHolder(issuer), target.getSerialNumber());
+            OCSPReqBuilder gen = new OCSPReqBuilder();
+            gen.addRequest(cid);
+            byte[] nonce = new byte[8];
+            new SecureRandom().nextBytes(nonce);
+            gen.setRequestExtensions(new Extensions(new Extension(
+                    OCSPObjectIdentifiers.id_pkix_ocsp_nonce, false, new DEROctetString(nonce))));
+            byte[] reqDer = gen.build().getEncoded();
+
+            String url = configValue(baseDir, "OCSP");
+            if (url == null || url.isEmpty()) {
+                url = "http://127.0.0.1:" + configValue(baseDir, "WEBPORT", "80") + "/OCSP";
+            }
+            return httpPost(url, "application/ocsp-request", reqDer);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /** 下载颁发者 CRL（DER）。优先 CONFIG CRL URL 的 .der.crl 变体，回退原 URL 与本地文件。 */
+    private static byte[] fetchIssuerCrl(X509Certificate issuer, String baseDir) {
+        String serial = issuer.getSerialNumber().toString(16);
+        String url = configValue(baseDir, "CRL");
+        if (url != null && !url.isEmpty()) {
+            String u = url.replace("{CID}", serial).replace("{cid}", serial);
+            String derUrl = u.endsWith(".crl")
+                    ? u.substring(0, u.length() - 4) + ".der.crl" : u + ".der.crl";
+            byte[] b = httpGet(derUrl);
+            if (b != null && isDer(b)) {
+                return b;
+            }
+            byte[] b2 = httpGet(u);
+            if (b2 != null) {
+                byte[] der = toDerCrl(b2);
+                if (der != null) {
+                    return der;
+                }
+            }
+        }
+        // 本地兜底（MAIN 未启动 / 外部 URL 不可达时）
+        try {
+            Path p = Paths.get(baseDir, "PKI", "WebPublic", "CRL", serial + ".der.crl");
+            if (Files.exists(p)) {
+                return Files.readAllBytes(p);
+            }
+        } catch (Exception ignored) {
+        }
+        return null;
+    }
+
+    /** 读取 CONFIG.txt 键值（缺省返回 def）。 */
+    private static String configValue(String baseDir, String key) {
+        return configValue(baseDir, key, null);
+    }
+
+    private static String configValue(String baseDir, String key, String def) {
+        try {
+            Path cfg = Paths.get(baseDir, "PKI", "CONFIG.txt");
+            if (Files.exists(cfg)) {
+                for (String line : Files.readAllLines(cfg, StandardCharsets.UTF_8)) {
+                    String t = line.trim();
+                    if (t.startsWith(key + "=")) {
+                        String v = t.substring(key.length() + 1).trim();
+                        if (!v.isEmpty()) {
+                            return v;
+                        }
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return def;
+    }
+
+    /** HTTP POST（二进制），非 200 或异常返回 null。 */
+    private static byte[] httpPost(String url, String contentType, byte[] body) {
+        try {
+            HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+            conn.setRequestMethod("POST");
+            conn.setDoOutput(true);
+            conn.setConnectTimeout(8000);
+            conn.setReadTimeout(20000);
+            conn.setRequestProperty("Content-Type", contentType);
+            conn.setRequestProperty("Content-Length", String.valueOf(body.length));
+            try (OutputStream os = conn.getOutputStream()) {
+                os.write(body);
+            }
+            int code = conn.getResponseCode();
+            if (code != HttpURLConnection.HTTP_OK) {
+                return null;
+            }
+            ByteArrayOutputStream resp = new ByteArrayOutputStream();
+            try (InputStream is = conn.getInputStream()) {
+                byte[] buf = new byte[8192];
+                int n;
+                while ((n = is.read(buf)) != -1) {
+                    resp.write(buf, 0, n);
+                }
+            }
+            return resp.toByteArray();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /** HTTP GET，非 200 或异常返回 null。 */
+    private static byte[] httpGet(String url) {
+        try {
+            HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+            conn.setRequestMethod("GET");
+            conn.setConnectTimeout(8000);
+            conn.setReadTimeout(20000);
+            int code = conn.getResponseCode();
+            if (code != HttpURLConnection.HTTP_OK) {
+                return null;
+            }
+            ByteArrayOutputStream resp = new ByteArrayOutputStream();
+            try (InputStream is = conn.getInputStream()) {
+                byte[] buf = new byte[8192];
+                int n;
+                while ((n = is.read(buf)) != -1) {
+                    resp.write(buf, 0, n);
+                }
+            }
+            return resp.toByteArray();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /** 判断字节是否为 DER 编码（可解析 ASN.1）。 */
+    private static boolean isDer(byte[] b) {
+        try {
+            ASN1Primitive.fromByteArray(b);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /** PEM CRL（-----BEGIN X509 CRL-----）→ DER；非 PEM 原样返回。 */
+    private static byte[] toDerCrl(byte[] pem) {
+        try {
+            String s = new String(pem, StandardCharsets.US_ASCII);
+            int i = s.indexOf("-----BEGIN");
+            int j = s.indexOf("-----END");
+            if (i < 0 || j < 0) {
+                return isDer(pem) ? pem : null;
+            }
+            String b64 = s.substring(s.indexOf('\n', i) + 1, j)
+                    .replaceAll("[^A-Za-z0-9+/=]", "");
+            if (b64.isEmpty()) {
+                return null;
+            }
+            return Base64.getDecoder().decode(b64);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     // ============================ PDF 验证 ============================
 
     /** 验证 PDF 签名：CMS 签名、ByteRange 摘要比对、证书链。 */
@@ -1013,7 +2037,7 @@ public final class SignTool {
             if (sig.getSignDate() != null) {
                 sb.append("签名时间: ").append(sig.getSignDate().getTime()).append('\n');
             }
-            sb.append("SubFilter: ").append(sig.getSubFilter()).append('\n');
+            sb.append("SubFilter: ").append(printable(sig.getSubFilter())).append('\n');
 
             byte[] contents = sig.getContents();
             if (contents == null || contents.length == 0) {
@@ -1038,6 +2062,32 @@ public final class SignTool {
             rangeOut.write(pdf, (int) br[2], (int) br[3]);
             byte[] range = rangeOut.toByteArray();
             sb.append("待签名数据长度: ").append(range.length).append(" 字节\n");
+
+            // PAdES LTV 状态（DSS / VRI 字典）
+            COSDictionary dss = doc.getDocumentCatalog().getCOSObject()
+                    .getCOSDictionary(COSName.getPDFName("DSS"));
+            if (dss != null) {
+                COSArray ce = dss.getCOSArray(COSName.getPDFName("Certs"));
+                COSArray oc = dss.getCOSArray(COSName.getPDFName("OCSPs"));
+                COSArray cr = dss.getCOSArray(COSName.getPDFName("CRLs"));
+                COSDictionary vris = dss.getCOSDictionary(COSName.getPDFName("VRI"));
+                StringBuilder ltv = new StringBuilder("LTV: 已启用（DSS 字典");
+                if (ce != null) ltv.append("，Certs=").append(ce.size());
+                if (oc != null) ltv.append("，OCSPs=").append(oc.size());
+                if (cr != null) ltv.append("，CRLs=").append(cr.size());
+                if (vris != null && vris.size() > 0) {
+                    ltv.append("，VRI=").append(vris.keySet().iterator().next().getName());
+                }
+                ltv.append("）\n");
+                sb.append(ltv);
+            } else {
+                sb.append("LTV: 未启用（无 DSS 字典）\n");
+            }
+
+            // 国密 GB/T 38540-2020：Contents = SES_Signature（非 CMS），走专用解析
+            if (SUBFILTER_GM_SEAL.equals(sig.getSubFilter())) {
+                return verifyGmSeal38540(sb, cmsBytes, range);
+            }
 
             CMSSignedData cms;
             try {
@@ -1102,6 +2152,89 @@ public final class SignTool {
     }
 
     // ============================ 工具方法 ============================
+
+    /**
+     * 验证国密 SES_Signature（PDF Contents 原始结构，非 CMS）：
+     * 支持 GB/T 38540-2020（4 字段：toSign/cert/signatureAlgID/signature）与
+     * GM/T 0031（2 字段：toSign/signature，证书与算法在 TBS_Sign 内部）：
+     * 1) 解析 SES_Signature；2) dataHash 与 SM3(ByteRange) 比对；
+     * 3) 用证书公钥 SM3withSM2 验签 TBS_Sign DER。
+     */
+    private static String verifyGmSeal38540(StringBuilder sb, byte[] contents,
+                                            byte[] range) throws Exception {
+        ASN1Sequence sesSig = ASN1Sequence.getInstance(ASN1Primitive.fromByteArray(contents));
+        final boolean is0031 = sesSig.size() == 2;
+        final boolean is38540 = sesSig.size() == 4;
+        if (!is0031 && !is38540) {
+            return sb.append("[失败] SES_Signature 字段数=").append(sesSig.size())
+                    .append("（应为 2: toSign/signature（GM/T 0031）或 4: toSign/cert/signatureAlgID/signature（GB/T 38540））")
+                    .toString();
+        }
+        sb.append(is0031 ? "\n[国密 GM/T 0031 SES_Signature 验证]\n"
+                : "\n[国密 GB/T 38540-2020 SES_Signature 验证]\n");
+        try {
+            ASN1Sequence tbs = ASN1Sequence.getInstance(sesSig.getObjectAt(0));
+            sb.append("TBS_Sign 字段数: ").append(tbs.size()).append('\n');
+            sb.append("TBS version: ").append(ASN1Integer.getInstance(tbs.getObjectAt(0)).getValue()).append('\n');
+            if (tbs.size() < 4) {
+                return sb.append("[失败] TBS_Sign 缺少 dataHash").toString();
+            }
+            // dataHash（BIT STRING，两种标准均在 TBS_Sign[3]）
+            byte[] embeddedHash = DERBitString.getInstance(tbs.getObjectAt(3)).getBytes();
+            // 证书 / 签名算法 / 签名值：38540 在外层，0031 在 TBS_Sign 内部
+            byte[] certBytes;
+            String sigAlgOid;
+            byte[] sigValue;
+            if (is0031) {
+                if (tbs.size() < 7) {
+                    return sb.append("[失败] TBS_Sign 字段数不足 7（GM/T 0031 应为 version/eseal/timeInfo/dataHash/propertyInfo/cert/signatureAlgorithm）")
+                            .toString();
+                }
+                certBytes = ASN1OctetString.getInstance(tbs.getObjectAt(5)).getOctets();
+                sigAlgOid = ASN1ObjectIdentifier.getInstance(tbs.getObjectAt(6)).getId();
+                sigValue = DERBitString.getInstance(sesSig.getObjectAt(1)).getBytes();
+            } else {
+                certBytes = ASN1OctetString.getInstance(sesSig.getObjectAt(1)).getOctets();
+                sigAlgOid = ASN1ObjectIdentifier.getInstance(sesSig.getObjectAt(2)).getId();
+                sigValue = DERBitString.getInstance(sesSig.getObjectAt(3)).getBytes();
+            }
+            java.security.cert.CertificateFactory cf =
+                    java.security.cert.CertificateFactory.getInstance("X.509", "BC");
+            X509Certificate signerCert = (X509Certificate) cf
+                    .generateCertificate(new ByteArrayInputStream(certBytes));
+            sb.append("签名者证书: ").append(signerCert.getSubjectX500Principal()).append('\n');
+            sb.append("签名算法 OID: ").append(sigAlgOid).append('\n');
+            sb.append("签名值长度: ").append(sigValue.length).append(" 字节\n");
+
+            // 原文 SM3 哈希比对
+            MessageDigest sm3 = MessageDigest.getInstance("SM3", "BC");
+            byte[] calc = sm3.digest(range);
+            boolean hashOk = MessageDigest.isEqual(embeddedHash, calc);
+            sb.append("原文SM3哈希: ").append(Hex.toHexString(calc)).append('\n');
+            sb.append("内嵌dataHash: ").append(Hex.toHexString(embeddedHash)).append('\n');
+            sb.append("文档摘要比对: ").append(hashOk ? "通过 ✓" : "失败 ✗").append('\n');
+
+            // 验签（TBS_Sign 完整 DER）
+            byte[] tbsDer = tbs.getEncoded("DER");
+            boolean sigOk = false;
+            try {
+                Signature ver = Signature.getInstance("SM3WITHSM2", "BC");
+                ver.initVerify(signerCert.getPublicKey());
+                ver.update(tbsDer);
+                sigOk = ver.verify(sigValue);
+            } catch (Exception e) {
+                sb.append("  SM3withSM2 验签异常: ").append(e).append('\n');
+            }
+            sb.append("SM2 签名验证: ").append(sigOk ? "通过 ✓" : "失败 ✗").append('\n');
+
+            sb.append("\n========================================\n");
+            sb.append("最终结论: ").append((sigOk && hashOk)
+                    ? "国密 PDF 电子签章有效 ✓" : "国密 PDF 电子签章无效 ✗").append('\n');
+            return sb.toString();
+        } catch (Exception e) {
+            return sb.append("[失败] SES_Signature 解析异常: ").append(e).append('\n').toString();
+        }
+    }
 
     private static String shortDn(String dn) {
         if (dn != null && dn.length() > 120) {

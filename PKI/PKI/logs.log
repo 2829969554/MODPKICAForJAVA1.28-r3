@@ -1,0 +1,7 @@
+时间: 2026/09/15 21:45:48
+时间戳: 1789479948013
+操作: WebAdmin /api/sign/pdf 异常
+命令: POST /api/sign/pdf
+结果: 
+错误: java.lang.IllegalArgumentException: CERTS.txt 无序列号 113548382
+

@@ -15215,3 +15215,1936 @@ TSA 证书 RSA_sha256 根=13fbe86586d1206
 命令: POST /api/verify 提交数据={"target":"11354838d"}
 结果:         版本： 3\r\n      序列号： 011354838d\r\n    签名算法： SM3-SM2 (1.2.156.10197.1.501)\r\n签名哈希算法： SM3\n\r\n颁发者： CN=SM2CA\r\n有效期从： Sun Sep 13 20:29:55 CST 2026\r\n有效期到： Tue Sep 12 20:29:55 CST 2028\n\r\n使用者： CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\r\n    公钥： ECC 256\r\n授权密钥标识符  ： 8736a81424b164af3da420d7ca86ea1b613a98a4\r\n使用者密钥标识符： 637b9bff7e6f25c136fb34f01f4541d2426c9b8f\n\r\n增强型密钥用法：\n\r\n              服务器身份验证 (1.3.6.1.5.5.7.3.1)\r\n              代码签名 (1.3.6.1.5.5.7.3.3)\r\n              安全电子邮件 (1.3.6.1.5.5.7.3.4)\r\n              内核模式代码签名 (1.3.6.1.4.1.311.61.1.1)\r\n              Windows 硬件驱动程序验证 (1.3.6.1.4.1.311.10.3.5)\r\n              Windows 系统组件验证 (1.3.6.1.4.1.311.10.3.6)\r\n              OEM Windows 系统组件验证 (1.3.6.1.4.1.311.10.3.7)\r\n              内嵌 Windows 系统组件验证 (1.3.6.1.4.1.311.10.3.8)\r\n              1.3.6.1.5.5.7.3.36 (1.3.6.1.5.5.7.3.36)\r\n              文档签名 (1.3.6.1.4.1.311.10.3.12)\r\n              加密文件系统 (1.3.6.1.4.1.311.10.3.4)\r\n              数字权利 (1.3.6.1.4.1.311.10.5.1)\r\n\n使用者可选名称：\r\n              DNS = localhost\r\n              DNS = anqikeji.picp.net\r\n              IP = 127.0.0.1\r\n授权信息访问：\r\n              OCSP   URL=http://localhost:80/ocsp\r\n              颁发者 URL=http://localhost:80/CRT/1cdd33203a2ce.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost:80/CRL/1cdd33203a2ce.crl\r\n              CRL分发点 = http://localhost:80/CRL/1cdd33203a2ce.der.crl\r\ndigitalSignature, nonRepudiation\r\n证书策略：\r\n              证书颁发策略(Statement Identifier) OID = 1.3.6.1.4.1.4146.1.95\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\nSCT列表:\r\n      第 1 条 SCT:\r\n        日志版本:  V1\r\n      日志标识符:  8736a81424b164af3da420d7ca86ea1b613a98a4637b9bff7e6f25c136fb34f0\r\n          时间戳:  Sun Sep 13 20:29:55 CST 2026\r\n        签名类型:  ECDSA-SHA256\r\n            签名:  3044022036b60a3e3fbdfe7f86bb16684bc15f4b7a934ff18429b041416c2a838181596702201eb487e37db7db08a0dda25ecdeb896ce95cb3cec0f2c20eec1160d0258a34b8\r\n\r\n      第 2 条 SCT:\r\n        日志版本:  V1\r\n      日志标识符:  637b9bff7e6f25c136fb34f01f4541d2426c9b8f8736a81424b164af3da420d7\r\n          时间戳:  Sun Sep 13 20:29:55 CST 2026\r\n        签名类型:  ECDSA-SHA256\r\n            签名:  304402205d02aa1f470cdf13130587457d076c2f19d4106a1b5b309e886a6f0e1a3002b2022025d7319f5559eeb09bc086afb6ae547fe7ba5bdb3e5ad0b1593c75649f9a630a\r\n\r\n      第 3 条 SCT:\r\n        日志版本:  V1\r\n      日志标识符:  12f14e34bd53724c840619c38f3f7a13f8e7b56287889c6d300584ebe586263a\r\n          时间戳:  Sun Sep 13 20:29:55 CST 2026\r\n        签名类型:  ECDSA-SHA256\r\n            签名:  304402201806790eb4dd6e5cd0849d5f480aac164b28498c27df14a0ef6e428dc90aeb1d02202aaf41e4cda53f4a26ce5b92352763b8e9569104e887f342a0ea8ef4873f6e03\r\n\r\n公钥列表:\r\n         公钥标识符: b00b25fb520517e1ee2b4f855b538e4bc8934858db99ea2678d36e752f1aaf8a\r\n           签名公钥: 048201153059301306072a8648ce3d020106082a8648ce3d030107034200043eb51d9b8256a56f3c918cd05f90735eb8bc65e6342828a68cef37457a9aee74a4da201f8f6518594f96d9982143c017e3560b3955324d41f7a1d63dd9c6e49f\r\n\r\n         公钥标识符: 267eac4b0c59142ba334d50b7d0151a2ac45b03f2cb6c17ce82cc5f0fcb1204c\r\n           签名公钥: 3059301306072a8648ce3d020106082a8648ce3d03010703420004c69e246435175af6491f891d9ff9f094ae208d323001e878ec3fda9223c0de9d35fe3ca9b9e2fdb5281cadcf9a5dc7205f61254ac2c0528c7a68e073514767ea\r\n\r\n         公钥标识符: 3c68c7f7e104317d4c94df43f751142277f17f19a7506b4e168d695ecd2d0325\r\n           签名公钥: 3059301306072a8648ce3d020106082a8648ce3d0301070342000425cf2d6ca5300043d5c2c47d1a0e68fd148ccb2c73a2ff2fcb203841f3b2640624ace45e64b585f234120358626a8bfe747fe5ce5467c58d21a17e6b472699ea\r\n\r\n\n\n\r\n证书签名：\n        3044022014720dce08b1405aa21c06314390a13bc05afce9931af7b42ca68dda3aa506e00220413ed8d0d38bde90c9197c98abf13d67a5048249c08925f7a4908ce0a8c81a83\n\r\n证书类别： 非根证书\n\r\n证书链： \r\n       CA   --> 8736a81424b164af3da420d7ca86ea1b613a98a4\r\n       Root --> 7377c95fbe1119350d6ad61c7c3b7aac9fed5913\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n验证签名： 通过、签名有效 颁发者=CN=SM2CA\r\n证书状态：          此证书已被颁发机构吊销。（CRL） 吊销时间：Thu Sep 10 22:33:23 CST 2026\r\n2026/09/14 23:46:59 OCSP:已吊销,序列号 11354838d\r\n          此证书已被颁发机构吊销。（OCSP）吊销时间：Thu Sep 10 22:33:23 CST 2026 原因:6\r\n\r\n密钥 Id 哈希(SHA1)          ： b12814c984e78af178dad61a76baf7a2ca02feaa\r\n密钥 Id 哈希(RFC-SHA1)      ： 637b9bff7e6f25c136fb34f01f4541d2426c9b8f\r\n密钥 Id 哈希(Pin-SHA256)    ： SN6f6ub3hn7UOazFdQ8knAFMCVCdlwF3/I1EcXlBev4=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 48de9feae6f7867ed439acc5750f249c014c09509d970177fc8d447179417afe\r\n\n\r\n证书哈希(SHA1)              ： 4c6f293c2bc72b5865fca8b74e8c467f9b91a977\r\n证书哈希(SHA256)            ： 2ca89a443ae36c6a281fada6a0a4e189de64167471da344469b0b131ae52a2aa\r\n签名哈希                    ： e8ab875c7ef0e4ae8dd4a909527984054157e108f8de0fb8f1455c54b9b604af\r\n
 
+时间: 2026/09/15 20:23:19
+时间戳: 1789474999338
+操作: 收到时间戳请求
+命令: 
+结果: 来源=127.0.0.1 路径=/timestamp
+
+时间: 2026/09/15 20:23:19
+时间戳: 1789474999457
+操作: 时间戳签名
+命令: 
+结果: 算法=Authenticode-SHA256 证书=CN=ROOTCA By Timstamp SHA256, OU=Only TSA SHA256 Signing, C=CN, O=My Org 摘要=20f9424d373788b5e8513bc099d5213cbc498fb8
+
+时间: 2026/09/15 20:23:19
+时间戳: 1789474999505
+操作: 时间戳响应
+命令: 
+结果: 长度=2664字节
+
+时间: 2026/09/15 20:23:19
+时间戳: 1789474999519
+操作: WebAdmin /api/sign/exe 异常
+命令: POST /api/sign/exe
+结果: 
+错误: java.io.IOException: Extra data detected in stream
+
+时间: 2026/09/15 20:24:37
+时间戳: 1789475077600
+操作: 收到时间戳请求
+命令: 
+结果: 来源=127.0.0.1 路径=/timestamp
+
+时间: 2026/09/15 20:24:37
+时间戳: 1789475077622
+操作: 时间戳签名
+命令: 
+结果: 算法=Authenticode-SHA256 证书=CN=ROOTCA By Timstamp SHA256, OU=Only TSA SHA256 Signing, C=CN, O=My Org 摘要=20f9424d373788b5e8513bc099d5213cbc498fb8
+
+时间: 2026/09/15 20:24:37
+时间戳: 1789475077626
+操作: 时间戳响应
+命令: 
+结果: 长度=2664字节
+
+时间: 2026/09/15 20:24:37
+时间戳: 1789475077734
+操作: WebAdmin /api/sign/exe
+命令: POST /api/sign/exe serial=11355fe00 file=test.exe size=360448
+结果: 微软代码签名（Authenticode）\n  时间戳类型: AUTHENTICODE\n  时间戳地址: （本机 MAIN 默认）\n  时间戳: 已附加 Authenticode 时间戳 (1996B) @ 本机MAIN\n  输入: test.exe（360448 字节）\n  证书: CN=AuthCodeTest, O=My Org, C=CN\n  序列号: 11355fe00   算法: RSA   摘要: SHA256\n  输出: 365496 字节
+
+时间: 2026/09/15 20:24:47
+时间戳: 1789475087098
+操作: 收到时间戳请求(RFC3161)
+命令: 
+结果: 来源=127.0.0.1 路径=/rfc3161
+
+时间: 2026/09/15 20:24:47
+时间戳: 1789475087106
+操作: 时间戳请求解析(RFC3161)
+命令: 
+结果: 摘要算法=2.16.840.1.101.3.4.2.1 消息摘要=4c2a99226d8cedf4252678e0584ef444360e0038604db06ab96bf7ab968e1e7d Nonce=null
+
+时间: 2026/09/15 20:24:47
+时间戳: 1789475087160
+操作: 时间戳签名(RFC3161)
+命令: 
+结果: 算法=sha256 TSA证书=CN=ROOTCA By Timstamp SHA256, OU=Only TSA SHA256 Signing, C=CN, O=My Org 摘要=044fb1b3cab7162a1143b2906fd193a0f6d8fab8
+
+时间: 2026/09/15 20:24:47
+时间戳: 1789475087166
+操作: 时间戳响应(RFC3161)
+命令: 
+结果: 长度=3256字节
+
+时间: 2026/09/15 20:24:47
+时间戳: 1789475087336
+操作: WebAdmin /api/sign/exe
+命令: POST /api/sign/exe serial=11355fe00 file=test.exe size=360448
+结果: 微软代码签名（Authenticode）\n  时间戳类型: RFC3161\n  时间戳地址: （本机 MAIN 默认）\n  时间戳: 已附加 RFC3161 时间戳 (3229B) @ 本机MAIN\n  输入: test.exe（360448 字节）\n  证书: CN=AuthCodeTest, O=My Org, C=CN\n  序列号: 11355fe00   算法: RSA   摘要: SHA256\n  输出: 366736 字节
+
+时间: 2026/09/15 20:24:56
+时间戳: 1789475096146
+操作: WebAdmin /api/sign/pdf
+命令: POST /api/sign/pdf serial=11355fe00 file=test.pdf size=1883
+结果: PDF 文档签名\n  签章类型: Adobe 标准文档签名\n  签章: 已附加可见签章（14057B 图片）\n  时间戳地址: （本机 MAIN /rfc3161 默认）\n  输入: test.pdf（1883 字节）\n  证书: CN=AuthCodeTest, O=My Org, C=CN\n  序列号: 11355fe00   算法: RSA   摘要: SHA256\n  输出: 41429 字节
+
+时间: 2026/09/15 20:25:04
+时间戳: 1789475104524
+操作: WebAdmin /api/verify/pdf
+命令: POST /api/verify/pdf size=41429
+结果: PDF 页数: 5\n签名数量: 1\n签名者: CN=AuthCodeTest, O=My Org, C=CN\n原因: MODPKICA PDF Document Signing\n签名时间: Tue Sep 15 20:24:55 CST 2026\nSubFilter: adbe.pkcs7.detached\n签名区长度: 9472 字节（去除填充后 3012 字节）\nByteRange: [0, 2269, 21215, 20214]\n待签名数据长度: 22483 字节\ncontentType: 1.2.840.113549.1.7.1\n证书数量: 2\n签名者证书: CN=AuthCodeTest, O=My Org, C=CN\n摘要算法: 2.16.840.1.101.3.4.2.1  签名算法: 1.2.840.113549.1.1.11\nCMS 签名验证: 通过 ✓\n文档摘要(SHA-256): f684a19c0968e78821136b7895d0688552fd1230d7a66926f43a117bbfe4b7db\nmessageDigest      : f684a19c0968e78821136b7895d0688552fd1230d7a66926f43a117bbfe4b7db\n文档摘要比对: 通过 ✓\n\n[3] 证书链验证\n  CN=AuthCodeTest, O=My Org, C=CN\n    └─ 由 CN=ROOTCA, O=My Org, C=CN 签发 ✓\n  链顶: CN=ROOTCA, O=My Org, C=CN（自签根）\n  证书链: 通过 ✓\n\n========================================\n最终结论: PDF 签名有效 ✓\n
+
+时间: 2026/09/15 20:25:15
+时间戳: 1789475115538
+操作: WebAdmin /api/sign/pdf
+命令: POST /api/sign/pdf serial=113548382 file=test.pdf size=1883
+结果: PDF 文档签名\n  签章类型: 国密 GB/T 35275-2017\n  签章: 已附加可见签章（14057B 图片）\n  时间戳地址: （本机 MAIN /rfc3161 默认）\n  输入: test.pdf（1883 字节）\n  证书: CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n  序列号: 113548382   算法: SM2   摘要: SM3\n  输出: 153694 字节
+
+时间: 2026/09/15 20:25:24
+时间戳: 1789475124241
+操作: WebAdmin /api/sign/pdf
+命令: POST /api/sign/pdf serial=113548382 file=test.pdf size=1883
+结果: PDF 文档签名\n  签章类型: 国密 GB/T 38540-2020\n  签章: 已附加可见签章（14057B 图片）\n  时间戳地址: （本机 MAIN /rfc3161 默认）\n  输入: test.pdf（1883 字节）\n  证书: CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n  序列号: 113548382   算法: SM2   摘要: SM3\n  输出: 153686 字节
+
+时间: 2026/09/15 20:25:32
+时间戳: 1789475132193
+操作: WebAdmin /api/verify/pdf
+命令: POST /api/verify/pdf size=153694
+结果: PDF 页数: 5\n签名数量: 1\n签名者: CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n原因: GB/T 35275-2017 国密电子签章\n签名时间: Tue Sep 15 20:25:15 CST 2026\nSubFilter: GM.sm2cms.detached\n签名区长度: 65536 字节（去除填充后 26776 字节）\nByteRange: [0, 2400, 133474, 20220]\n待签名数据长度: 22620 字节\ncontentType: 1.2.840.113549.1.7.1\n证书数量: 3\n签名者证书: CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n摘要算法: 1.2.156.10197.1.401  签名算法: 1.2.156.10197.1.501\nCMS 签名验证: 通过 ✓\n文档摘要(SM3): f3f4529fce222a46b8db6505b0d563614e9486724623bdcdeb2d1463f0642db2\nmessageDigest      : f3f4529fce222a46b8db6505b0d563614e9486724623bdcdeb2d1463f0642db2\n文档摘要比对: 通过 ✓\n\n[3] 证书链验证\n  CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n    └─ 由 CN=SM2CA 签发 ✓\n  CN=SM2CA\n    └─ 由 CN=ROOTCA, O=My Org, C=CN 签发 ✓\n  链顶: CN=ROOTCA, O=My Org, C=CN（自签根）\n  证书链: 通过 ✓\n\n========================================\n最终结论: PDF 签名有效 ✓\n
+
+时间: 2026/09/15 20:25:38
+时间戳: 1789475138943
+操作: WebAdmin /api/verify/pdf
+命令: POST /api/verify/pdf size=153686
+结果: PDF 页数: 5\n签名数量: 1\n签名者: CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n原因: GB/T 38540-2020 国密电子签章\n签名时间: Tue Sep 15 20:25:24 CST 2026\nSubFilter: GM.sm2seal\n签名区长度: 65536 字节（去除填充后 21916 字节）\nByteRange: [0, 2392, 133466, 20220]\n待签名数据长度: 22612 字节\n\n[国密 GB/T 38540-2020 SES_Signature 验证]\nTBS_Sign 字段数: 5\nTBS version: 4\n签名者证书: CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n签名算法 OID: 1.2.156.10197.1.501\n签名值长度: 71 字节\n原文SM3哈希: e9679d07263aabd32964f2a1ebdae366f0983809d7224e439e7ec57fe89c5c78\n内嵌dataHash: e9679d07263aabd32964f2a1ebdae366f0983809d7224e439e7ec57fe89c5c78\n文档摘要比对: 通过 ✓\nSM2 签名验证: 通过 ✓\n\n========================================\n最终结论: 国密 PDF 电子签章有效 ✓\n
+
+时间: 2026/09/15 20:25:53
+时间戳: 1789475153376
+操作: WebAdmin /api/sign/exe
+命令: POST /api/sign/exe serial=11355fe00 file=test.exe size=360448
+结果: 微软代码签名（Authenticode）\n  时间戳类型: RFC3161\n  时间戳地址: http://timestamp.digicert.com\n  时间戳: 已附加 RFC3161 时间戳 (5986B) @ http://timestamp.digicert.com\n  输入: test.exe（360448 字节）\n  证书: CN=AuthCodeTest, O=My Org, C=CN\n  序列号: 11355fe00   算法: RSA   摘要: SHA256\n  输出: 369488 字节
+
+时间: 2026/09/15 20:43:54
+时间戳: 1789476234175
+操作: 收到时间戳请求
+命令: 
+结果: 来源=127.0.0.1 路径=/timestamp
+
+时间: 2026/09/15 20:43:54
+时间戳: 1789476234241
+操作: 时间戳签名
+命令: 
+结果: 算法=Authenticode-SHA256 证书=CN=ROOTCA By Timstamp SHA256, OU=Only TSA SHA256 Signing, C=CN, O=My Org 摘要=89fc36bdaab1260da94f686a8815fa6f69896a84
+
+时间: 2026/09/15 20:43:54
+时间戳: 1789476234244
+操作: 时间戳响应
+命令: 
+结果: 长度=2664字节
+
+时间: 2026/09/15 20:43:54
+时间戳: 1789476234291
+操作: WebAdmin /api/sign/exe
+命令: POST /api/sign/exe serial=113522b95 file=signed_CERTVERIFY.exe size=9848928
+结果: 微软代码签名（Authenticode）\n  时间戳类型: AUTHENTICODE\n  时间戳地址: （本机 MAIN 默认）\n  时间戳: 已附加 Authenticode 时间戳 (1996B) @ 本机MAIN\n  输入: signed_CERTVERIFY.exe（9848928 字节）\n  证书: CN=demo.com, O=My Org, C=CN\n  序列号: 113522b95   算法: RSA   摘要: SHA256\n  输出: 9855880 字节
+
+时间: 2026/09/15 20:44:05
+时间戳: 1789476245796
+操作: 收到OCSP请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/ocsp 长度=74字节
+
+时间: 2026/09/15 20:44:05
+时间戳: 1789476245804
+操作: OCSP请求解析
+命令: 
+结果: 序列号=1cdd332014ecd 哈希=1.3.14.3.2.26 Nonce=无
+
+时间: 2026/09/15 20:44:05
+时间戳: 1789476245832
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=ROOTCA By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=1cdd332014ecd
+
+时间: 2026/09/15 20:44:05
+时间戳: 1789476245835
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1799字节
+
+时间: 2026/09/15 20:44:05
+时间戳: 1789476245863
+操作: 收到OCSP请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/ocsp 长度=72字节
+
+时间: 2026/09/15 20:44:05
+时间戳: 1789476245864
+操作: OCSP请求解析
+命令: 
+结果: 序列号=113522b95 哈希=1.3.14.3.2.26 Nonce=无
+
+时间: 2026/09/15 20:44:05
+时间戳: 1789476245878
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=EVCA By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=113522b95
+
+时间: 2026/09/15 20:44:05
+时间戳: 1789476245881
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1785字节
+
+时间: 2026/09/15 20:44:18
+时间戳: 1789476258309
+操作: 收到时间戳请求(RFC3161)
+命令: 
+结果: 来源=127.0.0.1 路径=/rfc3161
+
+时间: 2026/09/15 20:44:18
+时间戳: 1789476258312
+操作: 时间戳请求解析(RFC3161)
+命令: 
+结果: 摘要算法=2.16.840.1.101.3.4.2.1 消息摘要=c7d9a8b4320d2cf945e867e15617573e6ca7648c06887cbef2d04453e2fe5543 Nonce=null
+
+时间: 2026/09/15 20:44:18
+时间戳: 1789476258347
+操作: 时间戳签名(RFC3161)
+命令: 
+结果: 算法=sha256 TSA证书=CN=ROOTCA By Timstamp SHA256, OU=Only TSA SHA256 Signing, C=CN, O=My Org 摘要=5a9409351b9399206480a801c97a517be767789d
+
+时间: 2026/09/15 20:44:18
+时间戳: 1789476258354
+操作: 时间戳响应(RFC3161)
+命令: 
+结果: 长度=3256字节
+
+时间: 2026/09/15 20:44:18
+时间戳: 1789476258367
+操作: WebAdmin /api/sign/exe
+命令: POST /api/sign/exe serial=113522b95 file=signed_CERTVERIFY.exe size=9848928
+结果: 微软代码签名（Authenticode）\n  时间戳类型: RFC3161\n  时间戳地址: （本机 MAIN 默认）\n  时间戳: 已附加 RFC3161 时间戳 (3229B) @ 本机MAIN\n  输入: signed_CERTVERIFY.exe（9848928 字节）\n  证书: CN=demo.com, O=My Org, C=CN\n  序列号: 113522b95   算法: RSA   摘要: SHA256\n  输出: 9857128 字节
+
+时间: 2026/09/15 20:44:50
+时间戳: 1789476290297
+操作: 收到时间戳请求(RFC3161)
+命令: 
+结果: 来源=127.0.0.1 路径=/rfc3161
+
+时间: 2026/09/15 20:44:50
+时间戳: 1789476290300
+操作: 时间戳请求解析(RFC3161)
+命令: 
+结果: 摘要算法=2.16.840.1.101.3.4.2.1 消息摘要=1b614ed1bbc6e32a7809570e092aa3e36e9dd6678c8f064cc8fc18fff0c4b5ab Nonce=null
+
+时间: 2026/09/15 20:44:50
+时间戳: 1789476290419
+操作: 时间戳签名(RFC3161)
+命令: 
+结果: 算法=sha256 TSA证书=CN=ROOTCA By Timstamp SHA256, OU=Only TSA SHA256 Signing, C=CN, O=My Org 摘要=477f954cecdfc601813f73f9772d30ecf654893a
+
+时间: 2026/09/15 20:44:50
+时间戳: 1789476290445
+操作: 时间戳响应(RFC3161)
+命令: 
+结果: 长度=3256字节
+
+时间: 2026/09/15 20:44:50
+时间戳: 1789476290506
+操作: WebAdmin /api/sign/exe
+命令: POST /api/sign/exe serial=11355fe00 file=signed_CERTVERIFY.exe size=9848928
+结果: 微软代码签名（Authenticode）\n  时间戳类型: RFC3161\n  时间戳地址: （本机 MAIN 默认）\n  时间戳: 已附加 RFC3161 时间戳 (3229B) @ 本机MAIN\n  输入: signed_CERTVERIFY.exe（9848928 字节）\n  证书: CN=AuthCodeTest, O=My Org, C=CN\n  序列号: 11355fe00   算法: RSA   摘要: SHA256\n  输出: 9855216 字节
+
+时间: 2026/09/15 20:45:00
+时间戳: 1789476300243
+操作: 收到OCSP请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/ocsp 长度=72字节
+
+时间: 2026/09/15 20:45:00
+时间戳: 1789476300244
+操作: OCSP请求解析
+命令: 
+结果: 序列号=11355fe00 哈希=1.3.14.3.2.26 Nonce=无
+
+时间: 2026/09/15 20:45:00
+时间戳: 1789476300254
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=ROOTCA By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=11355fe00
+
+时间: 2026/09/15 20:45:00
+时间戳: 1789476300256
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1797字节
+
+时间: 2026/09/15 20:45:04
+时间戳: 1789476304957
+操作: 收到时间戳请求
+命令: 
+结果: 来源=127.0.0.1 路径=/timestamp
+
+时间: 2026/09/15 20:45:04
+时间戳: 1789476304973
+操作: 时间戳签名
+命令: 
+结果: 算法=Authenticode-SHA256 证书=CN=ROOTCA By Timstamp SHA256, OU=Only TSA SHA256 Signing, C=CN, O=My Org 摘要=129e93d302a2fb5d770d7e0f8b1e97fbba035462
+
+时间: 2026/09/15 20:45:04
+时间戳: 1789476304978
+操作: 时间戳响应
+命令: 
+结果: 长度=2664字节
+
+时间: 2026/09/15 20:45:04
+时间戳: 1789476304992
+操作: WebAdmin /api/sign/exe
+命令: POST /api/sign/exe serial=11355fe00 file=signed_CERTVERIFY.exe size=9848928
+结果: 微软代码签名（Authenticode）\n  时间戳类型: AUTHENTICODE\n  时间戳地址: （本机 MAIN 默认）\n  时间戳: 已附加 Authenticode 时间戳 (1996B) @ 本机MAIN\n  输入: signed_CERTVERIFY.exe（9848928 字节）\n  证书: CN=AuthCodeTest, O=My Org, C=CN\n  序列号: 11355fe00   算法: RSA   摘要: SHA256\n  输出: 9853976 字节
+
+时间: 2026/09/15 20:46:26
+时间戳: 1789476386883
+操作: WebAdmin /api/sign/pdf
+命令: POST /api/sign/pdf serial=113548234 file=kong.pdf size=53758
+结果: PDF 文档签名\n  签章类型: Adobe 标准文档签名\n  签章: 已附加可见签章（90522B 图片）\n  时间戳地址: （本机 MAIN /rfc3161 默认）\n  输入: kong.pdf（53758 字节）\n  证书: CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n  序列号: 113548234   算法: RSA   摘要: SHA256\n  输出: 159419 字节
+
+时间: 2026/09/15 20:47:16
+时间戳: 1789476436491
+操作: 收到时间戳请求
+命令: 
+结果: 来源=127.0.0.1 路径=/timestamp
+
+时间: 2026/09/15 20:47:16
+时间戳: 1789476436504
+操作: 时间戳签名
+命令: 
+结果: 算法=Authenticode-SHA256 证书=CN=ROOTCA By Timstamp SHA256, OU=Only TSA SHA256 Signing, C=CN, O=My Org 摘要=20f9424d373788b5e8513bc099d5213cbc498fb8
+
+时间: 2026/09/15 20:47:16
+时间戳: 1789476436511
+操作: 时间戳响应
+命令: 
+结果: 长度=2664字节
+
+时间: 2026/09/15 20:47:16
+时间戳: 1789476436517
+操作: WebAdmin /api/sign/exe
+命令: POST /api/sign/exe serial=11355fe00 file=test.exe size=360448
+结果: 微软代码签名（Authenticode）\n  时间戳类型: AUTHENTICODE\n  时间戳地址: （本机 MAIN 默认）\n  时间戳: 已附加 Authenticode 时间戳 (1996B) @ 本机MAIN\n  输入: test.exe（360448 字节）\n  证书: CN=AuthCodeTest, O=My Org, C=CN\n  序列号: 11355fe00   算法: RSA   摘要: SHA256\n  输出: 365496 字节
+
+时间: 2026/09/15 20:47:55
+时间戳: 1789476475817
+操作: WebAdmin /api/sign/pdf 异常
+命令: POST /api/sign/pdf
+结果: 
+错误: java.io.IOException: Can't write signature, not enough space; adjust it with SignatureOptions.setPreferredSignatureSize
+
+时间: 2026/09/15 20:47:57
+时间戳: 1789476477349
+操作: WebAdmin /api/sign/pdf 异常
+命令: POST /api/sign/pdf
+结果: 
+错误: java.io.IOException: Can't write signature, not enough space; adjust it with SignatureOptions.setPreferredSignatureSize
+
+时间: 2026/09/15 20:48:01
+时间戳: 1789476481184
+操作: WebAdmin /api/sign/pdf 异常
+命令: POST /api/sign/pdf
+结果: 
+错误: java.io.IOException: Can't write signature, not enough space; adjust it with SignatureOptions.setPreferredSignatureSize
+
+时间: 2026/09/15 20:48:07
+时间戳: 1789476487194
+操作: WebAdmin /api/sign/pdf 异常
+命令: POST /api/sign/pdf
+结果: 
+错误: java.io.IOException: Can't write signature, not enough space; adjust it with SignatureOptions.setPreferredSignatureSize
+
+时间: 2026/09/15 20:48:10
+时间戳: 1789476490612
+操作: WebAdmin /api/sign/pdf 异常
+命令: POST /api/sign/pdf
+结果: 
+错误: java.lang.IllegalArgumentException: 国密 PDF 签章（GM35275）需要 SM2 证书，当前证书算法: ECC
+
+时间: 2026/09/15 20:48:16
+时间戳: 1789476496214
+操作: WebAdmin /api/sign/pdf 异常
+命令: POST /api/sign/pdf
+结果: 
+错误: java.lang.IllegalArgumentException: 国密 PDF 签章（GM35275）需要 SM2 证书，当前证书算法: ECC
+
+时间: 2026/09/15 20:48:18
+时间戳: 1789476498930
+操作: WebAdmin /api/sign/pdf 异常
+命令: POST /api/sign/pdf
+结果: 
+错误: java.lang.IllegalArgumentException: 国密 PDF 签章（GM35275）需要 SM2 证书，当前证书算法: RSA
+
+时间: 2026/09/15 20:48:20
+时间戳: 1789476500254
+操作: WebAdmin /api/sign/pdf 异常
+命令: POST /api/sign/pdf
+结果: 
+错误: java.lang.IllegalArgumentException: 国密 PDF 签章（GM35275）需要 SM2 证书，当前证书算法: RSA
+
+时间: 2026/09/15 20:48:34
+时间戳: 1789476514371
+操作: WebAdmin /api/sign/pdf 异常
+命令: POST /api/sign/pdf
+结果: 
+错误: java.io.IOException: Can't write signature, not enough space; adjust it with SignatureOptions.setPreferredSignatureSize
+
+时间: 2026/09/15 20:50:03
+时间戳: 1789476603886
+操作: 收到时间戳请求
+命令: 
+结果: 来源=127.0.0.1 路径=/timestamp
+
+时间: 2026/09/15 20:50:03
+时间戳: 1789476603895
+操作: 时间戳签名
+命令: 
+结果: 算法=Authenticode-SHA256 证书=CN=ROOTCA By Timstamp SHA256, OU=Only TSA SHA256 Signing, C=CN, O=My Org 摘要=46281ec24b27df2573cfdb2a19ac4041b0bfced2
+
+时间: 2026/09/15 20:50:03
+时间戳: 1789476603899
+操作: 时间戳响应
+命令: 
+结果: 长度=3200字节
+
+时间: 2026/09/15 20:50:20
+时间戳: 1789476620385
+操作: WebAdmin /api/sign/pdf 异常
+命令: POST /api/sign/pdf
+结果: 
+错误: java.io.IOException: Can't write signature, not enough space; adjust it with SignatureOptions.setPreferredSignatureSize
+
+时间: 2026/09/15 20:56:51
+时间戳: 1789477011352
+操作: WebAdmin /api/sign/exe 异常
+命令: POST /api/sign/exe
+结果: 
+错误: java.lang.IllegalArgumentException: 需要 multipart/form-data 上传
+
+时间: 2026/09/15 20:57:02
+时间戳: 1789477022591
+操作: 收到时间戳请求
+命令: 
+结果: 来源=127.0.0.1 路径=/timestamp
+
+时间: 2026/09/15 20:57:02
+时间戳: 1789477022624
+操作: 时间戳签名
+命令: 
+结果: 算法=Authenticode-SHA256 证书=CN=ROOTCA By Timstamp SHA256, OU=Only TSA SHA256 Signing, C=CN, O=My Org 摘要=4c64126510937827ad7ede93424385b158165932
+
+时间: 2026/09/15 20:57:02
+时间戳: 1789477022639
+操作: 时间戳响应
+命令: 
+结果: 长度=3200字节
+
+时间: 2026/09/15 20:57:02
+时间戳: 1789477022689
+操作: WebAdmin /api/sign/exe
+命令: POST /api/sign/exe serial=11355fe00 file=file.bin size=360448
+结果: 微软代码签名（Authenticode）\n  时间戳类型: AUTHENTICODE\n  时间戳地址: （本机 MAIN 默认）\n  时间戳: 已附加 Authenticode 时间戳 (2399B) @ 本机MAIN\n  输入: file.bin（360448 字节）\n  证书: CN=AuthCodeTest, O=My Org, C=CN\n  序列号: 11355fe00   算法: RSA   摘要: SHA256\n  输出: 364288 字节
+
+时间: 2026/09/15 20:57:11
+时间戳: 1789477031562
+操作: 收到时间戳请求
+命令: 
+结果: 来源=127.0.0.1 路径=/timestamp
+
+时间: 2026/09/15 20:57:11
+时间戳: 1789477031579
+操作: 时间戳签名
+命令: 
+结果: 算法=Authenticode-SHA256 证书=CN=ROOTCA By Timstamp SHA256, OU=Only TSA SHA256 Signing, C=CN, O=My Org 摘要=4c64126510937827ad7ede93424385b158165932
+
+时间: 2026/09/15 20:57:11
+时间戳: 1789477031585
+操作: 时间戳响应
+命令: 
+结果: 长度=3200字节
+
+时间: 2026/09/15 20:57:11
+时间戳: 1789477031590
+操作: WebAdmin /api/sign/exe
+命令: POST /api/sign/exe serial=11355fe00 file=file.bin size=360448
+结果: 微软代码签名（Authenticode）\n  时间戳类型: AUTHENTICODE\n  时间戳地址: （本机 MAIN 默认）\n  时间戳: 已附加 Authenticode 时间戳 (2399B) @ 本机MAIN\n  输入: file.bin（360448 字节）\n  证书: CN=AuthCodeTest, O=My Org, C=CN\n  序列号: 11355fe00   算法: RSA   摘要: SHA256\n  输出: 364288 字节
+
+时间: 2026/09/15 20:57:19
+时间戳: 1789477039630
+操作: 收到OCSP请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/ocsp 长度=72字节
+
+时间: 2026/09/15 20:57:19
+时间戳: 1789477039632
+操作: OCSP请求解析
+命令: 
+结果: 序列号=11355fe00 哈希=1.3.14.3.2.26 Nonce=无
+
+时间: 2026/09/15 20:57:19
+时间戳: 1789477039641
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=ROOTCA By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=11355fe00
+
+时间: 2026/09/15 20:57:19
+时间戳: 1789477039643
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1797字节
+
+时间: 2026/09/15 21:00:32
+时间戳: 1789477232746
+操作: 收到时间戳请求
+命令: 
+结果: 来源=127.0.0.1 路径=/timestamp
+
+时间: 2026/09/15 21:00:32
+时间戳: 1789477232759
+操作: 时间戳签名
+命令: 
+结果: 算法=Authenticode-SHA256 证书=CN=ROOTCA By Timstamp SHA256, OU=Only TSA SHA256 Signing, C=CN, O=My Org 摘要=4c64126510937827ad7ede93424385b158165932
+
+时间: 2026/09/15 21:00:32
+时间戳: 1789477232765
+操作: 时间戳响应
+命令: 
+结果: 长度=3200字节
+
+时间: 2026/09/15 21:00:32
+时间戳: 1789477232849
+操作: WebAdmin /api/sign/exe
+命令: POST /api/sign/exe serial=11355fe00 file=file.bin size=360448
+结果: 微软代码签名（Authenticode）\n  时间戳类型: AUTHENTICODE\n  时间戳地址: （本机 MAIN 默认）\n  时间戳: 已附加 Authenticode 时间戳 (2399B) @ 本机MAIN\n  输入: file.bin（360448 字节）\n  证书: CN=AuthCodeTest, O=My Org, C=CN\n  序列号: 11355fe00   算法: RSA   摘要: SHA256\n  输出: 364288 字节
+
+时间: 2026/09/15 21:02:25
+时间戳: 1789477345525
+操作: 收到时间戳请求
+命令: 
+结果: 来源=127.0.0.1 路径=/timestamp
+
+时间: 2026/09/15 21:02:25
+时间戳: 1789477345628
+操作: 时间戳签名
+命令: 
+结果: 算法=Authenticode-SHA256 证书=CN=ROOTCA By Timstamp SHA256, OU=Only TSA SHA256 Signing, C=CN, O=My Org 摘要=4c64126510937827ad7ede93424385b158165932
+
+时间: 2026/09/15 21:02:25
+时间戳: 1789477345634
+操作: 时间戳响应
+命令: 
+结果: 长度=3200字节
+
+时间: 2026/09/15 21:02:25
+时间戳: 1789477345714
+操作: WebAdmin /api/sign/exe
+命令: POST /api/sign/exe serial=11355fe00 file=file.bin size=360448
+结果: 微软代码签名（Authenticode）\n  时间戳类型: AUTHENTICODE\n  时间戳地址: （本机 MAIN 默认）\n  时间戳: 已附加 Authenticode 时间戳 (2399B) @ 本机MAIN\n  输入: file.bin（360448 字节）\n  证书: CN=AuthCodeTest, O=My Org, C=CN\n  序列号: 11355fe00   算法: RSA   摘要: SHA256\n  输出: 365568 字节
+
+时间: 2026/09/15 21:02:40
+时间戳: 1789477360065
+操作: 收到时间戳请求(RFC3161)
+命令: 
+结果: 来源=127.0.0.1 路径=/rfc3161
+
+时间: 2026/09/15 21:02:40
+时间戳: 1789477360067
+操作: 时间戳请求解析(RFC3161)
+命令: 
+结果: 摘要算法=2.16.840.1.101.3.4.2.1 消息摘要=4c2a99226d8cedf4252678e0584ef444360e0038604db06ab96bf7ab968e1e7d Nonce=null
+
+时间: 2026/09/15 21:02:40
+时间戳: 1789477360084
+操作: 时间戳签名(RFC3161)
+命令: 
+结果: 算法=sha256 TSA证书=CN=ROOTCA By Timstamp SHA256, OU=Only TSA SHA256 Signing, C=CN, O=My Org 摘要=044fb1b3cab7162a1143b2906fd193a0f6d8fab8
+
+时间: 2026/09/15 21:02:40
+时间戳: 1789477360101
+操作: 时间戳响应(RFC3161)
+命令: 
+结果: 长度=3256字节
+
+时间: 2026/09/15 21:02:40
+时间戳: 1789477360388
+操作: WebAdmin /api/sign/exe
+命令: POST /api/sign/exe serial=11355fe00 file=file.bin size=360448
+结果: 微软代码签名（Authenticode）\n  时间戳类型: RFC3161\n  时间戳地址: （本机 MAIN 默认）\n  时间戳: 已附加 RFC3161 时间戳 (3229B) @ 本机MAIN\n  输入: file.bin（360448 字节）\n  证书: CN=AuthCodeTest, O=My Org, C=CN\n  序列号: 11355fe00   算法: RSA   摘要: SHA256\n  输出: 366736 字节
+
+时间: 2026/09/15 21:05:46
+时间戳: 1789477546643
+操作: WebAdmin /api/sign/pdf 异常
+命令: POST /api/sign/pdf
+结果: 
+错误: java.lang.IllegalArgumentException: 国密 PDF 签章需要选择签章图片（png/jpg/bmp/gif）
+
+时间: 2026/09/15 21:06:14
+时间戳: 1789477574821
+操作: WebAdmin /api/sign/pdf
+命令: POST /api/sign/pdf serial=113548382 file= size=1883
+结果: PDF 文档签名\n  签章类型: 国密 GB/T 38540-2020\n  签章: 已附加可见签章（14057B 图片）\n  时间戳地址: （本机 MAIN /rfc3161 默认）\n  输入: （1883 字节）\n  证书: CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n  序列号: 113548382   算法: SM2   摘要: SM3\n  输出: 153686 字节
+
+时间: 2026/09/15 21:06:39
+时间戳: 1789477599469
+操作: WebAdmin /api/sign/pdf
+命令: POST /api/sign/pdf serial=113548382 file= size=153686
+结果: PDF 文档签名\n  签章类型: 国密 GB/T 38540-2020\n  签章: 已附加可见签章（14057B 图片）\n  时间戳地址: （本机 MAIN /rfc3161 默认）\n  输入: （153686 字节）\n  证书: CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n  序列号: 113548382   算法: SM2   摘要: SM3\n  输出: 305681 字节
+
+时间: 2026/09/15 21:06:57
+时间戳: 1789477617170
+操作: 收到时间戳请求
+命令: 
+结果: 来源=127.0.0.1 路径=/timestamp
+
+时间: 2026/09/15 21:06:57
+时间戳: 1789477617264
+操作: 时间戳签名
+命令: 
+结果: 算法=Authenticode-SHA256 证书=CN=ROOTCA By Timstamp SHA256, OU=Only TSA SHA256 Signing, C=CN, O=My Org 摘要=e2894ea55899124211405b0bddd8fe04649991e0
+
+时间: 2026/09/15 21:06:57
+时间戳: 1789477617279
+操作: 时间戳响应
+命令: 
+结果: 长度=3200字节
+
+时间: 2026/09/15 21:06:57
+时间戳: 1789477617335
+操作: WebAdmin /api/sign/exe
+命令: POST /api/sign/exe serial=113522b95 file=setup.exe size=1667784
+结果: 微软代码签名（Authenticode）\n  时间戳类型: AUTHENTICODE\n  时间戳地址: （本机 MAIN 默认）\n  时间戳: 已附加 Authenticode 时间戳 (2399B) @ 本机MAIN\n  输入: setup.exe（1667784 字节）\n  证书: CN=demo.com, O=My Org, C=CN\n  序列号: 113522b95   算法: RSA   摘要: SHA256\n  输出: 1674816 字节
+
+时间: 2026/09/15 21:07:05
+时间戳: 1789477625576
+操作: 收到OCSP请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/ocsp 长度=74字节
+
+时间: 2026/09/15 21:07:05
+时间戳: 1789477625583
+操作: OCSP请求解析
+命令: 
+结果: 序列号=1cdd332014ecd 哈希=1.3.14.3.2.26 Nonce=无
+
+时间: 2026/09/15 21:07:05
+时间戳: 1789477625610
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=ROOTCA By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=1cdd332014ecd
+
+时间: 2026/09/15 21:07:05
+时间戳: 1789477625613
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1799字节
+
+时间: 2026/09/15 21:07:05
+时间戳: 1789477625638
+操作: 收到OCSP请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/ocsp 长度=72字节
+
+时间: 2026/09/15 21:07:05
+时间戳: 1789477625640
+操作: OCSP请求解析
+命令: 
+结果: 序列号=113522b95 哈希=1.3.14.3.2.26 Nonce=无
+
+时间: 2026/09/15 21:07:05
+时间戳: 1789477625651
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=EVCA By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=113522b95
+
+时间: 2026/09/15 21:07:05
+时间戳: 1789477625655
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1785字节
+
+时间: 2026/09/15 21:07:13
+时间戳: 1789477633395
+操作: 收到时间戳请求
+命令: 
+结果: 来源=127.0.0.1 路径=/timestamp
+
+时间: 2026/09/15 21:07:13
+时间戳: 1789477633432
+操作: 时间戳签名
+命令: 
+结果: 算法=Authenticode-SHA256 证书=CN=ROOTCA By Timstamp SHA256, OU=Only TSA SHA256 Signing, C=CN, O=My Org 摘要=7fe7f910b6231656adc371b3d90216397fe0d4a9
+
+时间: 2026/09/15 21:07:13
+时间戳: 1789477633459
+操作: 时间戳响应
+命令: 
+结果: 长度=3200字节
+
+时间: 2026/09/15 21:07:13
+时间戳: 1789477633495
+操作: WebAdmin /api/sign/exe
+命令: POST /api/sign/exe serial=11355fe00 file=setup.exe size=1667784
+结果: 微软代码签名（Authenticode）\n  时间戳类型: AUTHENTICODE\n  时间戳地址: （本机 MAIN 默认）\n  时间戳: 已附加 Authenticode 时间戳 (2399B) @ 本机MAIN\n  输入: setup.exe（1667784 字节）\n  证书: CN=AuthCodeTest, O=My Org, C=CN\n  序列号: 11355fe00   算法: RSA   摘要: SHA256\n  输出: 1672904 字节
+
+时间: 2026/09/15 21:07:39
+时间戳: 1789477659220
+操作: 收到OCSP请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/ocsp 长度=72字节
+
+时间: 2026/09/15 21:07:39
+时间戳: 1789477659222
+操作: OCSP请求解析
+命令: 
+结果: 序列号=11355fe00 哈希=1.3.14.3.2.26 Nonce=无
+
+时间: 2026/09/15 21:07:39
+时间戳: 1789477659232
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=ROOTCA By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=11355fe00
+
+时间: 2026/09/15 21:07:39
+时间戳: 1789477659235
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1797字节
+
+时间: 2026/09/15 21:08:31
+时间戳: 1789477711195
+操作: ADMIN RevokeCERT
+命令: revokecert 11355e544 6
+结果: 吊销证书 11355e544 原因=6
+
+时间: 2026/09/15 21:08:31
+时间戳: 1789477711197
+操作: WebAdmin /api/revoke
+命令: POST /api/revoke 提交数据={"serial":"11355e544","reason":"6"}
+结果: 已吊销证书 11355e544（原因=6），CRL 已刷新。\nCRL 已生成: 13fbe86586d3f90 (算法 RSA/sha256, 吊销 3 条)\r\nCRL 已生成: 1cdd332014ecd (算法 RSA/sha256, 吊销 3 条)\r\nCRL 已生成: 1cdd33203a2ce (算法 SM2/sm3, 吊销 3 条)\r\nCRL 已生成: 13fbe865870f9b4 (算法 SM2/sm3, 吊销 3 条)\r\nCRL 生成完成，共处理颁发者 4 个\r\n
+
+时间: 2026/09/15 21:08:43
+时间戳: 1789477723034
+操作: WebAdmin /api/sign/pdf
+命令: POST /api/sign/pdf serial=113548382 file= size=1883
+结果: PDF 文档签名\n  签章类型: 国密 GB/T 38540-2020\n  签章: 已附加可见签章（2087818B 图片）\n  时间戳地址: （本机 MAIN /rfc3161 默认）\n  输入: （1883 字节）\n  证书: CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n  序列号: 113548382   算法: SM2   摘要: SM3\n  输出: 8456704 字节
+
+时间: 2026/09/15 21:08:48
+时间戳: 1789477728985
+操作: ADMIN RevokeCERT
+命令: revokecert 11355e5c4 6
+结果: 吊销证书 11355e5c4 原因=6
+
+时间: 2026/09/15 21:08:48
+时间戳: 1789477728986
+操作: WebAdmin /api/revoke
+命令: POST /api/revoke 提交数据={"serial":"11355e5c4","reason":"6"}
+结果: 已吊销证书 11355e5c4（原因=6），CRL 已刷新。\nCRL 已生成: 13fbe86586d3f90 (算法 RSA/sha256, 吊销 4 条)\r\nCRL 已生成: 1cdd332014ecd (算法 RSA/sha256, 吊销 4 条)\r\nCRL 已生成: 1cdd33203a2ce (算法 SM2/sm3, 吊销 4 条)\r\nCRL 已生成: 13fbe865870f9b4 (算法 SM2/sm3, 吊销 4 条)\r\nCRL 生成完成，共处理颁发者 4 个\r\n
+
+时间: 2026/09/15 21:09:01
+时间戳: 1789477741648
+操作: ADMIN RevokeCERT
+命令: revokecert 11355e515 6
+结果: 吊销证书 11355e515 原因=6
+
+时间: 2026/09/15 21:09:01
+时间戳: 1789477741650
+操作: WebAdmin /api/revoke
+命令: POST /api/revoke 提交数据={"serial":"11355e515","reason":"6"}
+结果: 已吊销证书 11355e515（原因=6），CRL 已刷新。\nCRL 已生成: 13fbe86586d3f90 (算法 RSA/sha256, 吊销 5 条)\r\nCRL 已生成: 1cdd332014ecd (算法 RSA/sha256, 吊销 5 条)\r\nCRL 已生成: 1cdd33203a2ce (算法 SM2/sm3, 吊销 5 条)\r\nCRL 已生成: 13fbe865870f9b4 (算法 SM2/sm3, 吊销 5 条)\r\nCRL 生成完成，共处理颁发者 4 个\r\n
+
+时间: 2026/09/15 21:09:02
+时间戳: 1789477742624
+操作: WebAdmin /api/sign/pdf
+命令: POST /api/sign/pdf serial=113548382 file= size=1883
+结果: PDF 文档签名\n  签章类型: 国密 GB/T 35275-2017\n  签章: 已附加可见签章（2087818B 图片）\n  时间戳地址: （本机 MAIN /rfc3161 默认）\n  输入: （1883 字节）\n  证书: CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n  序列号: 113548382   算法: SM2   摘要: SM3\n  输出: 8456712 字节
+
+时间: 2026/09/15 21:09:15
+时间戳: 1789477755492
+操作: 收到时间戳请求
+命令: 
+结果: 来源=127.0.0.1 路径=/timestamp
+
+时间: 2026/09/15 21:09:15
+时间戳: 1789477755509
+操作: 时间戳签名
+命令: 
+结果: 算法=Authenticode-SHA256 证书=CN=ROOTCA By Timstamp SHA256, OU=Only TSA SHA256 Signing, C=CN, O=My Org 摘要=7fe7f910b6231656adc371b3d90216397fe0d4a9
+
+时间: 2026/09/15 21:09:15
+时间戳: 1789477755518
+操作: 时间戳响应
+命令: 
+结果: 长度=3200字节
+
+时间: 2026/09/15 21:09:15
+时间戳: 1789477755523
+操作: WebAdmin /api/sign/exe
+命令: POST /api/sign/exe serial=11355fe00 file=setup.exe size=1667784
+结果: 微软代码签名（Authenticode）\n  时间戳类型: AUTHENTICODE\n  时间戳地址: （本机 MAIN 默认）\n  时间戳: 已附加 Authenticode 时间戳 (2399B) @ 本机MAIN\n  输入: setup.exe（1667784 字节）\n  证书: CN=AuthCodeTest, O=My Org, C=CN\n  序列号: 11355fe00   算法: RSA   摘要: SHA256\n  输出: 1672904 字节
+
+时间: 2026/09/15 21:09:42
+时间戳: 1789477782700
+操作: WebAdmin /api/verify/exe
+命令: POST /api/verify/exe size=1672904
+结果: PE格式: PE32 (32位)\nSecurity Directory: offset=0x1972c8 size=0x1400\nWIN_CERTIFICATE: dwLength=5120 wRevision=0x200 wCertificateType=0x2 → 符合规范\nCMS 实际长度: 5112 字节（偏移 +8）\n\n[1] CMS SignedData 解析\n  contentType: 1.3.6.1.4.1.311.2.1.4  <-- spcIndirectDataContext (Authenticode)\n  证书数量: 3\n    - C=CN,O=My Org,CN=AuthCodeTest\n    - C=CN,O=My Org,CN=ROOTCA\n    - O=My Org,C=CN,OU=Only TSA SHA256 Signing,CN=ROOTCA By Timstamp SHA256\n  签名者证书: CN=AuthCodeTest, O=My Org, C=CN\n  摘要算法: 2.16.840.1.101.3.4.2.1  签名算法: 1.2.840.113549.1.1.1\n  CMS 签名验证: 通过 ✓\n  RFC3161 时间戳: 未嵌入\n\n[2] Authenticode 文件哈希验证\n  摘要算法: SHA-256\n  计算摘要: 9c9c48d434fde440732d7b67550bb9a0a9f1b752ce139b1919323b511addc507\n  内嵌摘要: 9c9c48d434fde440732d7b67550bb9a0a9f1b752ce139b1919323b511addc507\n  文件哈希比对: 通过 ✓\n\n[3] 证书链验证\n  CN=AuthCodeTest, O=My Org, C=CN\n    └─ 由 CN=ROOTCA, O=My Org, C=CN 签发 ✓\n  链顶: CN=ROOTCA, O=My Org, C=CN（自签根）\n  证书链: 通过 ✓\n\n========================================\n最终结论: 代码签名有效 ✓\n
+
+时间: 2026/09/15 21:10:03
+时间戳: 1789477803332
+操作: 收到时间戳请求
+命令: 
+结果: 来源=127.0.0.1 路径=/timestamp
+
+时间: 2026/09/15 21:10:03
+时间戳: 1789477803343
+操作: 时间戳签名
+命令: 
+结果: 算法=Authenticode-SHA256 证书=CN=ROOTCA By Timstamp SHA256, OU=Only TSA SHA256 Signing, C=CN, O=My Org 摘要=a82708bded7e693749d1a100e01fa15b7a47c287
+
+时间: 2026/09/15 21:10:03
+时间戳: 1789477803351
+操作: 时间戳响应
+命令: 
+结果: 长度=2780字节
+
+时间: 2026/09/15 21:10:03
+时间戳: 1789477803354
+操作: WebAdmin /api/sign/exe
+命令: POST /api/sign/exe serial=113548382 file=signed_setup (3).exe size=1672904
+结果: 微软代码签名（Authenticode）\n  时间戳类型: AUTHENTICODE\n  时间戳地址: （本机 MAIN 默认）\n  时间戳: 已附加 Authenticode 时间戳 (2083B) @ 本机MAIN\n  输入: signed_setup (3).exe（1672904 字节）\n  证书: CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n  序列号: 113548382   算法: SM2   摘要: SM3\n  输出: 1677944 字节
+
+时间: 2026/09/15 21:10:12
+时间戳: 1789477812066
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRT/1cdd33203a2ce.crt
+
+时间: 2026/09/15 21:10:12
+时间戳: 1789477812067
+操作: 文件响应
+命令: 
+结果: 文件=1cdd33203a2ce.crt 大小=1596字节 类型=crt
+
+时间: 2026/09/15 21:10:12
+时间戳: 1789477812104
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRT/1cdd33203a2ce.crt
+
+时间: 2026/09/15 21:10:12
+时间戳: 1789477812106
+操作: 文件响应
+命令: 
+结果: 文件=1cdd33203a2ce.crt 大小=1596字节 类型=crt
+
+时间: 2026/09/15 21:10:30
+时间戳: 1789477830902
+操作: WebAdmin /api/verify/exe
+命令: POST /api/verify/exe size=1677944
+结果: PE格式: PE32 (32位)\nSecurity Directory: offset=0x1986c8 size=0x13b0\nWIN_CERTIFICATE: dwLength=5040 wRevision=0x200 wCertificateType=0x2 → 符合规范\nCMS 实际长度: 5025 字节（偏移 +8）\n\n[1] CMS SignedData 解析\n  contentType: 1.3.6.1.4.1.311.2.1.4  <-- spcIndirectDataContext (Authenticode)\n  证书数量: 3\n    - CN=SM2CA\n    - C=CN,O=My Org,CN=ROOTCA\n    - C=CN,O=ChinaITboys,OU=Person,CN=2829969554@qq.com\n  签名者证书: CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n  摘要算法: 1.2.156.10197.1.401  签名算法: 1.2.156.10197.1.501\n  CMS 签名验证: 通过 ✓\n  RFC3161 时间戳: 未嵌入\n\n[2] Authenticode 文件哈希验证\n  摘要算法: SM3\n  计算摘要: 716cfd336b6d197c69f47979e0cdda8d3a647a544dc4287e3709d9c32f6a1c14\n  内嵌摘要: 716cfd336b6d197c69f47979e0cdda8d3a647a544dc4287e3709d9c32f6a1c14\n  文件哈希比对: 通过 ✓\n\n[3] 证书链验证\n  CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n    └─ 由 CN=SM2CA 签发 ✓\n  CN=SM2CA\n    └─ 由 CN=ROOTCA, O=My Org, C=CN 签发 ✓\n  链顶: CN=ROOTCA, O=My Org, C=CN（自签根）\n  证书链: 通过 ✓\n\n========================================\n最终结论: 代码签名有效 ✓\n
+
+时间: 2026/09/15 21:10:40
+时间戳: 1789477840117
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRT/1cdd33203a2ce.crt
+
+时间: 2026/09/15 21:10:40
+时间戳: 1789477840118
+操作: 文件响应
+命令: 
+结果: 文件=1cdd33203a2ce.crt 大小=1596字节 类型=crt
+
+时间: 2026/09/15 21:10:40
+时间戳: 1789477840147
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRT/1cdd33203a2ce.crt
+
+时间: 2026/09/15 21:10:40
+时间戳: 1789477840149
+操作: 文件响应
+命令: 
+结果: 文件=1cdd33203a2ce.crt 大小=1596字节 类型=crt
+
+时间: 2026/09/15 21:10:43
+时间戳: 1789477843314
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRT/1cdd33203a2ce.crt
+
+时间: 2026/09/15 21:10:43
+时间戳: 1789477843315
+操作: 文件响应
+命令: 
+结果: 文件=1cdd33203a2ce.crt 大小=1596字节 类型=crt
+
+时间: 2026/09/15 21:10:43
+时间戳: 1789477843348
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRT/1cdd33203a2ce.crt
+
+时间: 2026/09/15 21:10:43
+时间戳: 1789477843350
+操作: 文件响应
+命令: 
+结果: 文件=1cdd33203a2ce.crt 大小=1596字节 类型=crt
+
+时间: 2026/09/15 21:11:09
+时间戳: 1789477869812
+操作: 收到时间戳请求(RFC3161)
+命令: 
+结果: 来源=127.0.0.1 路径=/rfc3161
+
+时间: 2026/09/15 21:11:09
+时间戳: 1789477869816
+操作: 时间戳请求解析(RFC3161)
+命令: 
+结果: 摘要算法=2.16.840.1.101.3.4.2.1 消息摘要=b128b34dea992e344ca4724faa76e1adaa596d81b1382e2549acd8e339a42e8d Nonce=null
+
+时间: 2026/09/15 21:11:09
+时间戳: 1789477869839
+操作: 时间戳签名(RFC3161)
+命令: 
+结果: 算法=sha256 TSA证书=CN=ROOTCA By Timstamp SHA256, OU=Only TSA SHA256 Signing, C=CN, O=My Org 摘要=de893e46fb877d32817091f7ec0f4a0006ab0f35
+
+时间: 2026/09/15 21:11:09
+时间戳: 1789477869843
+操作: 时间戳响应(RFC3161)
+命令: 
+结果: 长度=3256字节
+
+时间: 2026/09/15 21:11:09
+时间戳: 1789477869845
+操作: WebAdmin /api/sign/exe
+命令: POST /api/sign/exe serial=113548382 file=signed_signed_setup (3).exe size=1677944
+结果: 微软代码签名（Authenticode）\n  时间戳类型: RFC3161\n  时间戳地址: （本机 MAIN 默认）\n  时间戳: 已附加 RFC3161 时间戳 (3229B) @ 本机MAIN\n  输入: signed_signed_setup (3).exe（1677944 字节）\n  证书: CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n  序列号: 113548382   算法: SM2   摘要: SM3\n  输出: 1685584 字节
+
+时间: 2026/09/15 21:11:18
+时间戳: 1789477878065
+操作: WebAdmin /api/verify/exe
+命令: POST /api/verify/exe size=1685584
+结果: PE格式: PE32 (32位)\nSecurity Directory: offset=0x199a78 size=0x1dd8\nWIN_CERTIFICATE: dwLength=7640 wRevision=0x200 wCertificateType=0x2 → 符合规范\nCMS 实际长度: 7630 字节（偏移 +8）\n\n[1] CMS SignedData 解析\n  contentType: 1.3.6.1.4.1.311.2.1.4  <-- spcIndirectDataContext (Authenticode)\n  证书数量: 3\n    - CN=SM2CA\n    - C=CN,O=My Org,CN=ROOTCA\n    - C=CN,O=ChinaITboys,OU=Person,CN=2829969554@qq.com\n  签名者证书: CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n  摘要算法: 1.2.156.10197.1.401  签名算法: 1.2.156.10197.1.501\n  CMS 签名验证: 通过 ✓\n  RFC3161 时间戳: 已嵌入（SPC_RFC3161_TS 1.3.6.1.4.1.311.3.3.1）\n\n[2] Authenticode 文件哈希验证\n  摘要算法: SM3\n  计算摘要: fedf3ad75d77ec12a3f2c209612cc677307fb5b1b38481c30631dce330110585\n  内嵌摘要: fedf3ad75d77ec12a3f2c209612cc677307fb5b1b38481c30631dce330110585\n  文件哈希比对: 通过 ✓\n\n[3] 证书链验证\n  CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n    └─ 由 CN=SM2CA 签发 ✓\n  CN=SM2CA\n    └─ 由 CN=ROOTCA, O=My Org, C=CN 签发 ✓\n  链顶: CN=ROOTCA, O=My Org, C=CN（自签根）\n  证书链: 通过 ✓\n\n========================================\n最终结论: 代码签名有效 ✓\n
+
+时间: 2026/09/15 21:11:26
+时间戳: 1789477886809
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRT/1cdd33203a2ce.crt
+
+时间: 2026/09/15 21:11:26
+时间戳: 1789477886811
+操作: 文件响应
+命令: 
+结果: 文件=1cdd33203a2ce.crt 大小=1596字节 类型=crt
+
+时间: 2026/09/15 21:11:26
+时间戳: 1789477886836
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRT/1cdd33203a2ce.crt
+
+时间: 2026/09/15 21:11:26
+时间戳: 1789477886838
+操作: 文件响应
+命令: 
+结果: 文件=1cdd33203a2ce.crt 大小=1596字节 类型=crt
+
+时间: 2026/09/15 21:13:17
+时间戳: 1789477997737
+操作: WebAdmin /api/sign/pdf
+命令: POST /api/sign/pdf serial=113548382 file=kong.pdf size=53758
+结果: PDF 文档签名\n  签章类型: 国密 GB/T 35275-2017\n  签章: 已附加可见签章（102863B 图片）\n  时间戳地址: （本机 MAIN /rfc3161 默认）\n  输入: kong.pdf（53758 字节）\n  证书: CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n  序列号: 113548382   算法: SM2   摘要: SM3\n  输出: 559926 字节
+
+时间: 2026/09/15 21:14:00
+时间戳: 1789478040952
+操作: WebAdmin /api/sign/pdf
+命令: POST /api/sign/pdf serial=113548382 file=kong.pdf size=53758
+结果: PDF 文档签名\n  签章类型: 国密 GB/T 38540-2020\n  签章: 已附加可见签章（102863B 图片）\n  时间戳地址: （本机 MAIN /rfc3161 默认）\n  输入: kong.pdf（53758 字节）\n  证书: CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n  序列号: 113548382   算法: SM2   摘要: SM3\n  输出: 559918 字节
+
+时间: 2026/09/15 21:15:40
+时间戳: 1789478140826
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRT/1cdd33203a2ce.crt
+
+时间: 2026/09/15 21:15:40
+时间戳: 1789478140832
+操作: 文件响应
+命令: 
+结果: 文件=1cdd33203a2ce.crt 大小=1596字节 类型=crt
+
+时间: 2026/09/15 21:16:48
+时间戳: 1789478208841
+操作: WebAdmin /api/renew 详细
+命令: 续签 序列号=1cdd332014ecd 生效=2026-09-01T21:16:29 失效=2031-06-19T21:16:29
+结果: 续签完成 | 新生效时间: 2026-09-01 13:16:29 UTC | 新失效时间: 2031-06-19 13:16:29 UTC | 重签算法: RSA（颁发者 13fbe86586d3f90 签名） | 公钥与扩展保持不变，仅更新时间 | 证书已同步: PKI/WebPublic/CRT/1cdd332014ecd.crt | 证书类型: CA证书(C) | 证书已替换: PKI/CA/1cdd332014ecd.crt | 私钥保持不变（续签不更换密钥） | 
+
+时间: 2026/09/15 21:16:48
+时间戳: 1789478208843
+操作: WebAdmin /api/renew
+命令: POST /api/renew 提交数据={"serial":"1cdd332014ecd","notBefore":"2026-09-01T21:16:29","notAfter":"2031-06-19T21:16:29"}
+结果: 续签完成\n新生效时间: 2026-09-01 13:16:29 UTC\n新失效时间: 2031-06-19 13:16:29 UTC\n重签算法: RSA（颁发者 13fbe86586d3f90 签名）\n公钥与扩展保持不变，仅更新时间\n证书已同步: PKI/WebPublic/CRT/1cdd332014ecd.crt\n证书类型: CA证书(C)\n证书已替换: PKI/CA/1cdd332014ecd.crt\n私钥保持不变（续签不更换密钥）\n
+
+时间: 2026/09/15 21:17:10
+时间戳: 1789478230474
+操作: WebAdmin /api/renew 详细
+命令: 续签 序列号=1cdd33203a2ce 生效=2026-07-03T21:16:56 失效=2031-11-15T21:16:56
+结果: 续签完成 | 新生效时间: 2026-07-03 13:16:56 UTC | 新失效时间: 2031-11-15 13:16:56 UTC | 重签算法: RSA（颁发者 13fbe86586d3f90 签名） | 公钥与扩展保持不变，仅更新时间 | 证书已同步: PKI/WebPublic/CRT/1cdd33203a2ce.crt | 证书类型: CA证书(C) | 证书已替换: PKI/CA/1cdd33203a2ce.crt | 私钥保持不变（续签不更换密钥） | 
+
+时间: 2026/09/15 21:17:10
+时间戳: 1789478230475
+操作: WebAdmin /api/renew
+命令: POST /api/renew 提交数据={"serial":"1cdd33203a2ce","notBefore":"2026-07-03T21:16:56","notAfter":"2031-11-15T21:16:56"}
+结果: 续签完成\n新生效时间: 2026-07-03 13:16:56 UTC\n新失效时间: 2031-11-15 13:16:56 UTC\n重签算法: RSA（颁发者 13fbe86586d3f90 签名）\n公钥与扩展保持不变，仅更新时间\n证书已同步: PKI/WebPublic/CRT/1cdd33203a2ce.crt\n证书类型: CA证书(C)\n证书已替换: PKI/CA/1cdd33203a2ce.crt\n私钥保持不变（续签不更换密钥）\n
+
+时间: 2026/09/15 21:17:14
+时间戳: 1789478234134
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/CRT/13fbe86586d3f90.crt
+
+时间: 2026/09/15 21:17:14
+时间戳: 1789478234137
+操作: 文件响应
+命令: 
+结果: 文件=13fbe86586d3f90.crt 大小=1744字节 类型=crt
+
+时间: 2026/09/15 21:17:14
+时间戳: 1789478234145
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/CRL/13fbe86586d3f90.crl
+
+时间: 2026/09/15 21:17:14
+时间戳: 1789478234150
+操作: 文件响应
+命令: 
+结果: 文件=13fbe86586d3f90.crl 大小=842字节 类型=crl
+
+时间: 2026/09/15 21:17:14
+时间戳: 1789478234164
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=72字节
+
+时间: 2026/09/15 21:17:14
+时间戳: 1789478234169
+操作: OCSP请求解析
+命令: 
+结果: 序列号=1cdd332014ecd 哈希=1.3.14.3.2.26 Nonce=无
+
+时间: 2026/09/15 21:17:14
+时间戳: 1789478234194
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=ROOTCA By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=1cdd332014ecd
+
+时间: 2026/09/15 21:17:14
+时间戳: 1789478234203
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1799字节
+
+时间: 2026/09/15 21:17:14
+时间戳: 1789478234211
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"1cdd332014ecd"}
+结果:         版本： 3\r\n      序列号： 01cdd332014ecd\r\n    签名算法： SHA256-RSA (1.2.840.113549.1.1.11)\r\n签名哈希算法： SHA256\n\r\n颁发者： CN=ROOTCA, O=My Org, C=CN\r\n有效期从： Tue Sep 01 21:16:29 CST 2026\r\n有效期到： Thu Jun 19 21:16:29 CST 2031\n\r\n使用者： CN=EVCA, O=My Org, C=CN\r\n    公钥： RSA 2048\r\n授权密钥标识符  ： 7377c95fbe1119350d6ad61c7c3b7aac9fed5913\r\n使用者密钥标识符： 35ad60145bb7ec76cdef2a283c03938790f5ca87\n\r\n增强型密钥用法：\n\r\n              服务器身份验证 (1.3.6.1.5.5.7.3.1)\r\n授权信息访问：\r\n              OCSP   URL=http://localhost:80/ocsp\r\n              颁发者 URL=http://localhost:80/CRT/13fbe86586d3f90.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost:80/CRL/13fbe86586d3f90.crl\r\n              CRL分发点 = http://localhost:80/CRL/13fbe86586d3f90.der.crl\r\ndigitalSignature, nonRepudiation, keyCertSign, cRLSign\r\n基本约束(关键)：\n              Subject Type=CA  Path Length Constraint = 2147483647\r\n证书策略：\r\n              证书颁发策略(Statement Identifier) OID = 1.3.6.1.4.1.4146.1.95\r\n              所有颁发策略 OID = 2.5.29.32.0\r\n              所有应用程序策略 OID = 1.3.6.1.4.1.311.10.12.1\r\n\n\n\r\n证书签名：\n        afdf60195bff42525ba9f9160673119383f4b51e5131438258593cccbc3b8b06a8e802b56dc44b9311fe6fd17dcc34e629fef2fe3a6243547538f4a261c71db68cdb9e7c3d0356fe90351647d8de9e1072737615dc9ac1ae057163a8e0c371d81d6a63a186abfefd37cd8c711fea63c94aa1b112b8c10887c9da2b5a50e89cc6c9e639b6cc155a147d8ec36f0ece4086f4434abf68ac014ec4d79033385e550959629f73656f08892c30352667df8232c6e8ce4d0f34b6a88c6dd26ab0fc4c2c0f8aff02f75f494fb0d432c709f7d14d1326e891424df421d42bd6481958afccaecd7c8571948b5a128b01e3d854824df1042e7bf4eae660a5f5608bcfd9f3e8\n\r\n证书类别： 非根证书\n\r\n证书链： \r\n       Root --> 7377c95fbe1119350d6ad61c7c3b7aac9fed5913\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n验证签名： 通过、签名有效 颁发者=CN=ROOTCA, O=My Org, C=CN\r\n证书状态：证书正常。（CRL）\r\n2026/09/15 21:17:14 OCSP:正常,序列号 1cdd332014ecd\r\n          证书正常。（OCSP）\r\n\r\n密钥 Id 哈希(SHA1)          ： 640a2eb1fa80ef68bb661c918b9a32dab4587bcb\r\n密钥 Id 哈希(RFC-SHA1)      ： 35ad60145bb7ec76cdef2a283c03938790f5ca87\r\n密钥 Id 哈希(Pin-SHA256)    ： oBm4k16ZWmt4uHo9qBWj5o0r7QyVpJnEANpIE0jzDx0=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： a019b8935e995a6b78b87a3da815a3e68d2bed0c95a499c400da481348f30f1d\r\n\n\r\n证书哈希(SHA1)              ： 2fd6f1879e62d2f97b4dd63a359aeaba775a39c9\r\n证书哈希(SHA256)            ： 039e5fb1c65e6eb43014184a69462aeee1b280a14e221ef61fae29a2557efb5a\r\n签名哈希                    ： 472d87b3e49a84307843edc3bf8f430267c973bfca1b6aab3bb289f1641459b2\r\n
+
+时间: 2026/09/15 21:17:17
+时间戳: 1789478237591
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/CRT/13fbe86586d3f90.crt
+
+时间: 2026/09/15 21:17:17
+时间戳: 1789478237593
+操作: 文件响应
+命令: 
+结果: 文件=13fbe86586d3f90.crt 大小=1744字节 类型=crt
+
+时间: 2026/09/15 21:17:17
+时间戳: 1789478237596
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/CRL/13fbe86586d3f90.crl
+
+时间: 2026/09/15 21:17:17
+时间戳: 1789478237601
+操作: 文件响应
+命令: 
+结果: 文件=13fbe86586d3f90.crl 大小=842字节 类型=crl
+
+时间: 2026/09/15 21:17:17
+时间戳: 1789478237602
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=72字节
+
+时间: 2026/09/15 21:17:17
+时间戳: 1789478237604
+操作: OCSP请求解析
+命令: 
+结果: 序列号=1cdd33203a2ce 哈希=1.3.14.3.2.26 Nonce=无
+
+时间: 2026/09/15 21:17:17
+时间戳: 1789478237617
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=ROOTCA By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=1cdd33203a2ce
+
+时间: 2026/09/15 21:17:17
+时间戳: 1789478237621
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1799字节
+
+时间: 2026/09/15 21:17:17
+时间戳: 1789478237622
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"1cdd33203a2ce"}
+结果:         版本： 3\r\n      序列号： 01cdd33203a2ce\r\n    签名算法： SHA256-RSA (1.2.840.113549.1.1.11)\r\n签名哈希算法： SHA256\n\r\n颁发者： CN=ROOTCA, O=My Org, C=CN\r\n有效期从： Fri Jul 03 21:16:56 CST 2026\r\n有效期到： Sat Nov 15 21:16:56 CST 2031\n\r\n使用者： CN=SM2CA\r\n    公钥： ECC 256\r\n授权密钥标识符  ： 7377c95fbe1119350d6ad61c7c3b7aac9fed5913\r\n使用者密钥标识符： 8736a81424b164af3da420d7ca86ea1b613a98a4\n\r\n增强型密钥用法：\n\r\n              服务器身份验证 (1.3.6.1.5.5.7.3.1)\r\n              代码签名 (1.3.6.1.5.5.7.3.3)\r\n              安全电子邮件 (1.3.6.1.5.5.7.3.4)\r\n              内核模式代码签名 (1.3.6.1.4.1.311.61.1.1)\r\n              Windows 硬件驱动程序验证 (1.3.6.1.4.1.311.10.3.5)\r\n              Windows 系统组件验证 (1.3.6.1.4.1.311.10.3.6)\r\n              OEM Windows 系统组件验证 (1.3.6.1.4.1.311.10.3.7)\r\n              内嵌 Windows 系统组件验证 (1.3.6.1.4.1.311.10.3.8)\r\n              1.3.6.1.5.5.7.3.36 (1.3.6.1.5.5.7.3.36)\r\n              文档签名 (1.3.6.1.4.1.311.10.3.12)\r\n              加密文件系统 (1.3.6.1.4.1.311.10.3.4)\r\n              数字权利 (1.3.6.1.4.1.311.10.5.1)\r\n授权信息访问：\r\n              OCSP   URL=http://localhost:80/ocsp\r\n              颁发者 URL=http://localhost:80/CRT/13fbe86586d3f90.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost:80/CRL/13fbe86586d3f90.crl\r\n              CRL分发点 = http://localhost:80/CRL/13fbe86586d3f90.der.crl\r\ndigitalSignature, nonRepudiation, keyCertSign, cRLSign\r\n基本约束(关键)：\n              Subject Type=CA  Path Length Constraint = 2147483647\r\n证书策略：\r\n              证书颁发策略(Statement Identifier) OID = 1.3.6.1.4.1.4146.1.95\r\n              所有颁发策略 OID = 2.5.29.32.0\r\n              所有应用程序策略 OID = 1.3.6.1.4.1.311.10.12.1\r\n\n\n\r\n证书签名：\n        adb8188c8578b438de7e30fe9a27006f091fd695ccebb1bece3bf21c3bf62a9766ee876097b595f8cb0260600d7fc1782268594542f9ba28bfcb14a18a99254ab402f576ee367bd8b5281fb65cba58ac4d509679fa51249008a2c3973c5f5aea491ad17078a6ecdc687438a1bcedeac8d6e209a72a4ff80bc308c828bb2734daf2684fdcee4652cf4d9b0d8892057e6195d82995558cbb142e81a49e2eeb54c84a495f8797ed35db522f5f1c79286ac51b92f4d8d18c2a32ba043b4c4ed68ab83b56205cfcaf7dce5f8c6ce3172dcf50cf0445b9698e54ab84c0829119dba0b1844e782136234f2136253a1486c6efb9cc2a38ed844b401918a305700ca9390f\n\r\n证书类别： 非根证书\n\r\n证书链： \r\n       Root --> 7377c95fbe1119350d6ad61c7c3b7aac9fed5913\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n验证签名： 通过、签名有效 颁发者=CN=ROOTCA, O=My Org, C=CN\r\n证书状态：证书正常。（CRL）\r\n2026/09/15 21:17:17 OCSP:正常,序列号 1cdd33203a2ce\r\n          证书正常。（OCSP）\r\n\r\n密钥 Id 哈希(SHA1)          ： 9be418f9f8c8530e172770bf906b7e7f3776fde9\r\n密钥 Id 哈希(RFC-SHA1)      ： 8736a81424b164af3da420d7ca86ea1b613a98a4\r\n密钥 Id 哈希(Pin-SHA256)    ： yUKyLgTWYiZaLla4fINrM8qhbLqipAoFa3MtKIGLlC0=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： c942b22e04d662265a2e56b87c836b33caa16cbaa2a40a056b732d28818b942d\r\n\n\r\n证书哈希(SHA1)              ： 995b9e9be5e6a3b932ee046a6401ebbc84da32a7\r\n证书哈希(SHA256)            ： 098d315c619d53ecc5aa9f8677e28c37bbf75e6a2a9c6bc9a99621bb41f9935b\r\n签名哈希                    ： b0fcb9e876244bf691a678aeeb2d42b3741acb0a66c7dc4416de3816edd26649\r\n
+
+时间: 2026/09/15 21:17:36
+时间戳: 1789478256611
+操作: WebAdmin /api/sign/pdf
+命令: POST /api/sign/pdf serial=113548382 file=kong.pdf size=53758
+结果: PDF 文档签名\n  签章类型: 国密 GB/T 38540-2020\n  签章: 已附加可见签章（14057B 图片）\n  时间戳地址: （本机 MAIN /rfc3161 默认）\n  输入: kong.pdf（53758 字节）\n  证书: CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n  序列号: 113548382   算法: SM2   摘要: SM3\n  输出: 219378 字节
+
+时间: 2026/09/15 21:17:55
+时间戳: 1789478275215
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/CRT/1cdd33203a2ce.crt
+
+时间: 2026/09/15 21:17:55
+时间戳: 1789478275217
+操作: 文件响应
+命令: 
+结果: 文件=1cdd33203a2ce.crt 大小=1570字节 类型=crt
+
+时间: 2026/09/15 21:19:22
+时间戳: 1789478362470
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ca.crt
+
+时间: 2026/09/15 21:24:49
+时间戳: 1789478689145
+操作: WebAdmin /api/sign/pdf
+命令: POST /api/sign/pdf serial=113548382 file= size=1883
+结果: PDF 文档签名\n  签章类型: 国密 GB/T 38540-2020\n  签章: 已附加可见签章（14057B 图片）\n  时间戳地址: （本机 MAIN /rfc3161 默认）\n  输入: （1883 字节）\n  证书: CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n  序列号: 113548382   算法: SM2   摘要: SM3\n  输出: 166958 字节
+
+时间: 2026/09/15 21:31:48
+时间戳: 1789479108609
+操作: WebAdmin /api/sign/pdf
+命令: POST /api/sign/pdf serial=113548382 file=kong.pdf size=53758
+结果: PDF 文档签名\n  签章类型: 国密 GB/T 38540-2020\n  签章: 已附加可见签章（14057B 图片）\n  时间戳地址: （本机 MAIN /rfc3161 默认）\n  输入: kong.pdf（53758 字节）\n  证书: CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n  序列号: 113548382   算法: SM2   摘要: SM3\n  输出: 219378 字节
+
+时间: 2026/09/15 21:31:59
+时间戳: 1789479119809
+操作: WebAdmin /api/verify/pdf
+命令: POST /api/verify/pdf size=219378
+结果: PDF 页数: 1\n签名数量: 1\n签名者: CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n原因: GB/T 38540-2020 国密电子签章\n签名时间: Tue Sep 15 21:31:47 CST 2026\nSubFilter: GM.sm2seal\n签名区长度: 72171 字节（去除填充后 21917 字节）\nByteRange: [0, 54267, 198611, 20767]\n待签名数据长度: 75034 字节\n\n[国密 GB/T 38540-2020 SES_Signature 验证]\nTBS_Sign 字段数: 5\nTBS version: 4\n签名者证书: CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n签名算法 OID: 1.2.156.10197.1.501\n签名值长度: 72 字节\n原文SM3哈希: d24ba0b2016a63110b2b619c009c49fc555581136b1d1805832672a39a778276\n内嵌dataHash: d24ba0b2016a63110b2b619c009c49fc555581136b1d1805832672a39a778276\n文档摘要比对: 通过 ✓\nSM2 签名验证: 通过 ✓\n\n========================================\n最终结论: 国密 PDF 电子签章有效 ✓\n
+
+时间: 2026/09/15 21:33:42
+时间戳: 1789479222614
+操作: WebAdmin /api/sign/pdf
+命令: POST /api/sign/pdf serial=113548382 file=kong.pdf size=53758
+结果: PDF 文档签名\n  签章类型: 国密 GB/T 35275-2017\n  签章: 已附加可见签章（14057B 图片）\n  时间戳地址: （本机 MAIN /rfc3161 默认）\n  输入: kong.pdf（53758 字节）\n  证书: CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n  序列号: 113548382   算法: SM2   摘要: SM3\n  输出: 219386 字节
+
+时间: 2026/09/15 21:47:12
+时间戳: 1789480032602
+操作: 收到OCSP请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/ocsp 长度=72字节
+
+时间: 2026/09/15 21:47:12
+时间戳: 1789480032618
+操作: OCSP请求解析
+命令: 
+结果: 序列号=11355fe00 哈希=1.3.14.3.2.26 Nonce=无
+
+时间: 2026/09/15 21:47:12
+时间戳: 1789480032741
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=ROOTCA By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=11355fe00
+
+时间: 2026/09/15 21:47:12
+时间戳: 1789480032762
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1797字节
+
+时间: 2026/09/15 21:47:15
+时间戳: 1789480035700
+操作: WebAdmin /api/sign/pdf
+命令: POST /api/sign/pdf serial=113548382 file= size=1883
+结果: PDF 文档签名\n  签章类型: 国密 GM/T 0031-2025\n  签章: 已附加可见签章（14057B 图片）\n  时间戳地址: （本机 MAIN /rfc3161 默认）\n  输入: （1883 字节）\n  证书: CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n  序列号: 113548382   算法: SM2   摘要: SM3\n  输出: 41450 字节
+
+时间: 2026/09/15 21:50:05
+时间戳: 1789480205568
+操作: WebAdmin /api/sign/pdf
+命令: POST /api/sign/pdf serial=113548382 file= size=1883
+结果: PDF 文档签名\n  签章类型: 国密 GM/T 0031-2025\n  签章: 已附加可见签章（14057B 图片）\n  时间戳地址: （本机 MAIN /rfc3161 默认）\n  输入: （1883 字节）\n  证书: CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n  序列号: 113548382   算法: SM2   摘要: SM3\n  输出: 166954 字节
+
+时间: 2026/09/15 21:50:40
+时间戳: 1789480240805
+操作: WebAdmin /api/verify/pdf
+命令: POST /api/verify/pdf size=166954
+结果: PDF 页数: 5\n签名数量: 1\n签名者: CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n原因: GM/T 0031-2025 国密电子签章\n签名时间: Tue Sep 15 21:50:04 CST 2026\nSubFilter: GM.sm2seal\n签名区长度: 72171 字节（去除填充后 17919 字节）\nByteRange: [0, 2388, 146732, 20222]\n待签名数据长度: 22610 字节\n\n[国密 GM/T 0031 SES_Signature 验证]\nTBS_Sign 字段数: 7\nTBS version: 4\n签名者证书: CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n签名算法 OID: 1.2.156.10197.1.501\n签名值长度: 71 字节\n原文SM3哈希: ef12d4fcc474c3ccba54ed84c7cf578aaecabb6b3ac967796902c30fab26f37a\n内嵌dataHash: ef12d4fcc474c3ccba54ed84c7cf578aaecabb6b3ac967796902c30fab26f37a\n文档摘要比对: 通过 ✓\nSM2 签名验证: 通过 ✓\n\n========================================\n最终结论: 国密 PDF 电子签章有效 ✓\n
+
+时间: 2026/09/15 21:50:54
+时间戳: 1789480254529
+操作: WebAdmin /api/sign/pdf
+命令: POST /api/sign/pdf serial=113548382 file= size=1883
+结果: PDF 文档签名\n  签章类型: 国密 GB/T 38540-2020\n  签章: 已附加可见签章（14057B 图片）\n  时间戳地址: （本机 MAIN /rfc3161 默认）\n  输入: （1883 字节）\n  证书: CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n  序列号: 113548382   算法: SM2   摘要: SM3\n  输出: 166958 字节
+
+时间: 2026/09/15 21:50:54
+时间戳: 1789480254730
+操作: WebAdmin /api/verify/pdf
+命令: POST /api/verify/pdf size=166958
+结果: PDF 页数: 5\n签名数量: 1\n签名者: CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n原因: GM/T 38540-2020 国密电子签章\n签名时间: Tue Sep 15 21:50:54 CST 2026\nSubFilter: GM.sm2seal\n签名区长度: 72171 字节（去除填充后 21914 字节）\nByteRange: [0, 2392, 146736, 20222]\n待签名数据长度: 22614 字节\n\n[国密 GB/T 38540-2020 SES_Signature 验证]\nTBS_Sign 字段数: 5\nTBS version: 4\n签名者证书: CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n签名算法 OID: 1.2.156.10197.1.501\n签名值长度: 70 字节\n原文SM3哈希: e54fab9ac4fbb10028a4817d2ab60448df03542f20904b299874991949846e3f\n内嵌dataHash: e54fab9ac4fbb10028a4817d2ab60448df03542f20904b299874991949846e3f\n文档摘要比对: 通过 ✓\nSM2 签名验证: 通过 ✓\n\n========================================\n最终结论: 国密 PDF 电子签章有效 ✓\n
+
+时间: 2026/09/15 21:51:05
+时间戳: 1789480265988
+操作: WebAdmin /api/sign/pdf
+命令: POST /api/sign/pdf serial=113548382 file= size=1883
+结果: PDF 文档签名\n  签章类型: 国密 GB/T 35275-2017\n  签章: 已附加可见签章（14057B 图片）\n  时间戳地址: （本机 MAIN /rfc3161 默认）\n  输入: （1883 字节）\n  证书: CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n  序列号: 113548382   算法: SM2   摘要: SM3\n  输出: 166966 字节
+
+时间: 2026/09/15 21:51:06
+时间戳: 1789480266307
+操作: WebAdmin /api/verify/pdf
+命令: POST /api/verify/pdf size=166966
+结果: PDF 页数: 5\n签名数量: 1\n签名者: CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n原因: GM/T 35275-2017 国密电子签章\n签名时间: Tue Sep 15 21:51:05 CST 2026\nSubFilter: GM.sm2cms.detached\n签名区长度: 72171 字节（去除填充后 26775 字节）\nByteRange: [0, 2400, 146744, 20222]\n待签名数据长度: 22622 字节\ncontentType: 1.2.840.113549.1.7.1\n证书数量: 3\n签名者证书: CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n摘要算法: 1.2.156.10197.1.401  签名算法: 1.2.156.10197.1.501\nCMS 签名验证: 通过 ✓\n文档摘要(SM3): 3f32a30e28a8412128c8b96172d9cbf850c1fbb3fd04ef8f695601b4a11b2c7a\nmessageDigest      : 3f32a30e28a8412128c8b96172d9cbf850c1fbb3fd04ef8f695601b4a11b2c7a\n文档摘要比对: 通过 ✓\n\n[3] 证书链验证\n  CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n    └─ 由 CN=SM2CA 签发 ✓\n  CN=SM2CA\n    └─ 由 CN=ROOTCA, O=My Org, C=CN 签发 ✓\n  链顶: CN=ROOTCA, O=My Org, C=CN（自签根）\n  证书链: 通过 ✓\n\n========================================\n最终结论: PDF 签名有效 ✓\n
+
+时间: 2026/09/15 21:53:13
+时间戳: 1789480393244
+操作: WebAdmin /api/sign/pdf
+命令: POST /api/sign/pdf serial=113548382 file=kong.pdf size=53758
+结果: PDF 文档签名\n  签章类型: 国密 GM/T 0031-2025\n  签章: 已附加可见签章（14057B 图片）\n  时间戳地址: （本机 MAIN /rfc3161 默认）\n  输入: kong.pdf（53758 字节）\n  证书: CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n  序列号: 113548382   算法: SM2   摘要: SM3\n  输出: 219374 字节
+
+时间: 2026/09/15 22:10:36
+时间戳: 1789481436538
+操作: WebAdmin /api/verify/pdf
+命令: POST /api/verify/pdf size=219374
+结果: PDF 页数: 1\n签名数量: 1\n签名者: CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n原因: GM/T 0031-2025 国密电子签章\n签名时间: Tue Sep 15 21:53:12 CST 2026\nSubFilter: GM.sm2seal\n签名区长度: 72171 字节（去除填充后 17918 字节）\nByteRange: [0, 54263, 198607, 20767]\n待签名数据长度: 75030 字节\n\n[国密 GM/T 0031 SES_Signature 验证]\nTBS_Sign 字段数: 7\nTBS version: 4\n签名者证书: CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n签名算法 OID: 1.2.156.10197.1.501\n签名值长度: 70 字节\n原文SM3哈希: 73e3015a6c405ad41f587636ac8a192a1eef33b5bd363a52bcef3018872f08cd\n内嵌dataHash: 73e3015a6c405ad41f587636ac8a192a1eef33b5bd363a52bcef3018872f08cd\n文档摘要比对: 通过 ✓\nSM2 签名验证: 通过 ✓\n\n========================================\n最终结论: 国密 PDF 电子签章有效 ✓\n
+
+时间: 2026/09/15 22:12:36
+时间戳: 1789481556887
+操作: WebAdmin /api/sign/pdf
+命令: POST /api/sign/pdf serial=11354837d file=kong.pdf size=53758
+结果: PDF 文档签名\n  签章类型: Adobe 标准文档签名\n  签章: 已附加可见签章（14057B 图片）\n  时间戳地址: （本机 MAIN /rfc3161 默认）\n  输入: kong.pdf（53758 字节）\n  证书: CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n  序列号: 11354837d   算法: ECC   摘要: SHA256\n  输出: 93877 字节
+
+时间: 2026/09/15 22:12:48
+时间戳: 1789481568005
+操作: WebAdmin /api/verify/pdf
+命令: POST /api/verify/pdf size=93877
+结果: PDF 页数: 1\n签名数量: 1\n签名者: CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n原因: MODPKICA PDF Document Signing\n签名时间: Tue Sep 15 22:12:35 CST 2026\nSubFilter: adbe.pkcs7.detached\n签名区长度: 9472 字节（去除填充后 4713 字节）\nByteRange: [0, 54165, 73111, 20766]\n待签名数据长度: 74931 字节\ncontentType: 1.2.840.113549.1.7.1\n证书数量: 3\n签名者证书: CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n摘要算法: 2.16.840.1.101.3.4.2.1  签名算法: 1.2.840.10045.4.3.2\nCMS 签名验证: 通过 ✓\n文档摘要(SHA-256): f13927ba9f5bed22bc3f1ff465eeffbe8ba491497f2306f136cd7b2317aa5672\nmessageDigest      : f13927ba9f5bed22bc3f1ff465eeffbe8ba491497f2306f136cd7b2317aa5672\n文档摘要比对: 通过 ✓\n\n[3] 证书链验证\n  CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n    └─ 由 CN=EVCA, O=My Org, C=CN 签发 ✓\n  CN=EVCA, O=My Org, C=CN\n    └─ 由 CN=ROOTCA, O=My Org, C=CN 签发 ✓\n  链顶: CN=ROOTCA, O=My Org, C=CN（自签根）\n  证书链: 通过 ✓\n\n========================================\n最终结论: PDF 签名有效 ✓\n
+
+时间: 2026/09/15 22:14:20
+时间戳: 1789481660484
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=109字节
+
+时间: 2026/09/15 22:14:20
+时间戳: 1789481660495
+操作: OCSP请求解析
+命令: 
+结果: 序列号=11354837d 哈希=1.3.14.3.2.26 Nonce=0410956edee16f9e31d7d9148c251cc06b5d
+
+时间: 2026/09/15 22:14:20
+时间戳: 1789481660554
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=EVCA By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=11354837d
+
+时间: 2026/09/15 22:14:20
+时间戳: 1789481660560
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1845字节
+
+时间: 2026/09/15 22:14:20
+时间戳: 1789481660584
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=111字节
+
+时间: 2026/09/15 22:14:20
+时间戳: 1789481660587
+操作: OCSP请求解析
+命令: 
+结果: 序列号=1cdd332014ecd 哈希=1.3.14.3.2.26 Nonce=0410c1020b81dd6ea3997deb766ddf730c37
+
+时间: 2026/09/15 22:14:20
+时间戳: 1789481660618
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=ROOTCA By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=1cdd332014ecd
+
+时间: 2026/09/15 22:14:20
+时间戳: 1789481660625
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1836字节
+
+时间: 2026/09/15 22:14:20
+时间戳: 1789481660868
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=109字节
+
+时间: 2026/09/15 22:14:20
+时间戳: 1789481660871
+操作: OCSP请求解析
+命令: 
+结果: 序列号=11354837d 哈希=1.3.14.3.2.26 Nonce=0410a00a268dff2fd2630bb8236fff2d17cf
+
+时间: 2026/09/15 22:14:20
+时间戳: 1789481660894
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=EVCA By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=11354837d
+
+时间: 2026/09/15 22:14:20
+时间戳: 1789481660898
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1845字节
+
+时间: 2026/09/15 22:14:20
+时间戳: 1789481660942
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=111字节
+
+时间: 2026/09/15 22:14:20
+时间戳: 1789481660947
+操作: OCSP请求解析
+命令: 
+结果: 序列号=1cdd332014ecd 哈希=1.3.14.3.2.26 Nonce=0410611727d1d14f306ae788b2528ceda427
+
+时间: 2026/09/15 22:14:21
+时间戳: 1789481661009
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=ROOTCA By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=1cdd332014ecd
+
+时间: 2026/09/15 22:14:21
+时间戳: 1789481661029
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1836字节
+
+时间: 2026/09/15 22:15:34
+时间戳: 1789481734242
+操作: 收到OCSP请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/ocsp 长度=111字节
+
+时间: 2026/09/15 22:15:34
+时间戳: 1789481734246
+操作: OCSP请求解析
+命令: 
+结果: 序列号=1cdd332014ecd 哈希=1.3.14.3.2.26 Nonce=0410c31a7aab8b0357957966585581ff73eb
+
+时间: 2026/09/15 22:15:34
+时间戳: 1789481734273
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=ROOTCA By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=1cdd332014ecd
+
+时间: 2026/09/15 22:15:34
+时间戳: 1789481734280
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1836字节
+
+时间: 2026/09/15 22:15:34
+时间戳: 1789481734318
+操作: 收到OCSP请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/ocsp 长度=109字节
+
+时间: 2026/09/15 22:15:34
+时间戳: 1789481734321
+操作: OCSP请求解析
+命令: 
+结果: 序列号=11354837d 哈希=1.3.14.3.2.26 Nonce=0410e5151e6b8155f0545ca4245d967e3ddc
+
+时间: 2026/09/15 22:15:34
+时间戳: 1789481734359
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=EVCA By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=11354837d
+
+时间: 2026/09/15 22:15:34
+时间戳: 1789481734365
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1845字节
+
+时间: 2026/09/15 22:31:08
+时间戳: 1789482668866
+操作: 收到时间戳请求(RFC3161)
+命令: 
+结果: 来源=127.0.0.1 路径=/rfc3161
+
+时间: 2026/09/15 22:31:08
+时间戳: 1789482668874
+操作: 时间戳请求解析(RFC3161)
+命令: 
+结果: 摘要算法=2.16.840.1.101.3.4.2.1 消息摘要=27d3e355a38d31e667dcaed18aee8a40b87da1371cd5707712ef92f5e2309096 Nonce=null
+
+时间: 2026/09/15 22:31:08
+时间戳: 1789482668929
+操作: 时间戳签名(RFC3161)
+命令: 
+结果: 算法=sha256 TSA证书=CN=ROOTCA By Timstamp SHA256, OU=Only TSA SHA256 Signing, C=CN, O=My Org 摘要=06dd43e4e42530002f6fa675cb0c94ac1851fb29
+
+时间: 2026/09/15 22:31:08
+时间戳: 1789482668943
+操作: 时间戳响应(RFC3161)
+命令: 
+结果: 长度=3256字节
+
+时间: 2026/09/15 22:31:09
+时间戳: 1789482669274
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=97字节
+
+时间: 2026/09/15 22:31:09
+时间戳: 1789482669277
+操作: OCSP请求解析
+命令: 
+结果: 序列号=1135228a2 哈希=1.3.14.3.2.26 Nonce=556afe161e21e70b
+
+时间: 2026/09/15 22:31:09
+时间戳: 1789482669340
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=EVCA By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=1135228a2
+
+时间: 2026/09/15 22:31:09
+时间戳: 1789482669344
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1812字节
+
+时间: 2026/09/15 22:31:09
+时间戳: 1789482669347
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=99字节
+
+时间: 2026/09/15 22:31:09
+时间戳: 1789482669355
+操作: OCSP请求解析
+命令: 
+结果: 序列号=1cdd332014ecd 哈希=1.3.14.3.2.26 Nonce=2176cd105b40ec8a
+
+时间: 2026/09/15 22:31:09
+时间戳: 1789482669389
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=ROOTCA By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=1cdd332014ecd
+
+时间: 2026/09/15 22:31:09
+时间戳: 1789482669395
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1826字节
+
+时间: 2026/09/15 22:31:09
+时间戳: 1789482669398
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=100字节
+
+时间: 2026/09/15 22:31:09
+时间戳: 1789482669406
+操作: OCSP请求解析
+命令: 
+结果: 序列号=13fbe86586d3f90 哈希=1.3.14.3.2.26 Nonce=57f8eb155f17899a
+
+时间: 2026/09/15 22:31:09
+时间戳: 1789482669478
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=ROOTCA By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=13fbe86586d3f90
+
+时间: 2026/09/15 22:31:09
+时间戳: 1789482669490
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1827字节
+
+时间: 2026/09/15 22:31:09
+时间戳: 1789482669494
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/CRL/1cdd332014ecd.der.crl
+
+时间: 2026/09/15 22:31:09
+时间戳: 1789482669545
+操作: 文件响应
+命令: 
+结果: 文件=1cdd332014ecd.der.crl 大小=572字节 类型=crl
+
+时间: 2026/09/15 22:31:09
+时间戳: 1789482669556
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/CRL/13fbe86586d3f90.der.crl
+
+时间: 2026/09/15 22:31:09
+时间戳: 1789482669596
+操作: 文件响应
+命令: 
+结果: 文件=13fbe86586d3f90.der.crl 大小=574字节 类型=crl
+
+时间: 2026/09/15 22:32:14
+时间戳: 1789482734967
+操作: 收到时间戳请求(RFC3161)
+命令: 
+结果: 来源=127.0.0.1 路径=/rfc3161
+
+时间: 2026/09/15 22:32:14
+时间戳: 1789482734971
+操作: 时间戳请求解析(RFC3161)
+命令: 
+结果: 摘要算法=2.16.840.1.101.3.4.2.1 消息摘要=a40517af066553cfeceffedc9aae23232f589e49968b82e7e23b34e85700d4b9 Nonce=null
+
+时间: 2026/09/15 22:32:14
+时间戳: 1789482734982
+操作: 时间戳签名(RFC3161)
+命令: 
+结果: 算法=sha256 TSA证书=CN=ROOTCA By Timstamp SHA256, OU=Only TSA SHA256 Signing, C=CN, O=My Org 摘要=1293f4eb06310790a1fbccffd552f88c06f5f24e
+
+时间: 2026/09/15 22:32:14
+时间戳: 1789482734990
+操作: 时间戳响应(RFC3161)
+命令: 
+结果: 长度=3256字节
+
+时间: 2026/09/15 22:32:15
+时间戳: 1789482735281
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=97字节
+
+时间: 2026/09/15 22:32:15
+时间戳: 1789482735284
+操作: OCSP请求解析
+命令: 
+结果: 序列号=1135228a2 哈希=1.3.14.3.2.26 Nonce=40fbffeca1f36412
+
+时间: 2026/09/15 22:32:15
+时间戳: 1789482735327
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=EVCA By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=1135228a2
+
+时间: 2026/09/15 22:32:15
+时间戳: 1789482735358
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1812字节
+
+时间: 2026/09/15 22:32:15
+时间戳: 1789482735360
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=99字节
+
+时间: 2026/09/15 22:32:15
+时间戳: 1789482735379
+操作: OCSP请求解析
+命令: 
+结果: 序列号=1cdd332014ecd 哈希=1.3.14.3.2.26 Nonce=033a1660ae840e02
+
+时间: 2026/09/15 22:32:15
+时间戳: 1789482735567
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=ROOTCA By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=1cdd332014ecd
+
+时间: 2026/09/15 22:32:15
+时间戳: 1789482735580
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1826字节
+
+时间: 2026/09/15 22:32:15
+时间戳: 1789482735582
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=100字节
+
+时间: 2026/09/15 22:32:15
+时间戳: 1789482735594
+操作: OCSP请求解析
+命令: 
+结果: 序列号=13fbe86586d3f90 哈希=1.3.14.3.2.26 Nonce=bc8fbec498b85632
+
+时间: 2026/09/15 22:32:15
+时间戳: 1789482735659
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=ROOTCA By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=13fbe86586d3f90
+
+时间: 2026/09/15 22:32:15
+时间戳: 1789482735664
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1827字节
+
+时间: 2026/09/15 22:32:15
+时间戳: 1789482735666
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/CRL/1cdd332014ecd.der.crl
+
+时间: 2026/09/15 22:32:15
+时间戳: 1789482735673
+操作: 文件响应
+命令: 
+结果: 文件=1cdd332014ecd.der.crl 大小=572字节 类型=crl
+
+时间: 2026/09/15 22:32:15
+时间戳: 1789482735678
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/CRL/13fbe86586d3f90.der.crl
+
+时间: 2026/09/15 22:32:15
+时间戳: 1789482735684
+操作: 文件响应
+命令: 
+结果: 文件=13fbe86586d3f90.der.crl 大小=574字节 类型=crl
+
+时间: 2026/09/15 22:32:30
+时间戳: 1789482750956
+操作: 收到时间戳请求(RFC3161)
+命令: 
+结果: 来源=127.0.0.1 路径=/rfc3161
+
+时间: 2026/09/15 22:32:30
+时间戳: 1789482750957
+操作: 时间戳请求解析(RFC3161)
+命令: 
+结果: 摘要算法=2.16.840.1.101.3.4.2.1 消息摘要=3015d9e64ce3c60fd521a11ae1bb33735ad32d9a3ba36141f77e9d745995e5b8 Nonce=null
+
+时间: 2026/09/15 22:32:30
+时间戳: 1789482750971
+操作: 时间戳签名(RFC3161)
+命令: 
+结果: 算法=sha256 TSA证书=CN=ROOTCA By Timstamp SHA256, OU=Only TSA SHA256 Signing, C=CN, O=My Org 摘要=b9294dbc2d013967eb5617855e7deded0ba1d93b
+
+时间: 2026/09/15 22:32:30
+时间戳: 1789482750977
+操作: 时间戳响应(RFC3161)
+命令: 
+结果: 长度=3256字节
+
+时间: 2026/09/15 22:32:31
+时间戳: 1789482751248
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=97字节
+
+时间: 2026/09/15 22:32:31
+时间戳: 1789482751257
+操作: OCSP请求解析
+命令: 
+结果: 序列号=1135228a2 哈希=1.3.14.3.2.26 Nonce=d1d34cd670d88584
+
+时间: 2026/09/15 22:32:31
+时间戳: 1789482751351
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=EVCA By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=1135228a2
+
+时间: 2026/09/15 22:32:31
+时间戳: 1789482751366
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1812字节
+
+时间: 2026/09/15 22:32:31
+时间戳: 1789482751376
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=99字节
+
+时间: 2026/09/15 22:32:31
+时间戳: 1789482751380
+操作: OCSP请求解析
+命令: 
+结果: 序列号=1cdd332014ecd 哈希=1.3.14.3.2.26 Nonce=ccb68c20306b5fa8
+
+时间: 2026/09/15 22:32:31
+时间戳: 1789482751443
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=ROOTCA By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=1cdd332014ecd
+
+时间: 2026/09/15 22:32:31
+时间戳: 1789482751448
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1826字节
+
+时间: 2026/09/15 22:32:31
+时间戳: 1789482751461
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=100字节
+
+时间: 2026/09/15 22:32:31
+时间戳: 1789482751464
+操作: OCSP请求解析
+命令: 
+结果: 序列号=13fbe86586d3f90 哈希=1.3.14.3.2.26 Nonce=e90b2b57ec816dbd
+
+时间: 2026/09/15 22:32:31
+时间戳: 1789482751548
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=ROOTCA By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=13fbe86586d3f90
+
+时间: 2026/09/15 22:32:31
+时间戳: 1789482751565
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1827字节
+
+时间: 2026/09/15 22:32:31
+时间戳: 1789482751575
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/CRL/1cdd332014ecd.der.crl
+
+时间: 2026/09/15 22:32:31
+时间戳: 1789482751579
+操作: 文件响应
+命令: 
+结果: 文件=1cdd332014ecd.der.crl 大小=572字节 类型=crl
+
+时间: 2026/09/15 22:32:31
+时间戳: 1789482751581
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/CRL/13fbe86586d3f90.der.crl
+
+时间: 2026/09/15 22:32:31
+时间戳: 1789482751632
+操作: 文件响应
+命令: 
+结果: 文件=13fbe86586d3f90.der.crl 大小=574字节 类型=crl
+
+时间: 2026/09/15 22:34:54
+时间戳: 1789482894762
+操作: 收到时间戳请求(RFC3161)
+命令: 
+结果: 来源=127.0.0.1 路径=/rfc3161
+
+时间: 2026/09/15 22:34:54
+时间戳: 1789482894769
+操作: 时间戳请求解析(RFC3161)
+命令: 
+结果: 摘要算法=2.16.840.1.101.3.4.2.1 消息摘要=b67a7f60e33ccf9ddcb9cdfad59d13e71f1a3dfc0d02a380178892677cb5a7e4 Nonce=null
+
+时间: 2026/09/15 22:34:54
+时间戳: 1789482894837
+操作: 时间戳签名(RFC3161)
+命令: 
+结果: 算法=sha256 TSA证书=CN=ROOTCA By Timstamp SHA256, OU=Only TSA SHA256 Signing, C=CN, O=My Org 摘要=df93b0a913d108062677db727dcd968d76c4231a
+
+时间: 2026/09/15 22:34:54
+时间戳: 1789482894844
+操作: 时间戳响应(RFC3161)
+命令: 
+结果: 长度=3256字节
+
+时间: 2026/09/15 22:34:54
+时间戳: 1789482894915
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=97字节
+
+时间: 2026/09/15 22:34:54
+时间戳: 1789482894918
+操作: OCSP请求解析
+命令: 
+结果: 序列号=113548234 哈希=1.3.14.3.2.26 Nonce=a851981563b60c9c
+
+时间: 2026/09/15 22:34:54
+时间戳: 1789482894953
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=EVCA By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=113548234
+
+时间: 2026/09/15 22:34:54
+时间戳: 1789482894957
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1812字节
+
+时间: 2026/09/15 22:34:54
+时间戳: 1789482894959
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=99字节
+
+时间: 2026/09/15 22:34:54
+时间戳: 1789482894961
+操作: OCSP请求解析
+命令: 
+结果: 序列号=1cdd332014ecd 哈希=1.3.14.3.2.26 Nonce=da44701d92e3d22c
+
+时间: 2026/09/15 22:34:54
+时间戳: 1789482894978
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=ROOTCA By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=1cdd332014ecd
+
+时间: 2026/09/15 22:34:54
+时间戳: 1789482894982
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1826字节
+
+时间: 2026/09/15 22:34:54
+时间戳: 1789482894984
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=100字节
+
+时间: 2026/09/15 22:34:54
+时间戳: 1789482894987
+操作: OCSP请求解析
+命令: 
+结果: 序列号=13fbe86586d3f90 哈希=1.3.14.3.2.26 Nonce=01a189b3de6d63bf
+
+时间: 2026/09/15 22:34:55
+时间戳: 1789482895004
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=ROOTCA By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=13fbe86586d3f90
+
+时间: 2026/09/15 22:34:55
+时间戳: 1789482895012
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1827字节
+
+时间: 2026/09/15 22:34:55
+时间戳: 1789482895014
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/CRL/1cdd332014ecd.der.crl
+
+时间: 2026/09/15 22:34:55
+时间戳: 1789482895021
+操作: 文件响应
+命令: 
+结果: 文件=1cdd332014ecd.der.crl 大小=572字节 类型=crl
+
+时间: 2026/09/15 22:34:55
+时间戳: 1789482895023
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/CRL/13fbe86586d3f90.der.crl
+
+时间: 2026/09/15 22:34:55
+时间戳: 1789482895029
+操作: 文件响应
+命令: 
+结果: 文件=13fbe86586d3f90.der.crl 大小=574字节 类型=crl
+
+时间: 2026/09/15 22:34:55
+时间戳: 1789482895060
+操作: WebAdmin /api/sign/pdf
+命令: POST /api/sign/pdf serial=113548234 file=kong.pdf size=53758
+结果: PDF 文档签名\n  签章类型: Adobe 标准文档签名\n  签章: 已附加可见签章（14057B 图片）\n  时间戳地址: （本机 MAIN /rfc3161 默认）\n  输入: kong.pdf（53758 字节）\n  证书: CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n  序列号: 113548234   算法: RSA   摘要: SHA256\n  输出: 106770 字节
+
+时间: 2026/09/15 22:35:05
+时间戳: 1789482905820
+操作: WebAdmin /api/verify/pdf
+命令: POST /api/verify/pdf size=106770
+结果: PDF 页数: 1\n签名数量: 1\n签名者: CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n原因: MODPKICA PDF Document Signing\n签名时间: Tue Sep 15 22:34:53 CST 2026\nSubFilter: adbe.pkcs7.detached\n签名区长度: 9472 字节（去除填充后 8361 字节）\nByteRange: [0, 54165, 73111, 20766]\n待签名数据长度: 74931 字节\nLTV: 已启用（DSS 字典，Certs=3，OCSPs=3，CRLs=2，VRI=E888E45A755C7DD62F5F862F120ED2E8F934119A）\ncontentType: 1.2.840.113549.1.7.1\n证书数量: 3\n签名者证书: CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n摘要算法: 2.16.840.1.101.3.4.2.1  签名算法: 1.2.840.113549.1.1.11\nCMS 签名验证: 通过 ✓\n文档摘要(SHA-256): b67a7f60e33ccf9ddcb9cdfad59d13e71f1a3dfc0d02a380178892677cb5a7e4\nmessageDigest      : b67a7f60e33ccf9ddcb9cdfad59d13e71f1a3dfc0d02a380178892677cb5a7e4\n文档摘要比对: 通过 ✓\n\n[3] 证书链验证\n  CN=2829969554@qq.com, OU=Person, O=ChinaITboys, C=CN\n    └─ 由 CN=EVCA, O=My Org, C=CN 签发 ✓\n  CN=EVCA, O=My Org, C=CN\n    └─ 由 CN=ROOTCA, O=My Org, C=CN 签发 ✓\n  链顶: CN=ROOTCA, O=My Org, C=CN（自签根）\n  证书链: 通过 ✓\n\n========================================\n最终结论: PDF 签名有效 ✓\n
+
+时间: 2026/09/15 22:38:15
+时间戳: 1789483095457
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=109字节
+
+时间: 2026/09/15 22:38:15
+时间戳: 1789483095462
+操作: OCSP请求解析
+命令: 
+结果: 序列号=113548234 哈希=1.3.14.3.2.26 Nonce=0410f2d5ad756cc374f6637641556e00a9a9
+
+时间: 2026/09/15 22:38:15
+时间戳: 1789483095482
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=EVCA By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=113548234
+
+时间: 2026/09/15 22:38:15
+时间戳: 1789483095488
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1822字节
+
+时间: 2026/09/15 22:38:15
+时间戳: 1789483095528
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=111字节
+
+时间: 2026/09/15 22:38:15
+时间戳: 1789483095529
+操作: OCSP请求解析
+命令: 
+结果: 序列号=1cdd332014ecd 哈希=1.3.14.3.2.26 Nonce=0410311cea634d1177e407ba42a7abffcd1c
+
+时间: 2026/09/15 22:38:15
+时间戳: 1789483095541
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=ROOTCA By OCSP, OU=Only OCSP Signing, C=CN, O=My Org 请求序列号=1cdd332014ecd
+
+时间: 2026/09/15 22:38:15
+时间戳: 1789483095544
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1836字节
+
