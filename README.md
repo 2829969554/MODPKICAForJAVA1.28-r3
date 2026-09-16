@@ -1,4 +1,4 @@
-# MODPKICA Java 复刻版 v1.8（BC 1.85 离线）
+# MODPKICA Java 复刻版 v1.20（BC 1.85 离线）
 
 > 使用 **Java + BouncyCastle 1.85** 离线复刻 Go 版 MODPKICA 全套 PKI 功能：X.509 证书签发、CRL 吊销列表、OCSP 在线状态、RFC3161 / Authenticode 时间戳、WebAdmin 浏览器管理面板。
 >
@@ -67,13 +67,15 @@
 
 ![调试专区](g.png)
 
-### 签名专区（微软代码签名 / PDF 文档签名）
+### 签名专区（选择夹：微软代码签名 / PDF 文档签名）
 
-**微软代码签名（Authenticode）**：选择 PE 可执行文件（exe / dll / sys）与带代码签名 EKU 的证书进行签名或验证，支持 RSA / ECC / SM2（摘要分别 SHA256 / SHA256 / SM3），证书表按 Microsoft PE/COFF 规范嵌入。**时间戳类型**下拉可选 **RFC3161**（标准 TimeStampToken）或 **Authenticode**（老式 PKCS#7）；**时间戳请求地址**可编辑下拉留空 = 本机 MAIN，或指向 DigiCert / Symantec / Comodo / Certum 等外部 TSA。
+**选择夹布局**：签名专区改为上下两个独立页签（tab）——「微软代码签名」与「PDF 文档签名」各占整页，空间更大、互不干扰；全局字体 15px，控件间距与列表行高同步放大。
 
-**PDF 文档签名**：选择 PDF 文件与带文档签名 EKU 的证书（微软文档签名 OID `1.3.6.1.4.1.311.10.3.12` 或通用文档签名 OID `1.3.6.1.5.5.7.3.36` 任一即可）。**签章类型**下拉四种：Adobe 标准文档签名（`adbe.pkcs7.detached`，RSA/ECC/SM2 均可，可选签章图片生成可见签章，**签名自动携带 RFC3161 时间戳并启用 PAdES LTV**——增量嵌入证书链 + OCSP 响应 + CRL，DSS/VRI 字典，验证器可离线长期验证）；国密 GB/T 35275-2017（`GM.sm2cms.detached`，仅 SM2 证书 + 签章图）；国密 GB/T 38540-2020（`GM.sm2seal` SES_Signature，仅 SM2 证书 + 签章图）；国密 GM/T 0031-2025（`GM.sm2seal` 两层 SES_Signature，仅 SM2 证书 + 签章图）。同样带时间戳请求地址可编辑下拉。验证支持三种类型：CMS 验签 / 文档摘要比对 / 证书链（Adobe 与 35275），SES_Signature 专用解析（dataHash 比对 + SM2 验签，自动判别 38540 四字段 / 0031 两字段）；验证输出含 LTV 状态（DSS Certs/OCSPs/CRLs/VRI 数量）。
+**微软代码签名（Authenticode）**：**同样支持批量选择与拖拽添加**——把 exe / dll / sys / cab / cat / msi 文件拖入虚线拖拽区或点击「选择文件」多选；待签名列表逐行显示文件名 / 大小 / 状态（待处理 / 签名中 / 成功 / 失败），行内可单独签名、验证、移除，成功后行内下载；顶部「批量签名」「批量验证」「清空」一次处理全部。签名支持 RSA / ECC / SM2（摘要分别 SHA256 / SHA256 / SM3），证书表按 Microsoft PE/COFF 规范嵌入。**时间戳类型**下拉可选 **RFC3161**（标准 TimeStampToken）或 **Authenticode**（老式 PKCS#7）；**时间戳请求地址**可编辑下拉留空 = 本机 MAIN，或指向 DigiCert / Symantec / Comodo / Certum 等外部 TSA。
 
-![签名专区](f.png)
+**PDF 文档签名**：**支持批量选择（多选文件）与拖拽添加**——把 PDF 文件直接拖入虚线拖拽区，或点击「选择 PDF 文件」多选；待签名列表逐行显示文件名 / 大小 / 状态（待处理 / 签名中 / 成功 / 失败），每行可单独签名、验证、移除，成功后可下载；顶部「批量签名」「批量验证」「清空」一次处理全部。证书（带文档签名 EKU，微软 OID `1.3.6.1.4.1.311.10.3.12` 或通用 OID `1.3.6.1.5.5.7.3.36` 任一即可；**证书留空 = 纯文档时间戳，不签名**）。**签章类型**下拉四种：Adobe 标准文档签名（`adbe.pkcs7.detached`，RSA/ECC/SM2 均可，可选签章图片生成可见签章；**选中证书时时间戳按 CAdES-T / PAdES-T 标准嵌入签名内部（SignerInfo 的 unsignedAttrs 属性 id-aa-timeStampToken，messageImprint = SHA-256(签名值)），DSS/LTV 数据（证书链 + OCSP 响应 + CRL）与签名同一次保存、被签名覆盖，签名后零增量**；不选证书时生成独立 DocTimeStamp（ETSI.RFC3161）纯文档时间戳，同样带 DSS/LTV）；国密 GB/T 35275-2017（`GM.sm2cms.detached`，仅 SM2 证书 + 签章图；同样支持 CAdES-T 签名时间戳（SM3 摘要 + unsignedAttrs）与 DSS/LTV 同保存）；国密 GB/T 38540-2020（`GM.sm2seal` SES_Signature，仅 SM2 证书 + 签章图；按标准 7.1.6 支持嵌入时间戳——SES_Signature 可选第 5 字段 timeStamp（对签名值的时间戳，符合 GB/T 20520= RFC3161，DER 编码，SM3 messageImprint），并支持 DSS/LTV 同保存）；国密 GM/T 0031-2025（`GM.sm2seal`，仅 SM2 证书 + 签章图，数据结构与 38540 一致）。验证支持三种类型：CMS 验签 / 文档摘要比对 / 证书链（Adobe 与 35275），SES_Signature 专用解析（dataHash 比对 + SM2 验签，自动判别 38540 四/五字段、0031 两字段；38540 时间戳字段 timeStamp 解析：TSA/时间/算法/绑定签名值（SM3）+ TSA 证书验签）；Adobe 模式逐签名字段验证（数字签名含签名时间戳 CAdES-T unsignedAttrs 解析：TSA/时间/算法/绑定签名值，哈希算法自适应 SHA-256/SM3；DocTimeStamp 走 TimeStampToken 专用解析：messageImprint 比对 + TSA 证书验签），输出含 LTV 状态（DSS Certs/OCSPs/CRLs 数量）。
+
+![签名专区选择夹](f.png)
 
 ### 签名专区（PDF 国密 GM/T 0031-2025 签章）
 
@@ -481,17 +483,125 @@ A：离线 / 无外网环境会请求失败，但签名**不中断**——时间
 
 ## 更新记录
 
-- **v1.8（2026-09-15）——PDF Adobe 标准签名携带 RFC3161 时间戳 + PAdES LTV 长期验证**
-  - **时间戳嵌入修复**：此前 PDF Adobe 标准签名在时间戳地址留空（= 本机 MAIN）时**不携带时间戳**——根因 `buildCms` 以 `tsUrl != null && !tsUrl.trim().isEmpty()` 作为嵌入条件，WebAdmin 留空传 `""` 被误判为"不嵌"。修复：非 null（含空串）即请求本机 MAIN `/rfc3161`，RFC3161 时间戳 token 以 `id-aa-timeStampToken`（1.2.840.113549.1.9.16.2.14）嵌入 signedAttrs；**时间戳请求失败自动降级**（不带时间戳继续签名，原因写入 logs.log，与 EXE 行为一致）
-  - **新增 PAdES LTV 长期验证**（`SignTool.applyLtvPdf`）：签名完成后自动增量追加 **DSS（Document Security Store）+ VRI** 字典，使验证器可离线长期验证（Acrobat 显示"签名有效，已启用 LTV"）：
-    - **DSS/Certs**：签名证书链 DER（去重）
-    - **DSS/OCSPs**：链上每张证书的 OCSP 响应（RFC 6960 完整 OCSPResp，含响应者签名；CertID=SHA-1 的 issuerNameHash/issuerKeyHash + 序列号 + Nonce 扩展；请求地址 = CONFIG.txt `OCSP`，缺省 `http://127.0.0.1:WEBPORT/OCSP`）
-    - **DSS/CRLs**：链上每个 CA/根的 CRL（DER；优先 CONFIG.txt `CRL` URL 替换 `{CID}` 后的 `.der.crl` 变体，回退原 URL 与本地 `PKI/WebPublic/CRL/序列号.der.crl`）
-    - **VRI**：key = ByteRange 覆盖内容 **SHA-1 十六进制大写**（PAdES 规定，兼容 Acrobat）；引用 DSS 中对应 OCSP/CRL/Cert 数组
-    - 所有 LTV 对象为新增间接对象 + catalog `/DSS` 增量修订，**PDFBox `saveIncremental(out, updated)` 增量保存，不触碰原签名区（ByteRange 不变，原签名保持有效）**
-    - 任一采集失败（MAIN 未启动 / 外网不可达 / 本地无 CRL）自动跳过对应数据，不影响签名
-  - `verifyPdf` 增加 **LTV 状态输出**：`LTV: 已启用（DSS 字典，Certs=n，OCSPs=n，CRLs=n，VRI=<SHA1 hex>）` 或 `LTV: 未启用（无 DSS 字典）`
-  - **实测（1135228a2 RSA，链 EVCA→ROOTCA）**：签名产物 DSS Certs=3 / OCSPs=3 / CRLs=2、VRI key 正确；OCSP[0] `responseStatus=0`（successful）、CRL[0] 颁发者=EVCA 条目=5 均可解析；CMS 验签、文档摘要比对（SHA-256）、证书链三级验证全部通过；`id-aa-timeStampToken` 属性确认已嵌入（1 个 token）
+- **v1.20（2026-09-17）——WebAdmin 改为多线程执行器 + 写操作串行锁**
+  - **多线程响应**：`HttpServer` 执行器由单线程改为 8 线程固定线程池（`wa-worker` 守护线程）——读接口（status / certs / config / logs / chain / verify 等）并发响应，单个慢请求（如大日志）不再阻塞其他请求
+  - **写操作串行锁**：所有修改 PKI 数据的 API（config 保存、init、makeroot、signcert、revoke、restore、rekey、renew、crl、initocsp、inittimestamp、sign/exe、sign/pdf）统一走 `WRITE_LOCK` 全局锁串行执行，避免并发写证书 / 私钥 / CRL / CONFIG 造成文件竞争
+  - **日志线程安全**：`MLog.write` 加静态 `synchronized`，多线程下 logs.log 追加不会交错损坏
+  - **缓存加大**：`countLogLines` 缓存 10 秒 → **30 秒**、读缓冲 64KB → **256KB**（日志行数显示秒级精度无意义，30 秒缓存几乎不读文件）
+  - **实测**：8 个并发请求（status×3 + config×2 + certs×2 + logs×1）全部 200；稳定延迟 status 3–8ms、certs 4ms；浏览器页面正常、console 无错误
+
+- **v1.19（2026-09-17）——管理界面端口写入 CONFIG.txt（SUPORT）+ 修复大日志导致服务卡死**
+  - **管理界面端口配置化**：WebAdmin 管理界面端口写入 `PKI/CONFIG.txt` 的 `SUPORT` 键（默认 `8080`，键名大小写不敏感）
+    - 启动时自动确保：CONFIG.txt 不存在 → 按默认模板创建（含 `SUPORT=8080`）；文件存在但无 SUPORT 项 → 自动追加 `SUPORT=8080`
+    - **启动时以配置文件为准**：修改 `SUPORT` 后重启 WebAdmin 即监听新端口（端口优先级：系统属性 `modpkica.admin.port` → CONFIG.txt SUPORT → 默认 8080）
+    - 系统配置页（系统设置）新增「SUPORT 管理界面端口」输入框，可读取 / 修改 / 保存，页面提示"修改保存后需重启 WebAdmin 生效"
+    - 实测：保存 `SUPORT=8081` 后重启 → 监听 8081，/api/config 返回 suport=8081；改回 8080 重启恢复正常
+  - **修复：日志量大时 WebAdmin 全部请求超时（服务卡死）**
+    - 现象：日志积累到 2 万+ 行后，/api/status、/api/config 等所有接口超时
+    - 根因：`countLogLines()` 用单字节 `InputStream.read()` 逐字节扫描整个 logs.log（200 万+ 次系统调用），而 HttpServer 是单线程执行器——仪表盘 3 秒一次的 `/api/status` 把唯一线程长期占住，后续请求全部排队超时
+    - 修复：改为 64KB 缓冲批量读 + 10 秒缓存（`lastLogCountTime/cachedLogLines`），日志行数不再每次全文件扫描；`tailFile`（尾部 N 行）本就是高效随机访问实现，保持不变
+    - 实测：21744 行日志下三个接口全部 200 快速响应
+  - 截图与使用方式不变
+
+- **v1.18（2026-09-16）——修复 WebAdmin 独立启动时 MAIN 状态误判**
+  - **问题**：`java modpkica.WebAdmin` 独立启动时，仪表盘 MAIN 状态显示矛盾——"MAIN: 未运行" 与 "● 运行中" 并存，且 MAIN 明明在运行却显示未运行
+  - **根因**：`mainPort` 静态字段初始值为字符串 `"未运行"`，`WebAdmin.start()` 原判定 `!isEmpty()` 把该占位串当作合法端口，导致 `mainRunning` 被误置为 true；且独立启动进程不持有 MAIN 的端口信息，状态永不刷新
+  - **修复**：①`WebAdmin.main()` 独立启动时探测本机 MAIN——读取 `CONFIG.txt` 的 `WEBPORT`（默认 80），TCP 连接成功则 `mainPort=实际端口`、`mainRunning=true`，否则 `未运行/false`；②`start()` 判定改为仅接受**数字端口**（`matches("\\d+")`），MAIN 内嵌启动传 "80" 正常、占位串不再误判；③`statusJson()` 每次被调用时按需重探测（3 秒缓存 `probeMainIfStale`），MAIN 启停后刷新页面/点刷新即可反映最新状态
+  - **实测**：MAIN 运行中（监听 80）→ 独立 WebAdmin 仪表盘显示 `MAIN: 80` + `● 运行中` ✓；console 无错误
+
+- **v1.17（2026-09-16）——微软代码签名也改为批量 + 拖拽布局（与 PDF 一致）**
+  - **微软代码签名页签改为与 PDF 相同的拖拽批量布局**：虚线拖拽区（ondragover/ondrop）+「选择文件」多选按钮（`multiple`，accept exe/dll/sys/cab/cat/msi）；待签名列表逐行显示文件名 / 大小 / 状态（待处理 / 签名中 / 成功 / 失败），行内单独签名 / 验证 / 移除，成功后行内下载链接；顶部「批量签名」「批量验证」「清空」串行处理全部并汇总（成功 N / 失败 M + 逐条错误）；按文件名 + 大小去重、非 PE 扩展名自动过滤
+  - 参数区保留：签名证书（代码签名 EKU 下拉）、时间戳类型（RFC3161 / Authenticode）、时间戳请求地址（留空 = 本机 MAIN / 外部 TSA 可编辑下拉）
+  - 请求参数与后端一致（`/api/sign/exe`：serial/tsType/tsUrl/file/name；`/api/verify/exe`：file），实测 `notepad.exe`（RSA SHA256）签名返回 200 且附加 RFC3161 时间戳（3229B）
+  - 移除旧单文件版 `signDo/verifyDo/signExeDo/verifyExeDo`（死代码）；JS 队列复用 `fmtSize/esc` 等工具函数
+  - 截图更新：`f.png` 替换为微软代码签名批量布局（拖拽区 + 2 文件待签名列表）
+
+- **v1.16（2026-09-16）——签名专区选择夹布局 + PDF 批量拖拽签名**
+  - **签名专区改造为选择夹（tab）形式**：「微软代码签名」与「PDF 文档签名」两个页签各占整页，空间更大；全局字体 14px → 15px，输出区、列表、按钮同步放大
+  - **PDF 文档签名支持批量与拖拽**：虚线拖拽区（ondragover/ondrop）+ 「选择 PDF 文件」多选按钮（`multiple`）；待签名列表逐行显示文件名 / 大小 / 状态（待处理 / 签名中 / 成功 / 失败），行内可单独签名 / 验证 / 移除，成功后行内显示下载链接；顶部「批量签名」「批量验证」串行处理全部文件并汇总（成功 N 个 / 失败 M 个 + 逐条错误）；按文件名 + 大小去重，非 PDF 自动过滤
+  - 修复 Java text block 内 JS 正则转义（`\.` → `\\.`）与 `\n` 字面量（`'\n'` → `'\\n'`），消除编译错误与运行时 JS SyntaxError；签名 API（`/api/sign/pdf`、`/api/verify/pdf`）参数格式不变（serial/sealType/tsUrl/image/file/name）
+  - 截图更新：`f.png` 替换为选择夹 + PDF 拖拽区新布局
+
+- **v1.15（2026-09-16）——国密 GM/T 0031-2025 修正为与 GB/T 38540-2020 一致的数据结构**
+  - **问题**：v1.14 按 GM/T 0031-2014 的两层结构（`SES_Signature{toSign, signature}` + `SESeal{esealInfo, signInfo}` + `header.version=11`）实现，权威工具识别为 **"SESv11"（GM/T 0031-2014）**，不是 0031-2025
+  - **依据**：国家密码管理局第 54 号公告（2026-01-05）发布 GM/T 0031-2025《安全电子签章密码技术规范》，**2026-07-01 实施并废止 2014 版**；标准牵头单位（北京数字认证）官方解读明确：**"本次标准充分考虑与 GB/T 38540-2020 标准的兼容性和延续性，在保证数据结构一致的前提下有所扩展"**——即 0031-2025 的电子印章/电子签章数据结构与 GB/T 38540-2020 一致（4 字段 SESeal、TBS_Sign 5 字段、SES_Signature 4-5 字段、header.version=4）
+  - **修正**：`signPdfGm` 中 0031 分支直接复用 **GB/T 38540 数据结构**（`buildGmSealInfo38540` + `buildGm38540Signature`），SubFilter 仍为 `GM.sm2seal`、签名理由显示"GM/T 0031-2025 国密电子签章"；删除 2014 两层结构的 `buildGm0031Signature`/`buildGm0031TimeInfo`/`buildGmSealInfo0031`；**时间戳与 LTV 沿用 38540 方案**（timeStamp[0] BIT STRING 绑定签名值 + DSS 同保存）
+  - **验证端兼容**：`verifyGmSeal38540` 保留对旧版 0031（2014 两层结构）的解析（字段数=2 分支），新结构（4-5 字段）走 38540 分支，两种样本都能验证
+  - **实测（113548382 SM2 文档签名证书，本机 MAIN /rfc3161）**：TBS_Sign 5 字段、version=4（权威工具应识别为 SESv4/2025 版而非 SESv11）；`SM2 签名验证: 通过 ✓`；`印章签名验证: 通过 ✓`；`签名时间戳(timeStamp 字段): TSA=… 绑定签名值(SM3): 通过 ✓ TSA 证书验签: 通过 ✓`；`LTV: 已启用（DSS 3/3/2）`；最终结论：国密 PDF 电子签章有效 ✓
+  - 演示产物：`MODPKICA_v115_GM0031_2025结构_时间戳_LTV.pdf`（桌面，供权威工具复核）
+
+- **v1.14（2026-09-16）——国密 GM/T 0031（2014 两层结构版本，被 v1.15 取代）**
+  - **标准依据**：GM/T 0031-2014《安全电子签章密码技术规范》（官方全文已下载核实；GM/T 0031-2025 已于 2026-07-01 实施并废止 2014 版，2025 版全文未公开，按其前身 2014 版可查证的 ASN.1 结构实现）
+  - **结构核对结论（vs 2014 版标准，逐项）**：
+    - `SES_Signature ::= SEQUENCE{ toSign TBS_Sign, signature BIT STRING }`（2 字段）✓
+    - `TBS_Sign` 7 字段：`version/eseal/timeInfo/dataHash/propertyInfo/cert/signatureAlgorithm` ✓
+    - `timeInfo ::= BIT STRING`——标准原文"可以是时间戳，也可以是 UTCTIME 时间"→ **支持嵌入时间戳** ✓（已实现）
+    - `SESeal ::= SEQUENCE{ esealInfo SES_SealInfo, signInfo SES_SignInfo }` ✓
+    - `SES_SealInfo.property` = 6 字段（type/name/certList/createDate/validStart/validEnd，**UTCTIME**）✓
+    - `SES_SignInfo.signData` = 制章人对 **SEQUENCE{ 印章信息, 制章人证书, 签名算法标识 }** 的签名（非仅印章信息）✓
+    - `extDatas` 为 **EXPLICIT [0]**（A0 包 SEQUENCE）——**本次修正**（原为无标签 SEQUENCE）
+  - **本次变更**：
+    1. `buildGmSealInfo0031`：extDatas 改为 `DERTaggedObject(true, 0, …)`（标准 EXPLICIT [0]）
+    2. `buildGm0031TimeInfo`：timeInfo 支持时间戳——`tsUrl` 非空时 BIT STRING 内容 = **完整 TimeStampToken DER**；因 timeInfo 是被签名 TBS_Sign 的组成部分、先于签名值存在，时间戳 **messageImprint = 原文 SM3 杂凑（dataHash）**（避免循环依赖，等价证明原文在 TSA 时间已存在）；失败降级 UTCTime 不阻断
+    3. **LTV**：0031 也装 DSS（DSS 是 PDF 层标准 ISO 32000，与签名格式无关），同一次保存（签名后零增量）
+    4. `verifyGmSeal38540` 0031 分支：新增**印章签名自检**（按 SEQUENCE{印章信息,证书,算法标识} 验签）+ **timeInfo 时间戳解析**（TimeStampToken 优先、UTCTime 回退；绑定原文杂凑 + TSA 验签）
+  - **实测（113548382 SM2 文档签名证书，本机 MAIN /rfc3161）**：TBS_Sign 7 字段；`SM2 签名验证: 通过 ✓`；`印章签名验证(制章者…): 通过 ✓`；`签章时间信息(timeInfo): TSA=… 时间=2026-09-16 23:02:09 算法=1.2.156.10197.1.401(SM3)`；`绑定原文杂凑(SM3): 通过 ✓ TSA 证书验签: 通过 ✓`；`LTV: 已启用（DSS Certs=3/OCSPs=3/CRLs=2）`；最终结论：国密 PDF 电子签章有效 ✓
+  - 演示产物：`MODPKICA_v114_GM0031_时间戳_LTV.pdf`（桌面，供权威工具复核）
+  - **答复用户问题**：①样本符合标准（已按 2014 版权威结构逐项核对并修正 extDatas EXPLICIT 标签）；②**支持嵌入时间戳**（timeInfo 字段，标准明文允许）；③**支持 LTV**（DSS 字典，PDF 层标准）
+
+- **v1.13（2026-09-16）——修正 GB/T 38540 timeStamp 字段编码为标准 `[0] BIT STRING` + 印章签名自检**
+  - **问题**：v1.12 把 timeStamp 编码成 universal OCTET STRING（tag 0x04），而标准 7.1.1 定义为 **`timeStamp[0] BIT STRING OPTIONAL`**（对签名值的时间戳，GB/T 20520 = RFC3161，DER 编码存放；ASN.1 无模块级 TAGS 声明时默认 EXPLICIT 标签）——权威验章工具按 `[0]` 上下文标签找时间戳，认不出 0x04 → 不显示时间戳（显示本地时间），并把异常字段计入解析导致印章验证报错
+  - **修正**：`buildGm38540Signature` 时间戳改为 **EXPLICIT [0]（A0）包 BIT STRING**（`new DERTaggedObject(true, 0, new DERBitString(tok))`）；SES_Signature 第 5 字段实测 tag=`DLTaggedObject tag=0x0` ✓
+  - **印章签名自检**：`verifyGmSeal38540` 新增按 GB/T 38540 6.1.5 验证 SESeal.signedValue（制章者对 eSealInfo SEQUENCE 的 SM3withSM2 签名，用 SESeal.cert 公钥）——本机实测印章签名验证**通过 ✓**，证明印章签名本身正确，权威工具之前报"印章签名错误"系 timeStamp 字段类型错误引发的连锁解析异常
+  - **时间戳解析兼容**：支持 EXPLICIT [0]（A0 包 03/04）、IMPLICIT [0]（80/81）、universal BIT STRING（03）、旧 OCTET STRING（04）四种编码；绑定签名值（SM3）+ TSA 证书验签
+  - **实测（113548382 SM2 文档签名证书，本机 MAIN）**：SES_Signature 5 字段；`印章签名验证(制章者 …): 通过 ✓`；`签名时间戳(timeStamp 字段): TSA=… 算法=1.2.156.10197.1.401 绑定签名值(SM3): 通过 ✓ TSA 证书验签: 通过 ✓`；`LTV: 已启用（DSS Certs=3/OCSPs=3/CRLs=2）`；最终结论：国密 PDF 电子签章有效 ✓
+  - 演示产物：`MODPKICA_v113_GM38540_时间戳_标准timeStamp.pdf`（桌面，供权威工具复核）
+
+- **v1.12（2026-09-16）——国密 GB/T 38540-2020 支持嵌入时间戳与 LTV**
+  - **标准依据**：GB/T 38540-2020 **7.1.6 时间戳**明确定义——SES_Signature 可选第 5 字段 `timeStamp`（对签名值的时间戳，符合 GB/T 20520 规定 = RFC3161，时间戳格式按 DER 编码存放；验证流程 h) 要求验证时间戳有效性，比对时间戳时间与签章时间）；参考实现（PDF国密GBT 38540-2020（4））只做了 4 字段、未实现该字段，本次按标准补齐
+  - **时间戳**：`buildGm38540Signature` 生成 SES_Signature 后取 SM2 签名值 → **SM3 摘要** → RFC3161（SM3）时间戳请求 → token DER 作为第 5 字段 `timeStamp`（OCTET STRING）加入；失败降级无时间戳（日志）
+  - **LTV**：DSS 是 PDF 层标准（ISO 32000 DSS 字典），与签名格式无关——`signPdfGm` 的 38540 分支同样 `collectLtvData` + `installDss` 同保存（被签名覆盖，签名后零增量）；GM/T 0031 保持不装（结构无对应约定）
+  - **verifyGmSeal38540**：接受 4/5 字段结构；时间戳解析（TSA/时间/算法/**绑定签名值（SM3）**/TSA 证书验签），时间戳无效则最终结论为无效
+  - **实测（113548382 SM2 文档签名证书，本机 MAIN）**：SubFilter=`GM.sm2seal`，SES_Signature 5 字段；`签名时间戳(timeStamp 字段): TSA=… 时间=2026-09-16 22:24:50 算法=1.2.156.10197.1.401 绑定签名值(SM3)=通过 TSA 证书验签=通过`；`LTV: 已启用（DSS Certs=3/OCSPs=3/CRLs=2）`；dataHash 比对 + SM2 验签 + 时间戳全部通过
+  - 演示产物：`MODPKICA_v112_GM38540_时间戳_LTV.pdf`（桌面）
+
+- **v1.11（2026-09-16）——国密 GB/T 35275-2017 支持嵌入签名时间戳（SM3）与 LTV**
+  - **标准依据**：GB/T 35275-2017 是基于 CMS（SM2 密码算法加密签名消息语法）的国密实现，SignerInfo 的 **unsignedAttrs 为通用结构**——CAdES-T 签名时间戳（`id-aa-timeStampToken`）可正常承载；DSS/LTV 是 PDF 层标准（ISO 32000 DSS 字典），与签名算法无关，任意 SubFilter 均可用
+  - **时间戳**：`buildGm35275Signature` 生成 CMS 后取 SM2 签名值 → **SM3 摘要**（SM2/SM3 证书固定 SM3）→ RFC3161 时间戳请求（`requestTimestamp` 新增摘要算法参数，SM3 OID `1.2.156.10197.1.401`）→ token 写入 unsignedAttrs → `replaceUnsignedAttributes` + `replaceSigners` 重建；失败降级无时间戳签名（日志）
+  - **LTV**：`signPdfGm` 的 35275 分支在保存前 `collectLtvData`（SM2 证书链 OCSP + CRL）+ `installDss`，与签名同一次保存（被签名覆盖，签名后零增量）；38540/0031 的 SES_Signature 无标准 LTV 扩展，不装 DSS
+  - **verifyPdf**：时间戳绑定校验按 token 哈希算法**自适应**（新增 `boundToSignature`：SHA-256/SHA-224/SHA-384/SHA-512/SM3），SM3 时间戳正确显示"绑定签名值=true"
+  - **实测（113548382 SM2 文档签名证书，链 SM2CA→ROOTCA，本机 MAIN）**：SubFilter=`GM.sm2cms.detached`；`签名时间戳(CAdES-T unsignedAttrs): TSA=… 时间=2026-09-16 22:11:31 算法=1.2.156.10197.1.401 绑定签名值=true`；`LTV: 已启用（DSS Certs=3/OCSPs=3/CRLs=2）`；CMS 验签 + SM3 摘要比对 + 证书链全部通过
+  - 演示产物：`MODPKICA_v111_GM35275_时间戳_LTV.pdf`（桌面）
+
+- **v1.10（2026-09-16）——PDF Adobe 签名时间戳位置修正：按权威工具样本对齐 CAdES-T（unsignedAttrs）**
+  - **背景**：v1.9 把时间戳放 signedAttrs（PAdES-BES 属性方式），用户权威验证工具判"签名不包含嵌入的时间戳"
+  - **样本逆向**：解析用户提供的权威工具签名样本 `签名嵌入时间戳无LTV.pdf`（Wosign 类工具，TSA 恰为本机 MODPKICA SHA256 时间戳证书）——其 SignerInfo **无 signedAttrs**，时间戳 token 位于 **unsignedAttrs** 的 `id-aa-timeStampToken`（1.2.840.113549.1.9.16.2.14），且 **messageImprint = SHA-256(签名值)**（非待签数据摘要）——这正是 **CAdES-T / PAdES-T 签名时间戳**的标准位置（ETSI TS 101 733）
+  - **重构 `buildCms`**：时间戳不再进 signedAttrs——先生成 CMS（BC 默认 signedAttrs：contentType/messageDigest/signingTime），取 SignerInfo 签名值 → SHA-256 摘要 → 请求 RFC3161 → token 放入 unsignedAttrs 属性 → `SignerInformation.replaceUnsignedAttributes`（BC 静态 API）+ `CMSSignedData.replaceSigners` 重建 CMS；时间戳失败仍降级无时间戳签名（日志）
+  - **verifyPdf 同步**：签名时间戳解析改查 **unsignedAttrs**，输出 TSA/时间/算法/`绑定签名值=true|false`（imprint 对签名值比对）
+  - **实测（113548234 RSA 文档签名证书，链 EVCA→ROOTCA，本机 MAIN）**：`签名时间戳(CAdES-T unsignedAttrs): TSA=… 时间=2026-09-16 21:30:36 算法=SHA-256 绑定签名值=true`；独立探针确认 unsignedAttrs 含 id-aa-timeStampToken、**imprint==SHA-256(签名值)=true**（与权威工具样本同构）；DSS Certs=3/OCSPs=3/CRLs=2 保留；CMS 验签 + 摘要比对 + 证书链全部通过
+  - **纯文档时间戳（无签名证书）补上 LTV**：修复 `extractTsaChain` 的 BC 泛型编译错误（`Store.getMatches` 擦除问题，此前 addDocTimeStamp 的 LTV 逻辑从未编译进 out，纯 DocTimeStamp 一直无 DSS）——现探测请求取 TSA 证书链 → `collectLtvData`（链上证书 OCSP 响应 + 根 CRL）→ `installDss` 与时间戳同一次保存（被 DocTimeStamp 覆盖，签名后零增量）；实测 `LTV: 已启用（DSS Certs=2/OCSPs=2/CRLs=1）`，messageImprint 比对通过、TSA 验签通过
+  - 演示产物：`MODPKICA_v110_签名内嵌时间戳_CAdES-T.pdf` 与 `MODPKICA_v110_纯文档时间戳_LTV.pdf`（桌面，可用权威工具复核）
+
+- **v1.9（2026-09-16）——PDF Adobe 标准签名时间戳策略重构：签名内嵌时间戳，独立 DocTimeStamp 仅用于无证书纯时间戳**
+  - **时间戳与签名不分离（用户明确要求）**：选中数字证书签名时，不再叠加独立 DocTimeStamp 签名字段——时间戳按 PAdES-BES 标准**嵌入数字签名内部**（signedAttrs 的 `id-aa-timeStampToken`，1.2.840.113549.1.9.16.2.14 属性），**文档只有一个签名字段（adbe.pkcs7.detached）**
+  - **纯文档时间戳（无签名证书）**：PDF 签名区证书下拉新增"（不签名，仅文档时间戳）"选项——不选证书时调用 `SignTool.signPdfTimestampOnly`，生成独立 DocTimeStamp 签名字段（Filter=Adobe.PPKLite、SubFilter=`ETSI.RFC3161`、Contents=RFC3161 TimeStampToken）；此时不可附加签章图片、不可选国密签章
+  - **LTV 同保存（签名后零增量）**：DSS（Certs 证书链 / OCSPs / CRLs）与数字签名**同一次保存**，全部落在签名 ByteRange 覆盖区内——数字签名是文档最后一次修改，无"签名区外内容增加"告警；因数字签名 ByteRange 无法在保存前预知（PDFBox 增量保存会改写 trailer `/ID[1]`，MD5 含时间），**省略 VRI 索引字典**（PAdES 允许），验证器按证书/响应内容匹配 DSS 数据
+  - **verifyPdf 新增"签名时间戳"解析**：主签名 CMS 的 signedAttrs 中若含 `id-aa-timeStampToken`，输出 TSA 名称 / 时间戳时间 / 摘要算法（TimeStampToken 专用解析）
+  - **实测（1135228a2 RSA，链 EVCA→ROOTCA，本机 MAIN，双场景）**：
+    - 选中证书：签名字段=1（adbe.pkcs7.detached）；`签名时间戳(id-aa-timeStampToken): TSA=… 时间=2026-09-16 20:54:07 算法=SHA256`；DSS Certs=3/OCSPs=3/CRLs=2/无 VRI；CMS 验签 + 证书链通过，最终"PDF 签名有效"
+    - 纯时间戳：签名字段=1（ETSI.RFC3161）；messageImprint 比对通过、TSA 证书验签通过，最终"PDF 文档时间戳有效（未附加数字签名）"
+  - WebAdmin PDF 签名区逻辑：`serial` 空 → 纯文档时间戳（signPdfTimestampOnly）；`serial` 非空 → signPdf（内嵌时间戳属性）；前端同步校验（纯时间戳禁签章图片/禁国密）
+
+- **v1.8（2026-09-16）——PDF Adobe 标准签名 PAdES 重构：DocTimeStamp 文档时间戳 + LTV 同保存，签名后零增量**
+  - **文档时间戳（DocTimeStamp）**：Adobe 标准签名现在**先盖文档时间戳**——独立签名字段，Filter=Adobe.PPKLite、SubFilter=`ETSI.RFC3161`、Contents=RFC 3161 TimeStampToken（覆盖整个文档）。Acrobat 据此显示"签名时间来自 TSA"而非本地时间（修复"签名时间来自本地、不含时间戳"）。时间戳地址留空（= 本机 MAIN）或指定外部 TSA 均可；请求失败自动降级（跳过时间戳继续签名，原因写 logs.log）
+  - **顺序重构（修复"签名控制区未经修改但有内容增加"）**：原实现"数字签名 → 签名后增量追加 DSS"造成签名后追加未签名内容，严格工具告警。现改为 **PAdES 部分签名顺序：① DocTimeStamp（覆盖原文档）→ ② 数字签名（adbe.pkcs7.detached）与 DSS/VRI 同一次保存**——数字签名是文档**最后一次**修改，其 ByteRange 覆盖含 DocTimeStamp 与全部 LTV 数据的整个文档，签名后零增量
+  - **DSS（Document Security Store）**：与数字签名同一次保存写入，全部被签名覆盖：
+    - `/DSS/Certs`：签名证书链 DER（去重）
+    - `/DSS/OCSPs`：链上每张证书的 OCSP 响应（RFC 6960 完整 OCSPResp；CertID=SHA-1 + Nonce；地址 = CONFIG.txt `OCSP`，缺省 `http://127.0.0.1:WEBPORT/OCSP`）
+    - `/DSS/CRLs`：链上每个 CA/根的 CRL（DER；优先 CONFIG `CRL` 替换 `{CID}` 的 `.der.crl` 变体，回退原 URL 与本地 `PKI/WebPublic/CRL/序列号.der.crl`）
+    - `/DSS/VRI`：key = **DocTimeStamp 的 ByteRange SHA-1 大写 hex**（PAdES 规范；时间戳失败降级时省略 VRI，DSS 数组仍全局可用）；VRI 引用 DSS 中对应 OCSP/CRL/Cert
+  - `verifyPdf` 升级：**逐个验证全部签名字段**——DocTimeStamp 走专用解析（TimeStampToken：messageImprint 与 ByteRange 摘要比对 + token 内 TSA 证书验签 + 时间戳时间/序列号输出），数字签名走 CMS 验签 + 文档摘要比对 + 证书链；输出含 LTV 状态（DSS Certs/OCSPs/CRLs/VRI）
+  - **实测（1135228a2 RSA，链 EVCA→ROOTCA，本机 MAIN）**：签名字段 2 个（ETSI.RFC3161 + adbe.pkcs7.detached）；DocTimeStamp messageImprint 比对通过、TSA 签名验证通过；数字签名 CMS 验签/摘要比对/证书链三级全部通过；DSS Certs=3/OCSPs=3/CRLs=2/VRI=DocTimeStamp SHA1 命中；OCSP `responseStatus=0`、CRL 可解析；数字签名后无任何增量
 
 - **v1.7（2026-09-15）——PDF 签名专区新增第四种签章类型：国密 GM/T 0031-2025《安全电子签章密码技术规范》**
   - **标准澄清**：需求中"GB/T 0031-2025"实际为 **GM/T 0031-2025**（密码行业标准，非 GB/T 国标；国家密码管理局公告第 54 号发布，2026-07-01 实施，替代 GM/T 0031-2014）。2025 版全文未公开（行业标准不免费发布），实现依据 = **GM/T 0031-2014 官方标准原文**（gmbz.org.cn）公开的 ASN.1 + 2025 版公告确认的兼容演进，交付如需对拍正式文本以官方为准

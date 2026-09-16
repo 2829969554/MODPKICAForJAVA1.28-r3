@@ -1,0 +1,10 @@
+﻿javac : ע: ĳЩ�����ļ�ʹ�û򸲸����ѹ�ʱ�� API��
+所在位置 行:1 字符: 52
++ ... pkica4JAVA; javac -encoding UTF-8 -cp "BC185\*;lib\*" -d out src\modp ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (ע: ĳЩ�����ļ�ʹ�û򸲸����ѹ�ʱ�� API��:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+ע: �й���ϸ��Ϣ, ��ʹ�� -Xlint:deprecation ���±��롣
+ע: ĳЩ�����ļ�ʹ����δ�����򲻰�ȫ�Ĳ�����
+ע: �й���ϸ��Ϣ, ��ʹ�� -Xlint:unchecked ���±��롣

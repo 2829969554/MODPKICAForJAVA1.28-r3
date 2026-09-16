@@ -4,6 +4,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 
 import java.io.ByteArrayOutputStream;
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -126,9 +127,124 @@ public final class WebAdmin {
     /** 独立启动入口：java modpkica.WebAdmin。 */
     public static void main(String[] args) throws Exception {
         baseDir = AppPaths.baseDir();
+        ensureSuportConfig();
+        probeMain();
         start(mainPort);
         System.out.println("WebAdmin 管理界面已启动: http://localhost:" + port());
         System.out.println("（Ctrl+C 停止）");
+    }
+
+    /**
+     * 确保 PKI/CONFIG.txt 存在且含管理界面端口项（SUPORT）。
+     * 文件不存在 → 创建默认模板（含 SUPORT=8080）；存在但无 SUPORT 项 → 追加 SUPORT=8080。
+     */
+    private static void ensureSuportConfig() {
+        try {
+            Path f = Paths.get(baseDir, "PKI", "CONFIG.txt");
+            if (!Files.exists(f)) {
+                Files.createDirectories(f.getParent());
+                String tpl = "WEBPORT=80\r\n"
+                        + "SUPORT=8080\r\n"
+                        + "OCSP=http://localhost:80/OCSP\r\n"
+                        + "CRL=http://localhost:80/CRL/{CID}.crl\r\n"
+                        + "CRT=http://localhost:80/CRT/{CID}.crt\r\n"
+                        + "CPS=https://gitee.com/wxgshuju/modpkica\r\n"
+                        + "CPS_Nonice=http://example.com/nonice\r\n";
+                Files.write(f, tpl.getBytes(StandardCharsets.UTF_8));
+                return;
+            }
+            boolean hasSuport = false;
+            for (String line : Files.readAllLines(f, StandardCharsets.UTF_8)) {
+                String t = line.trim();
+                if (t.isEmpty() || t.startsWith("#")) {
+                    continue;
+                }
+                int idx = t.indexOf('=');
+                if (idx > 0 && t.substring(0, idx).trim().equalsIgnoreCase("SUPORT")) {
+                    hasSuport = true;
+                    break;
+                }
+            }
+            if (!hasSuport) {
+                String all = new String(Files.readAllBytes(f), StandardCharsets.UTF_8);
+                if (!all.endsWith("\n") && !all.endsWith("\r")) {
+                    all += "\r\n";
+                }
+                Files.write(f, (all + "SUPORT=8080\r\n").getBytes(StandardCharsets.UTF_8));
+            }
+        } catch (Exception e) {
+            // 配置写入失败不影响服务启动
+        }
+    }
+
+    /** 读取 CONFIG.txt 的管理界面端口（SUPORT，大小写不敏感），缺省返回 8080。 */
+    private static int readConfigAdminPort() {
+        try {
+            Path f = Paths.get(baseDir, "PKI", "CONFIG.txt");
+            if (Files.exists(f)) {
+                for (String line : Files.readAllLines(f, StandardCharsets.UTF_8)) {
+                    String t = line.trim();
+                    if (t.isEmpty() || t.startsWith("#")) {
+                        continue;
+                    }
+                    int idx = t.indexOf('=');
+                    if (idx <= 0) {
+                        continue;
+                    }
+                    if (t.substring(0, idx).trim().equalsIgnoreCase("SUPORT")) {
+                        String v = t.substring(idx + 1).trim();
+                        if (v.matches("\\d+")) {
+                            int p = Integer.parseInt(v);
+                            if (p > 0 && p <= 65535) {
+                                return p;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception ignore) {
+            // 读取失败返回默认
+        }
+        return DEFAULT_PORT;
+    }
+
+    /** 独立启动时探测本机 MAIN 服务（CONFIG.txt WEBPORT，默认 80）是否在运行。 */
+    private static void probeMain() {
+        int p = 0;
+        String cfg = readConfigWebPort();
+        if (cfg != null && cfg.matches("\\d+")) {
+            p = Integer.parseInt(cfg);
+        }
+        if (p > 0 && canConnect(p)) {
+            mainPort = String.valueOf(p);
+            mainRunning = true;
+        } else {
+            mainPort = "未运行";
+            mainRunning = false;
+        }
+    }
+
+    /** 距上次探测的时间间隔（毫秒），避免每次状态请求都做 TCP 探测。 */
+    private static volatile long lastProbeTime = 0;
+
+    /** 状态接口调用时按需刷新 MAIN 探测结果（3 秒缓存）。 */
+    private static void probeMainIfStale() {
+        long now = System.currentTimeMillis();
+        if (now - lastProbeTime < 3000) {
+            return;
+        }
+        lastProbeTime = now;
+        probeMain();
+    }
+
+    /** 尝试 TCP 连接本机端口，用于探测 MAIN 服务是否在运行。 */
+    private static boolean canConnect(int port) {
+        try (java.net.Socket s = new java.net.Socket()) {
+            s.connect(new java.net.InetSocketAddress("127.0.0.1", port), 400);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     /** 当前管理端口。 */
@@ -145,16 +261,26 @@ public final class WebAdmin {
         if (server != null) {
             return;
         }
-        if (mainWebPort != null && !mainWebPort.isEmpty()) {
+        ensureSuportConfig();
+        if (mainWebPort != null && mainWebPort.matches("\\d+")) {
             mainPort = mainWebPort;
             mainRunning = true;
         }
-        int port = Integer.getInteger("modpkica.admin.port", DEFAULT_PORT);
+        // 端口优先级：系统属性 modpkica.admin.port（显式调试）→ CONFIG.txt SUPORT → 默认 8080
+        String prop = System.getProperty("modpkica.admin.port");
+        int port = (prop != null && prop.matches("\\d+"))
+                ? Integer.parseInt(prop) : readConfigAdminPort();
         String bind = System.getProperty("modpkica.admin.bind", DEFAULT_BIND);
         try {
             server = HttpServer.create(new InetSocketAddress(InetAddress.getByName(bind), port), 0);
             server.createContext("/", WebAdmin::route);
-            server.setExecutor(null); // 单线程串行，避免并发操作 PKI 数据
+            // 多线程执行器：读接口并发响应（大日志/慢请求不再阻塞其他请求）；
+            // 写 PKI 数据的 API 在 handleApi 内通过 WRITE_LOCK 串行，避免文件竞争
+            server.setExecutor(java.util.concurrent.Executors.newFixedThreadPool(8, r -> {
+                Thread t = new Thread(r, "wa-worker");
+                t.setDaemon(true);
+                return t;
+            }));
             server.start();
         } catch (Exception e) {
             // 端口被占用或绑定失败：不影响 MAIN 主服务，打印提示后跳过
@@ -190,12 +316,33 @@ public final class WebAdmin {
         sendJson(ex, 404, Map.of("ok", false, "message", "404: " + path));
     }
 
-    /** API 分发。 */
+    /** 写 PKI 数据的管理 API（并发时串行执行，避免文件竞争）。 */
+    private static final java.util.Set<String> WRITE_PATHS = java.util.Set.of(
+            "/api/config", "/api/init", "/api/makeroot", "/api/signcert",
+            "/api/revoke", "/api/restore", "/api/rekey", "/api/renew",
+            "/api/crl", "/api/initocsp", "/api/inittimestamp",
+            "/api/sign/exe", "/api/sign/pdf");
+
+    /** 写操作全局锁：保证 PKI 文件（证书/私钥/CRL/CONFIG/日志）串行修改。 */
+    private static final Object WRITE_LOCK = new Object();
+
+    /** API 分发（多线程执行；写操作经 WRITE_LOCK 串行）。 */
     private static void handleApi(HttpExchange ex) throws IOException {
         String path = ex.getRequestURI().getPath();
         String method = ex.getRequestMethod();
         TOTAL_CALLS.incrementAndGet();
         ENDPOINT_CALLS.merge(path, 1L, Long::sum);
+        if (WRITE_PATHS.contains(path)) {
+            synchronized (WRITE_LOCK) {
+                dispatchApi(ex, path, method);
+            }
+        } else {
+            dispatchApi(ex, path, method);
+        }
+    }
+
+    /** 实际 API 处理（原 switch 主体）。 */
+    private static void dispatchApi(HttpExchange ex, String path, String method) throws IOException {
         try {
             switch (path) {
                 case "/api/status":
@@ -1068,6 +1215,7 @@ public final class WebAdmin {
 
     /** MAIN 服务状态 + WebAdmin 自身统计。 */
     private static Map<String, Object> statusJson() {
+        probeMainIfStale();
         Map<String, Object> d = new LinkedHashMap<>();
         d.put("mainPort", mainPort);
         d.put("mainRunning", mainRunning);
@@ -1169,7 +1317,7 @@ public final class WebAdmin {
         Map<String, String> d = new LinkedHashMap<>();
         Path f = Paths.get(baseDir, "PKI", "CONFIG.txt");
         boolean exists = Files.exists(f);
-        String webport = "80", ocsp = "", crl = "", crt = "", cps = "", cpsNonice = "";
+        String webport = "80", suport = "8080", ocsp = "", crl = "", crt = "", cps = "", cpsNonice = "";
         if (exists) {
             try {
                 for (String line : Files.readAllLines(f, StandardCharsets.UTF_8)) {
@@ -1183,6 +1331,10 @@ public final class WebAdmin {
                     }
                     String k = t.substring(0, idx).trim();
                     String v = t.substring(idx + 1).trim();
+                    if (k.equalsIgnoreCase("SUPORT")) {
+                        suport = v;
+                        continue;
+                    }
                     switch (k) {
                         case "WEBPORT":   webport = v; break;
                         case "OCSP":      ocsp = v; break;
@@ -1202,6 +1354,7 @@ public final class WebAdmin {
         } else {
             // 文件不存在：返回默认模板内容
             webport = "80";
+            suport = "8080";
             ocsp = "http://localhost:80/OCSP";
             crl = "http://localhost:80/CRL/{CID}.crl";
             crt = "http://localhost:80/CRT/{CID}.crt";
@@ -1209,6 +1362,7 @@ public final class WebAdmin {
             cpsNonice = "http://example.com/nonice";
         }
         d.put("webport", webport);
+        d.put("suport", suport);
         d.put("ocsp", ocsp);
         d.put("crl", crl);
         d.put("crt", crt);
@@ -1223,6 +1377,8 @@ public final class WebAdmin {
         Map<String, Object> m = parseJsonObject(bodyStr);
         Map<String, String> updates = new LinkedHashMap<>();
         updates.put("WEBPORT", str(m, "webport"));
+        String su = str(m, "suport");
+        updates.put("SUPORT", (su == null || su.isEmpty()) ? "8080" : su);
         updates.put("OCSP", str(m, "ocsp"));
         updates.put("CRL", str(m, "crl"));
         updates.put("CRT", str(m, "crt"));
@@ -1240,6 +1396,7 @@ public final class WebAdmin {
             // 文件不存在：先用默认模板初始化
             lines = new java.util.ArrayList<>(java.util.Arrays.asList(
                     "WEBPORT=80",
+                    "SUPORT=8080",
                     "OCSP=http://localhost:80/OCSP",
                     "CRL=http://localhost:80/CRL/{CID}.crl",
                     "CRT=http://localhost:80/CRT/{CID}.crt",
@@ -1648,26 +1805,37 @@ public final class WebAdmin {
         return "未配置";
     }
 
-    /** logs.log 行数（快速统计）。 */
+    /** logs.log 行数（缓冲读 + 30 秒缓存，避免每次状态请求全文件扫描）。 */
+    private static volatile long lastLogCountTime = 0;
+    private static volatile long cachedLogLines = 0;
     private static long countLogLines() {
+        long now = System.currentTimeMillis();
+        if (now - lastLogCountTime < 30_000) {
+            return cachedLogLines;
+        }
+        lastLogCountTime = now;
         try {
             Path f = Paths.get(baseDir, "PKI", "logs.log");
             if (!Files.exists(f)) {
+                cachedLogLines = 0;
                 return 0;
             }
-            // 用字节流数换行符，避免整文件读入内存
             long count = 0;
-            try (InputStream in = Files.newInputStream(f)) {
-                int b;
-                while ((b = in.read()) != -1) {
-                    if (b == '\n') {
-                        count++;
+            byte[] buf = new byte[262144];
+            try (BufferedInputStream in = new BufferedInputStream(Files.newInputStream(f), 262144)) {
+                int n;
+                while ((n = in.read(buf)) != -1) {
+                    for (int i = 0; i < n; i++) {
+                        if (buf[i] == '\n') {
+                            count++;
+                        }
                     }
                 }
             }
+            cachedLogLines = count;
             return count;
         } catch (Exception e) {
-            return 0;
+            return cachedLogLines;
         }
     }
 
@@ -1847,20 +2015,21 @@ public final class WebAdmin {
             if (fileBytes == null || fileBytes.length == 0) {
                 throw new IllegalArgumentException("未上传文件");
             }
-            if (serial.isEmpty()) {
+            // serial 为空：仅 PDF 签名允许（纯文档时间戳）；EXE 签名必须选择证书
+            if (serial.isEmpty() && !pdf) {
                 throw new IllegalArgumentException("未选择签名证书序列号");
             }
             String base = AppPaths.baseDir();
             CertsDB db = new CertsDB();
             db.load(base);
-            CertsDB.CertEntry e = db.findBySerial(serial);
-            if (e == null) {
+            CertsDB.CertEntry e = serial == null || serial.isEmpty() ? null : db.findBySerial(serial);
+            if (serial != null && !serial.isEmpty() && e == null) {
                 throw new IllegalArgumentException("CERTS.txt 无序列号 " + serial);
             }
-            String keyType = e.algo;
-            java.security.cert.X509Certificate cert = SignTool.loadCertBySerial(base, serial);
-            PrivateKey key = SignTool.loadKeyBySerial(base, serial);
-            List<java.security.cert.X509Certificate> chain = SignTool.loadChain(base, serial);
+            String keyType = e == null ? "RSA" : e.algo;
+            java.security.cert.X509Certificate cert = e == null ? null : SignTool.loadCertBySerial(base, serial);
+            PrivateKey key = e == null ? null : SignTool.loadKeyBySerial(base, serial);
+            List<java.security.cert.X509Certificate> chain = e == null ? null : SignTool.loadChain(base, serial);
 
             byte[] result;
             String op;
@@ -1873,17 +2042,27 @@ public final class WebAdmin {
                 }
                 String tsUrl = new String(f.getOrDefault("tsUrl", new byte[0]),
                         StandardCharsets.UTF_8).trim();
-                result = SignTool.signPdf(fileBytes, keyType, cert, key, chain, image,
-                        sealType, tsUrl);
-                String sealLabel = "ADOBE".equalsIgnoreCase(sealType) ? "Adobe 标准文档签名"
-                        : "GM38540".equalsIgnoreCase(sealType) ? "国密 GB/T 38540-2020"
-                        : "GM0031".equalsIgnoreCase(sealType) ? "国密 GM/T 0031-2025"
-                        : "国密 GB/T 35275-2017";
-                op = "PDF 文档签名\n"
-                        + "  签章类型: " + sealLabel + "\n"
-                        + "  签章: " + (image != null && image.length > 0
-                        ? "已附加可见签章（" + image.length + "B 图片）" : "无（不可见签名）") + "\n"
-                        + "  时间戳地址: " + (tsUrl.isEmpty() ? "（本机 MAIN /rfc3161 默认）" : tsUrl);
+                if (cert == null) {
+                    // 未选择证书：纯文档时间戳（独立 DocTimeStamp，ETSI.RFC3161）
+                    if (image != null && image.length > 0) {
+                        throw new IllegalArgumentException("纯文档时间戳（不选证书）不能附加签章图片");
+                    }
+                    result = SignTool.signPdfTimestampOnly(fileBytes, tsUrl);
+                    op = "PDF 纯文档时间戳（无签名证书）\n"
+                            + "  时间戳地址: " + (tsUrl.isEmpty() ? "（本机 MAIN /rfc3161 默认）" : tsUrl);
+                } else {
+                    result = SignTool.signPdf(fileBytes, keyType, cert, key, chain, image,
+                            sealType, tsUrl);
+                    String sealLabel = "ADOBE".equalsIgnoreCase(sealType) ? "Adobe 标准文档签名"
+                            : "GM38540".equalsIgnoreCase(sealType) ? "国密 GB/T 38540-2020"
+                            : "GM0031".equalsIgnoreCase(sealType) ? "国密 GM/T 0031-2025"
+                            : "国密 GB/T 35275-2017";
+                    op = "PDF 文档签名\n"
+                            + "  签章类型: " + sealLabel + "\n"
+                            + "  签章: " + (image != null && image.length > 0
+                            ? "已附加可见签章（" + image.length + "B 图片）" : "无（不可见签名）") + "\n"
+                            + "  时间戳地址: " + (tsUrl.isEmpty() ? "（本机 MAIN /rfc3161 默认）" : tsUrl);
+                }
             } else {
                 if (fileName.isEmpty()) {
                     fileName = "file.bin";
@@ -1905,9 +2084,11 @@ public final class WebAdmin {
             }
             String out = op + "\n"
                     + "  输入: " + fileName + "（" + fileBytes.length + " 字节）\n"
-                    + "  证书: " + cert.getSubjectX500Principal() + "\n"
+                    + (cert != null
+                    ? "  证书: " + cert.getSubjectX500Principal() + "\n"
                     + "  序列号: " + serial + "   算法: " + keyType
                     + "   摘要: " + SignTool.digestName(keyType) + "\n"
+                    : "  证书: （未选择，纯文档时间戳）\n")
                     + "  输出: " + result.length + " 字节";
             MLog.append(base, "WebAdmin " + path,
                     "POST " + path + " serial=" + serial + " file=" + fileName
@@ -2186,7 +2367,7 @@ public final class WebAdmin {
             --err: #f87171; --mono: Consolas, "Courier New", monospace;
           }
           * { margin: 0; padding: 0; box-sizing: border-box; }
-          body { background: var(--bg); color: var(--text); font-family: "Segoe UI", "Microsoft YaHei", sans-serif; font-size: 14px; display: flex; height: 100vh; overflow: hidden; }
+          body { background: var(--bg); color: var(--text); font-family: "Segoe UI", "Microsoft YaHei", sans-serif; font-size: 15px; display: flex; height: 100vh; overflow: hidden; }
           /* ===== 侧边栏 ===== */
           #sidebar { width: 200px; min-width: 200px; background: var(--panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
           .logo { padding: 18px 16px; font-size: 18px; font-weight: 700; letter-spacing: 1px; border-bottom: 1px solid var(--border); }
@@ -2244,6 +2425,25 @@ public final class WebAdmin {
           input, select, textarea { width: 100%; background: var(--panel2); border: 1px solid var(--border); color: var(--text); border-radius: 6px; padding: 8px 10px; font-family: var(--mono); font-size: 13px; outline: none; }
           input:focus, select:focus, textarea:focus { border-color: var(--accent); }
           .row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+          .sig-tabs { display: flex; gap: 10px; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+          .sig-tab { padding: 10px 28px; font-size: 15px; font-weight: 700; background: var(--panel2); color: var(--dim); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: all .15s; }
+          .sig-tab:hover { color: var(--text); border-color: var(--accent); }
+          .sig-tab.active { background: var(--accent); color: #0b1220; border-color: var(--accent); }
+          .sig-pane { font-size: 14px; }
+          .sig-pane .row { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+          .dropzone { border: 2px dashed var(--border); border-radius: 10px; padding: 28px 20px; text-align: center; margin: 14px 0; cursor: pointer; transition: all .15s; }
+          .dropzone.over { border-color: var(--accent); background: rgba(96,165,250,.08); }
+          .fake-btn { display: inline-block; padding: 9px 22px; font-size: 14px; font-weight: 700; color: #0b1220; background: var(--accent); border-radius: 7px; cursor: pointer; }
+          .pdf-list-head { display: flex; gap: 10px; align-items: center; margin-top: 14px; font-size: 14px; }
+          .pdf-list-head button { padding: 7px 16px; }
+          .pdf-list { max-height: 240px; overflow: auto; border: 1px solid var(--border); border-radius: 8px; margin: 10px 0; }
+          .pdf-row { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid var(--border); font-size: 13px; }
+          .pdf-row:last-child { border-bottom: none; }
+          .pdf-row .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+          .pdf-row .st { font-size: 12px; min-width: 150px; }
+          .pdf-row .st.ok { color: var(--ok); } .pdf-row .st.err { color: var(--err); } .pdf-row .st.wait { color: var(--dim); }
+          .pdf-row button { padding: 3px 10px; font-size: 12px; }
+          .pdf-row a.dl { color: var(--accent); font-weight: 700; font-size: 12px; text-decoration: none; }
           button { background: var(--accent); color: #06202e; border: none; border-radius: 6px; padding: 9px 20px; font-size: 13px; font-weight: 700; cursor: pointer; transition: filter .15s; }
           button:hover { filter: brightness(1.15); }
           button.ghost { background: var(--panel2); color: var(--text); border: 1px solid var(--border); }
@@ -2254,7 +2454,7 @@ public final class WebAdmin {
           th, td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap; }
           th { color: var(--dim); font-weight: 600; position: sticky; top: 0; background: var(--panel); }
           tr:hover td { background: var(--panel2); }
-          pre.out { background: #0a0e13; border: 1px solid var(--border); border-radius: 8px; padding: 14px; font-family: var(--mono); font-size: 12.5px; line-height: 1.6; white-space: pre-wrap; word-break: break-all; max-height: 420px; overflow-y: auto; margin-top: 14px; }
+          pre.out { background: #0a0e13; border: 1px solid var(--border); border-radius: 8px; padding: 14px; font-family: var(--mono); font-size: 13px; line-height: 1.6; white-space: pre-wrap; word-break: break-all; max-height: 420px; overflow-y: auto; margin-top: 14px; }
           pre.out.ok { border-color: rgba(52,211,153,.4); } pre.out.err { border-color: rgba(248,113,113,.4); }
           .toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
           .toolbar input { width: auto; } .toolbar select { width: auto; }
@@ -2600,55 +2800,82 @@ public final class WebAdmin {
             <!-- 签名专区 -->
             <div class="page" id="page-sign">
               <div class="card">
-                <h2>微软代码签名（Authenticode）</h2>
-                <div class="hint">选择 PE 可执行文件（exe / dll / sys）与带代码签名 EKU 的证书进行签名，或验证已签名文件。支持 RSA / ECC / SM2（摘要分别用 SHA256 / SHA256 / SM3），证书表按 Microsoft PE/COFF 规范嵌入。时间戳类型可选 RFC3161（标准 TimeStampToken）或 Authenticode（微软老式 PKCS#7）；地址可指向本机 MAIN（留空）或任意外部 TSA。</div>
-                <div class="row">
-                  <div style="grid-column:1/2"><label>选择文件</label><input type="file" id="sgExeFile" accept=".exe,.dll,.sys,.cab,.cat,.msi,application/octet-stream"></div>
-                  <div><label>签名证书（代码签名 EKU）</label><select id="sgExeCert" title="鼠标悬停查看证书简介"><option value="">（加载中...）</option></select></div>
-                  <div><label>时间戳类型</label><select id="sgExeTsType">
-                    <option value="RFC3161" selected>RFC3161（标准）</option>
-                    <option value="AUTHENTICODE">Authenticode（老式 PKCS#7）</option>
-                  </select></div>
-                  <div style="grid-column:1/2"><label>时间戳请求地址（留空 = 本机 MAIN）</label>
-                    <input id="sgExeTsUrl" list="tsUrlList" placeholder="http://timestamp.digicert.com" spellcheck="false">
-                    <datalist id="tsUrlList">
-                      <option value="http://timestamp.digicert.com">
-                      <option value="http://sha256timestamp.ws.symantec.com/sha256/">
-                      <option value="http://timestamp.comodoca.com">
-                      <option value="http://time.certum.pl">
-                    </datalist>
-                  </div>
-                  <div style="align-self:end"><button onclick="signExeDo()">签名</button></div>
-                  <div style="align-self:end"><button class="ghost" onclick="verifyExeDo()">验证签名</button></div>
+                <h2>签名专区</h2>
+                <div class="sig-tabs">
+                  <button class="sig-tab active" id="sigTabBtn-exe" onclick="sigTab('exe',this)">微软代码签名</button>
+                  <button class="sig-tab" id="sigTabBtn-pdf" onclick="sigTab('pdf',this)">PDF 文档签名</button>
                 </div>
-                <pre class="out" id="sgExeOut" style="max-height:52vh;overflow:auto;white-space:pre;font-family:var(--mono);font-size:12px;line-height:1.55"></pre>
-              </div>
-              <div class="card" style="margin-top:16px">
-                <h2>PDF 文档签名</h2>
-                <div class="hint">选择 PDF 文件与带文档签名 EKU 的证书进行签名，或验证已签名 PDF。证书筛选：微软文档签名 OID（1.3.6.1.4.1.311.10.3.12）或通用文档签名 OID（1.3.6.1.5.5.7.3.36）任一即可。<br>签章类型：Adobe 标准文档签名（adbe.pkcs7.detached，RSA/ECC/SM2 均可）；国密 GB/T 35275-2017（GM.sm2cms.detached，仅 SM2 证书）；国密 GB/T 38540-2020（GM.sm2seal SES_Signature，仅 SM2 证书，需签章图片）；国密 GM/T 0031-2025（安全电子签章密码技术规范，GM.sm2seal 两层 SES_Signature，仅 SM2 证书，需签章图片）。</div>
-                <div class="row">
-                  <div><label>选择文件</label><input type="file" id="sgPdfFile" accept=".pdf,application/pdf"></div>
-                  <div><label>签章图片（png/jpg/bmp/gif）</label><input type="file" id="sgPdfImage" accept="image/png,image/jpeg,image/bmp,image/gif"></div>
-                  <div><label>签名证书（文档签名 EKU）</label><select id="sgPdfCert" title="鼠标悬停查看证书简介"><option value="">（加载中...）</option></select></div>
-                  <div><label>签章类型</label><select id="sgPdfSeal">
-                    <option value="ADOBE" selected>Adobe 标准文档签名</option>
-                    <option value="GM35275">国密 GB/T 35275-2017</option>
-                    <option value="GM38540">国密 GB/T 38540-2020</option>
-                    <option value="GM0031">国密 GM/T 0031-2025</option>
-                  </select></div>
-                  <div style="grid-column:1/3"><label>时间戳请求地址（留空 = 本机 MAIN；国密 38540 无标准时间戳扩展）</label>
-                    <input id="sgPdfTsUrl" list="tsUrlListPdf" placeholder="http://timestamp.digicert.com" spellcheck="false">
-                    <datalist id="tsUrlListPdf">
-                      <option value="http://timestamp.digicert.com">
-                      <option value="http://sha256timestamp.ws.symantec.com/sha256/">
-                      <option value="http://timestamp.comodoca.com">
-                      <option value="http://time.certum.pl">
-                    </datalist>
+
+                <!-- 微软代码签名（批量 + 拖拽） -->
+                <div class="sig-pane" id="sigPane-exe">
+                  <div class="hint">拖拽或批量选择 PE 可执行文件（exe / dll / sys / cab / cat / msi）加入待签名列表，再选证书与时间戳参数执行签名 / 验证。支持 RSA / ECC / SM2（摘要分别用 SHA256 / SHA256 / SM3），证书表按 Microsoft PE/COFF 规范嵌入。时间戳类型可选 RFC3161（标准 TimeStampToken）或 Authenticode（微软老式 PKCS#7）；地址可指向本机 MAIN（留空）或任意外部 TSA。</div>
+                  <div class="row">
+                    <div><label>签名证书（代码签名 EKU）</label><select id="sgExeCert" title="鼠标悬停查看证书简介"><option value="">（加载中...）</option></select></div>
+                    <div><label>时间戳类型</label><select id="sgExeTsType">
+                      <option value="RFC3161" selected>RFC3161（标准）</option>
+                      <option value="AUTHENTICODE">Authenticode（老式 PKCS#7）</option>
+                    </select></div>
+                    <div style="grid-column:1/2"><label>时间戳请求地址（留空 = 本机 MAIN）</label>
+                      <input id="sgExeTsUrl" list="tsUrlList" placeholder="http://timestamp.digicert.com" spellcheck="false">
+                      <datalist id="tsUrlList">
+                        <option value="http://timestamp.digicert.com">
+                        <option value="http://sha256timestamp.ws.symantec.com/sha256/">
+                        <option value="http://timestamp.comodoca.com">
+                        <option value="http://time.certum.pl">
+                      </datalist>
+                    </div>
                   </div>
-                  <div style="align-self:end"><button onclick="signPdfDo()">签名</button></div>
-                  <div style="align-self:end"><button class="ghost" onclick="verifyPdfDo()">验证签名</button></div>
+                  <div class="dropzone" id="exeDrop">
+                    <div style="font-size:16px;font-weight:700;color:var(--text)">拖拽可执行文件到此处</div>
+                    <div style="margin-top:6px;color:var(--dim)">支持 exe / dll / sys / cab / cat / msi（可多选）</div>
+                    <label class="fake-btn" style="margin-top:12px">选择文件<input type="file" id="sgExeFile" multiple accept=".exe,.dll,.sys,.cab,.cat,.msi,application/octet-stream" hidden></label>
+                  </div>
+                  <div class="pdf-list-head">
+                    <span style="font-weight:700">待签名列表（<b id="exeCount" style="color:var(--accent)">0</b> 个）</span>
+                    <button onclick="exeSignAll()">批量签名</button>
+                    <button class="ghost" onclick="exeVerifyAll()">批量验证</button>
+                    <button class="ghost" onclick="exeClear()">清空</button>
+                  </div>
+                  <div id="exeList" class="pdf-list"></div>
+                  <pre class="out" id="sgExeOut" style="max-height:30vh;overflow:auto;white-space:pre;font-family:var(--mono);font-size:12px;line-height:1.55"></pre>
                 </div>
-                <pre class="out" id="sgPdfOut" style="max-height:52vh;overflow:auto;white-space:pre;font-family:var(--mono);font-size:12px;line-height:1.55"></pre>
+
+                <!-- PDF 文档签名（批量 + 拖拽） -->
+                <div class="sig-pane" id="sigPane-pdf" style="display:none">
+                  <div class="hint">批量选择或拖拽 PDF 文件加入待签名列表，再选证书与签章参数执行签名 / 验证。证书筛选：微软文档签名 OID（1.3.6.1.4.1.311.10.3.12）或通用文档签名 OID（1.3.6.1.5.5.7.3.36）任一即可。<br>签章类型：Adobe 标准文档签名（adbe.pkcs7.detached，RSA/ECC/SM2 均可）；国密 GB/T 35275-2017（GM.sm2cms.detached，仅 SM2）；国密 GB/T 38540-2020（GM.sm2seal，仅 SM2，需签章图片）；国密 GM/T 0031-2025（GM.sm2seal，仅 SM2，需签章图片）。</div>
+                  <div class="row">
+                    <div><label>签章图片（png/jpg/bmp/gif）</label><input type="file" id="sgPdfImage" accept="image/png,image/jpeg,image/bmp,image/gif"></div>
+                    <div><label>签名证书（留空 = 仅文档时间戳）</label><select id="sgPdfCert" title="鼠标悬停查看证书简介（留空=纯文档时间戳，不签名）"><option value="">（不签名，仅文档时间戳）</option></select></div>
+                    <div><label>签章类型</label><select id="sgPdfSeal">
+                      <option value="ADOBE" selected>Adobe 标准文档签名</option>
+                      <option value="GM35275">国密 GB/T 35275-2017</option>
+                      <option value="GM38540">国密 GB/T 38540-2020</option>
+                      <option value="GM0031">国密 GM/T 0031-2025</option>
+                    </select></div>
+                    <div style="grid-column:1/3"><label>时间戳请求地址（留空 = 本机 MAIN）</label>
+                      <input id="sgPdfTsUrl" list="tsUrlListPdf" placeholder="http://timestamp.digicert.com" spellcheck="false">
+                      <datalist id="tsUrlListPdf">
+                        <option value="http://timestamp.digicert.com">
+                        <option value="http://sha256timestamp.ws.symantec.com/sha256/">
+                        <option value="http://timestamp.comodoca.com">
+                        <option value="http://time.certum.pl">
+                      </datalist>
+                    </div>
+                  </div>
+                  <div class="dropzone" id="pdfDrop">
+                    <div style="font-size:16px;font-weight:700;color:var(--text)">拖拽 PDF 文件到此处</div>
+                    <div style="margin-top:6px;color:var(--dim)">或点击下方按钮选择文件（可多选）</div>
+                    <label class="fake-btn" style="margin-top:12px">选择 PDF 文件<input type="file" id="sgPdfFile" multiple accept=".pdf,application/pdf" hidden></label>
+                  </div>
+                  <div class="pdf-list-head">
+                    <span style="font-weight:700">待签名列表（<b id="pdfCount" style="color:var(--accent)">0</b> 个）</span>
+                    <button onclick="pdfSignAll()">批量签名</button>
+                    <button class="ghost" onclick="pdfVerifyAll()">批量验证</button>
+                    <button class="ghost" onclick="pdfClear()">清空</button>
+                  </div>
+                  <div id="pdfList" class="pdf-list"></div>
+                  <pre class="out" id="sgPdfOut" style="max-height:30vh;overflow:auto;white-space:pre;font-family:var(--mono);font-size:12px;line-height:1.55"></pre>
+                </div>
               </div>
             </div>
 
@@ -2681,6 +2908,11 @@ public final class WebAdmin {
                     <label>WEBPORT <span class="cfg-tag">Web 服务端口</span></label>
                     <input id="cfgWebport" placeholder="80" spellcheck="false">
                     <p class="cfg-hint">MAIN 服务监听端口，修改后需重启 MAIN 生效。</p>
+                  </div>
+                  <div class="cfg-field">
+                    <label>SUPORT <span class="cfg-tag">管理界面端口</span></label>
+                    <input id="cfgSuport" placeholder="8080" spellcheck="false">
+                    <p class="cfg-hint">WebAdmin 管理界面监听端口（默认 8080），修改保存后需重启 WebAdmin 生效。</p>
                   </div>
                   <div class="cfg-field">
                     <label>OCSP <span class="cfg-tag">OCSP 响应器 URL</span></label>
@@ -2960,11 +3192,15 @@ public final class WebAdmin {
         }
         function fillSignSel(sel, list, kind) {
           if (!list) {
-            sel.innerHTML = '<option value="">（无可用证书）</option>';
+            sel.innerHTML = kind === 'pdf'
+              ? '<option value="">（不签名，仅文档时间戳）</option>'
+              : '<option value="">（无可用证书）</option>';
             return;
           }
           const hint = kind === 'exe' ? '代码签名 EKU' : '文档签名 EKU';
-          sel.innerHTML = '<option value="">（请选择 ' + hint + ' 证书）</option>';
+          sel.innerHTML = kind === 'pdf'
+            ? '<option value="">（不签名，仅文档时间戳）</option>'
+            : '<option value="">（请选择 ' + hint + ' 证书）</option>';
           list.forEach(c => {
             const o = document.createElement('option');
             o.value = c.serial;
@@ -2977,66 +3213,325 @@ public final class WebAdmin {
             sel.appendChild(o);
           });
         }
-        async function signDo(url, fileInput, certSel, outId, isPdf, tsTypeId, tsUrlId, sealId) {
-          const f = fileInput.files[0];
-          const serial = certSel.value;
-          const out = $(outId);
-          if (!f) { out.hidden = false; out.className = 'out err'; out.textContent = '请先选择文件'; return; }
-          if (!serial) { out.hidden = false; out.className = 'out err'; out.textContent = '请先选择签名证书'; return; }
-          out.hidden = false; out.className = 'out'; out.textContent = '正在签名 ' + f.name + ' ...';
-          const fd = new FormData();
-          fd.append('serial', serial);
-          fd.append('name', f.name);
-          fd.append('file', f);
-          if (isPdf) {
-            const imgInput = $('sgPdfImage');
-            if (imgInput && imgInput.files && imgInput.files[0]) {
-              fd.append('image', imgInput.files[0]);
-            }
-            if (sealId) fd.append('sealType', $(sealId).value);
-          } else if (tsTypeId) {
-            fd.append('tsType', $(tsTypeId).value);
-          }
-          if (tsUrlId) fd.append('tsUrl', $(tsUrlId).value);
-          try {
-            const resp = await fetch(url, { method: 'POST', body: fd });
-            const r = await resp.json();
-            out.className = 'out ' + (r.ok ? 'ok' : 'err');
-            out.textContent = r.message || '(无输出)';
-            if (r.ok && r.b64) {
-              const a = document.createElement('a');
-              a.href = 'data:application/octet-stream;base64,' + r.b64;
-              a.download = r.name || ('signed_' + f.name);
-              a.textContent = ' ⬇ 下载签名后文件';
-              a.style.marginLeft = '12px'; a.style.fontWeight = '700';
-              out.appendChild(a);
-            }
-          } catch (e) {
-            out.className = 'out err';
-            out.textContent = '请求失败: ' + e;
-          }
+        // ===== 微软代码签名批量待签名队列（多选 + 拖拽） =====
+        const exeJobs = [];
+        function addExeFiles(files) {
+          let added = 0;
+          [...files].forEach(f => {
+            if (!/\\.(exe|dll|sys|cab|cat|msi)$/i.test(f.name)) return;
+            if (exeJobs.some(j => j.file.name === f.name && j.file.size === f.file.size)) return;
+            exeJobs.push({ file: f, state: 'wait', msg: '待处理', b64: null, name: null });
+            added++;
+          });
+          renderExeList();
+          return added;
         }
-        async function verifyDo(url, fileInput, outId) {
-          const f = fileInput.files[0];
-          const out = $(outId);
-          if (!f) { out.hidden = false; out.className = 'out err'; out.textContent = '请先选择文件'; return; }
-          out.hidden = false; out.className = 'out'; out.textContent = '正在验证 ' + f.name + ' ...';
-          const fd = new FormData();
-          fd.append('file', f);
-          try {
-            const resp = await fetch(url, { method: 'POST', body: fd });
-            const r = await resp.json();
-            out.className = 'out ' + (r.ok ? 'ok' : 'err');
-            out.textContent = r.message || '(无输出)';
-          } catch (e) {
-            out.className = 'out err';
-            out.textContent = '请求失败: ' + e;
-          }
+        function renderExeList() {
+          const box = $('exeList');
+          box.innerHTML = '';
+          exeJobs.forEach((j, i) => {
+            const row = document.createElement('div');
+            row.className = 'pdf-row';
+            row.innerHTML = '<span class="nm" title="' + esc(j.file.name) + '">' + esc(j.file.name) + '（' + fmtSize(j.file.size) + '）</span>'
+              + '<span class="st ' + (j.state === 'ok' ? 'ok' : j.state === 'err' ? 'err' : '') + '">' + esc(j.msg) + '</span>'
+              + (j.state === 'ok' && j.b64 ? '<a class="dl" href="data:application/octet-stream;base64,' + j.b64 + '" download="' + esc(j.name) + '">⬇ 下载</a>' : '')
+              + '<button onclick="exeSignOne(' + i + ')">签名</button>'
+              + '<button class="ghost" onclick="exeVerifyOne(' + i + ')">验证</button>'
+              + '<button class="ghost" onclick="exeRemove(' + i + ')">移除</button>';
+            box.appendChild(row);
+          });
+          $('exeCount').textContent = exeJobs.length;
         }
-        function signExeDo() { signDo('/api/sign/exe', $('sgExeFile'), $('sgExeCert'), 'sgExeOut', false, 'sgExeTsType', 'sgExeTsUrl', null); }
-        function verifyExeDo() { verifyDo('/api/verify/exe', $('sgExeFile'), 'sgExeOut'); }
-        function signPdfDo() { signDo('/api/sign/pdf', $('sgPdfFile'), $('sgPdfCert'), 'sgPdfOut', true, null, 'sgPdfTsUrl', 'sgPdfSeal'); }
-        function verifyPdfDo() { verifyDo('/api/verify/pdf', $('sgPdfFile'), 'sgPdfOut'); }
+        function exeRemove(i) { exeJobs.splice(i, 1); renderExeList(); }
+        function exeClear() { exeJobs.length = 0; renderExeList(); $('sgExeOut').hidden = true; }
+        function exeParams() {
+          const fd = new FormData();
+          fd.append('serial', $('sgExeCert').value);
+          fd.append('tsType', $('sgExeTsType').value);
+          fd.append('tsUrl', $('sgExeTsUrl').value);
+          return fd;
+        }
+        function exePreCheck() {
+          if (!$('sgExeCert').value) return '请先选择签名证书';
+          return null;
+        }
+        async function exeSignOne(i) {
+          const j = exeJobs[i];
+          if (!j) return;
+          const err = exePreCheck();
+          if (err) { j.state = 'err'; j.msg = err; renderExeList(); return; }
+          j.state = 'signing'; j.msg = '签名中...'; renderExeList();
+          const fd = exeParams();
+          fd.append('name', j.file.name);
+          fd.append('file', j.file);
+          try {
+            const resp = await fetch('/api/sign/exe', { method: 'POST', body: fd });
+            const r = await resp.json();
+            j.state = r.ok ? 'ok' : 'err';
+            j.msg = (r.ok ? '✓ 签名成功' : '✗ ' + (r.message || '失败')).substring(0, 120);
+            j.b64 = r.ok ? (r.b64 || null) : null;
+            j.name = r.ok ? (r.name || 'signed_' + j.file.name) : null;
+            j.lastDetail = r.message || '';
+          } catch (e) {
+            j.state = 'err'; j.msg = '请求失败: ' + e; j.lastDetail = '';
+          }
+          renderExeList();
+          $('sgExeOut').hidden = false;
+          $('sgExeOut').className = 'out ' + (j.state === 'ok' ? 'ok' : 'err');
+          $('sgExeOut').textContent = '[' + j.file.name + '] ' + (j.lastDetail || j.msg);
+        }
+        async function exeVerifyOne(i) {
+          const j = exeJobs[i];
+          if (!j) return;
+          j.state = 'signing'; j.msg = '验证中...'; renderExeList();
+          const fd = new FormData();
+          fd.append('file', j.file);
+          try {
+            const resp = await fetch('/api/verify/exe', { method: 'POST', body: fd });
+            const r = await resp.json();
+            j.state = r.ok ? 'ok' : 'err';
+            j.msg = (r.ok ? '✓ 验证完成' : '✗ 验证失败').substring(0, 120);
+            j.lastDetail = r.message || '';
+          } catch (e) {
+            j.state = 'err'; j.msg = '请求失败: ' + e; j.lastDetail = '';
+          }
+          renderExeList();
+          $('sgExeOut').hidden = false;
+          $('sgExeOut').className = 'out ' + (j.state === 'ok' ? 'ok' : 'err');
+          $('sgExeOut').textContent = '[' + j.file.name + '] ' + (j.lastDetail || j.msg);
+        }
+        async function exeSignAll() {
+          const out = $('sgExeOut');
+          if (!exeJobs.length) { out.hidden = false; out.className = 'out err'; out.textContent = '待签名列表为空，请先添加文件'; return; }
+          let okN = 0, errN = 0; const lines = [];
+          for (let i = 0; i < exeJobs.length; i++) {
+            const j = exeJobs[i];
+            const err = exePreCheck();
+            if (err) { j.state = 'err'; j.msg = err; errN++; lines.push('✗ ' + j.file.name + ' → ' + err); renderExeList(); continue; }
+            j.state = 'signing'; j.msg = '签名中...'; renderExeList();
+            const fd = exeParams();
+            fd.append('name', j.file.name);
+            fd.append('file', j.file);
+            try {
+              const resp = await fetch('/api/sign/exe', { method: 'POST', body: fd });
+              const r = await resp.json();
+              j.state = r.ok ? 'ok' : 'err';
+              j.msg = r.ok ? '✓ 签名成功' : ('✗ ' + (r.message || '失败')).substring(0, 100);
+              j.b64 = r.ok ? (r.b64 || null) : null;
+              j.name = r.ok ? (r.name || 'signed_' + j.file.name) : null;
+              if (r.ok) okN++; else { errN++; lines.push('✗ ' + j.file.name + ' → ' + (r.message || '失败')); }
+            } catch (e) {
+              j.state = 'err'; j.msg = '请求失败: ' + e; errN++; lines.push('✗ ' + j.file.name + ' → ' + e);
+            }
+            renderExeList();
+          }
+          out.hidden = false;
+          out.className = 'out ' + (errN ? 'err' : 'ok');
+          out.textContent = '批量签名完成：成功 ' + okN + ' 个，失败 ' + errN + ' 个' + (lines.length ? '\\n' + lines.join('\\n') : '');
+        }
+        async function exeVerifyAll() {
+          const out = $('sgExeOut');
+          if (!exeJobs.length) { out.hidden = false; out.className = 'out err'; out.textContent = '待签名列表为空，请先添加文件'; return; }
+          let okN = 0, errN = 0; const lines = [];
+          for (let i = 0; i < exeJobs.length; i++) {
+            const j = exeJobs[i];
+            j.state = 'signing'; j.msg = '验证中...'; renderExeList();
+            const fd = new FormData();
+            fd.append('file', j.file);
+            try {
+              const resp = await fetch('/api/verify/exe', { method: 'POST', body: fd });
+              const r = await resp.json();
+              j.state = r.ok ? 'ok' : 'err';
+              j.msg = r.ok ? '✓ 验证完成' : '✗ 验证失败';
+              if (r.ok) okN++; else { errN++; lines.push('✗ ' + j.file.name + ' → ' + (r.message || '失败')); }
+            } catch (e) {
+              j.state = 'err'; j.msg = '请求失败: ' + e; errN++; lines.push('✗ ' + j.file.name + ' → ' + e);
+            }
+            renderExeList();
+          }
+          out.hidden = false;
+          out.className = 'out ' + (errN ? 'err' : 'ok');
+          out.textContent = '批量验证完成：成功 ' + okN + ' 个，失败 ' + errN + ' 个' + (lines.length ? '\\n' + lines.join('\\n') : '');
+        }
+        // 拖拽与多选初始化
+        (function initExeDrop() {
+          const dz = $('exeDrop');
+          if (!dz) return;
+          dz.ondragover = e => { e.preventDefault(); dz.classList.add('over'); };
+          dz.ondragleave = () => dz.classList.remove('over');
+          dz.ondrop = e => { e.preventDefault(); dz.classList.remove('over'); addExeFiles(e.dataTransfer.files); };
+          const fi = $('sgExeFile');
+          if (fi) fi.onchange = e => { addExeFiles(e.target.files); e.target.value = ''; };
+        })();
+
+        // ===== 签名专区：选择夹切换 =====
+        function sigTab(name, btn) {
+          ['exe', 'pdf'].forEach(n => {
+            $('sigPane-' + n).style.display = n === name ? '' : 'none';
+            $('sigTabBtn-' + n).classList.toggle('active', n === name);
+          });
+        }
+
+        // ===== PDF 批量待签名队列（多选 + 拖拽） =====
+        const pdfJobs = [];
+        function addPdfFiles(files) {
+          let added = 0;
+          [...files].forEach(f => {
+            if (!/\\.pdf$/i.test(f.name)) return;
+            if (pdfJobs.some(j => j.file.name === f.name && j.file.size === f.file.size)) return;
+            pdfJobs.push({ file: f, state: 'wait', msg: '待处理', b64: null, name: null });
+            added++;
+          });
+          renderPdfList();
+          return added;
+        }
+        function fmtSize(n) {
+          return n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
+        }
+        function renderPdfList() {
+          const box = $('pdfList');
+          box.innerHTML = '';
+          pdfJobs.forEach((j, i) => {
+            const row = document.createElement('div');
+            row.className = 'pdf-row';
+            row.innerHTML = '<span class="nm" title="' + esc(j.file.name) + '">' + esc(j.file.name) + '（' + fmtSize(j.file.size) + '）</span>'
+              + '<span class="st ' + (j.state === 'ok' ? 'ok' : j.state === 'err' ? 'err' : '') + '">' + esc(j.msg) + '</span>'
+              + (j.state === 'ok' && j.b64 ? '<a class="dl" href="data:application/pdf;base64,' + j.b64 + '" download="' + esc(j.name) + '">⬇ 下载</a>' : '')
+              + '<button onclick="pdfSignOne(' + i + ')">签名</button>'
+              + '<button class="ghost" onclick="pdfVerifyOne(' + i + ')">验证</button>'
+              + '<button class="ghost" onclick="pdfRemove(' + i + ')">移除</button>';
+            box.appendChild(row);
+          });
+          $('pdfCount').textContent = pdfJobs.length;
+        }
+        function pdfRemove(i) { pdfJobs.splice(i, 1); renderPdfList(); }
+        function pdfClear() { pdfJobs.length = 0; renderPdfList(); $('sgPdfOut').hidden = true; }
+        function pdfParams() {
+          const fd = new FormData();
+          fd.append('serial', $('sgPdfCert').value);
+          fd.append('sealType', $('sgPdfSeal').value);
+          fd.append('tsUrl', $('sgPdfTsUrl').value);
+          const img = $('sgPdfImage').files && $('sgPdfImage').files[0];
+          if (img) fd.append('image', img);
+          return fd;
+        }
+        function pdfPreCheck() {
+          const serial = $('sgPdfCert').value;
+          const seal = $('sgPdfSeal').value;
+          if (!serial) {
+            if (seal !== 'ADOBE') return '纯文档时间戳（不选证书）仅支持 Adobe 标准';
+            if ($('sgPdfImage').files && $('sgPdfImage').files[0]) return '纯文档时间戳（不选证书）不能附加签章图片';
+          }
+          return null;
+        }
+        async function pdfSignOne(i) {
+          const j = pdfJobs[i];
+          if (!j) return;
+          const err = pdfPreCheck();
+          if (err) { j.state = 'err'; j.msg = err; renderPdfList(); return; }
+          j.state = 'signing'; j.msg = '签名中...'; renderPdfList();
+          const fd = pdfParams();
+          fd.append('name', j.file.name);
+          fd.append('file', j.file);
+          try {
+            const resp = await fetch('/api/sign/pdf', { method: 'POST', body: fd });
+            const r = await resp.json();
+            j.state = r.ok ? 'ok' : 'err';
+            j.msg = (r.ok ? '✓ 签名成功' : '✗ ' + (r.message || '失败')).substring(0, 120);
+            j.b64 = r.ok ? (r.b64 || null) : null;
+            j.name = r.ok ? (r.name || 'signed_' + j.file.name) : null;
+            j.lastDetail = r.message || '';
+          } catch (e) {
+            j.state = 'err'; j.msg = '请求失败: ' + e; j.lastDetail = '';
+          }
+          renderPdfList();
+          $('sgPdfOut').hidden = false;
+          $('sgPdfOut').className = 'out ' + (j.state === 'ok' ? 'ok' : 'err');
+          $('sgPdfOut').textContent = '[' + j.file.name + '] ' + (j.lastDetail || j.msg);
+        }
+        async function pdfVerifyOne(i) {
+          const j = pdfJobs[i];
+          if (!j) return;
+          j.state = 'signing'; j.msg = '验证中...'; renderPdfList();
+          const fd = new FormData();
+          fd.append('file', j.file);
+          try {
+            const resp = await fetch('/api/verify/pdf', { method: 'POST', body: fd });
+            const r = await resp.json();
+            j.state = r.ok ? 'ok' : 'err';
+            j.msg = (r.ok ? '✓ 验证完成' : '✗ 验证失败').substring(0, 120);
+            j.lastDetail = r.message || '';
+          } catch (e) {
+            j.state = 'err'; j.msg = '请求失败: ' + e; j.lastDetail = '';
+          }
+          renderPdfList();
+          $('sgPdfOut').hidden = false;
+          $('sgPdfOut').className = 'out ' + (j.state === 'ok' ? 'ok' : 'err');
+          $('sgPdfOut').textContent = '[' + j.file.name + '] ' + (j.lastDetail || j.msg);
+        }
+        async function pdfSignAll() {
+          const out = $('sgPdfOut');
+          if (!pdfJobs.length) { out.hidden = false; out.className = 'out err'; out.textContent = '待签名列表为空，请先添加 PDF 文件'; return; }
+          let okN = 0, errN = 0; const lines = [];
+          for (let i = 0; i < pdfJobs.length; i++) {
+            const j = pdfJobs[i];
+            const err = pdfPreCheck();
+            if (err) { j.state = 'err'; j.msg = err; errN++; lines.push('✗ ' + j.file.name + ' → ' + err); renderPdfList(); continue; }
+            j.state = 'signing'; j.msg = '签名中...'; renderPdfList();
+            const fd = pdfParams();
+            fd.append('name', j.file.name);
+            fd.append('file', j.file);
+            try {
+              const resp = await fetch('/api/sign/pdf', { method: 'POST', body: fd });
+              const r = await resp.json();
+              j.state = r.ok ? 'ok' : 'err';
+              j.msg = r.ok ? '✓ 签名成功' : ('✗ ' + (r.message || '失败')).substring(0, 100);
+              j.b64 = r.ok ? (r.b64 || null) : null;
+              j.name = r.ok ? (r.name || 'signed_' + j.file.name) : null;
+              if (r.ok) okN++; else { errN++; lines.push('✗ ' + j.file.name + ' → ' + (r.message || '失败')); }
+            } catch (e) {
+              j.state = 'err'; j.msg = '请求失败: ' + e; errN++; lines.push('✗ ' + j.file.name + ' → ' + e);
+            }
+            renderPdfList();
+          }
+          out.hidden = false;
+          out.className = 'out ' + (errN ? 'err' : 'ok');
+          out.textContent = '批量签名完成：成功 ' + okN + ' 个，失败 ' + errN + ' 个' + (lines.length ? '\\n' + lines.join('\\n') : '');
+        }
+        async function pdfVerifyAll() {
+          const out = $('sgPdfOut');
+          if (!pdfJobs.length) { out.hidden = false; out.className = 'out err'; out.textContent = '待签名列表为空，请先添加 PDF 文件'; return; }
+          let okN = 0, errN = 0; const lines = [];
+          for (let i = 0; i < pdfJobs.length; i++) {
+            const j = pdfJobs[i];
+            j.state = 'signing'; j.msg = '验证中...'; renderPdfList();
+            const fd = new FormData();
+            fd.append('file', j.file);
+            try {
+              const resp = await fetch('/api/verify/pdf', { method: 'POST', body: fd });
+              const r = await resp.json();
+              j.state = r.ok ? 'ok' : 'err';
+              j.msg = r.ok ? '✓ 验证完成' : '✗ 验证失败';
+              if (r.ok) okN++; else { errN++; lines.push('✗ ' + j.file.name + ' → ' + (r.message || '失败')); }
+            } catch (e) {
+              j.state = 'err'; j.msg = '请求失败: ' + e; errN++; lines.push('✗ ' + j.file.name + ' → ' + e);
+            }
+            renderPdfList();
+          }
+          out.hidden = false;
+          out.className = 'out ' + (errN ? 'err' : 'ok');
+          out.textContent = '批量验证完成：成功 ' + okN + ' 个，失败 ' + errN + ' 个' + (lines.length ? '\\n' + lines.join('\\n') : '');
+        }
+        // 拖拽与多选初始化
+        (function initPdfDrop() {
+          const dz = $('pdfDrop');
+          if (!dz) return;
+          dz.ondragover = e => { e.preventDefault(); dz.classList.add('over'); };
+          dz.ondragleave = () => dz.classList.remove('over');
+          dz.ondrop = e => { e.preventDefault(); dz.classList.remove('over'); addPdfFiles(e.dataTransfer.files); };
+          const fi = $('sgPdfFile');
+          if (fi) fi.onchange = e => { addPdfFiles(e.target.files); e.target.value = ''; };
+        })();
 
         // ===== 页面切换 =====
         document.querySelectorAll('#nav a').forEach(a => {
@@ -3691,6 +4186,7 @@ public final class WebAdmin {
             if (!r.ok) { $('cfgState').textContent = '读取失败: ' + (r.message || ''); return; }
             const d = r.data;
             $('cfgWebport').value = d.webport;
+            $('cfgSuport').value = d.suport;
             $('cfgOcsp').value = d.ocsp;
             $('cfgCrl').value = d.crl;
             $('cfgCrt').value = d.crt;
@@ -3711,6 +4207,7 @@ public final class WebAdmin {
           try {
             const r = await api('/api/config', {
               webport: $('cfgWebport').value.trim(),
+              suport: $('cfgSuport').value.trim(),
               ocsp: $('cfgOcsp').value.trim(),
               crl: $('cfgCrl').value.trim(),
               crt: $('cfgCrt').value.trim(),

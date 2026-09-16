@@ -68,9 +68,9 @@ public final class MLog {
         write(baseDir, operation, command, "", error);
     }
 
-    /** 统一写入：时间 / 时间戳 / 操作 / 命令 / 结果 / 错误，条目间双换行。 */
-    private static void write(String baseDir, String operation, String command,
-                              String result, String error) {
+    /** 统一写入：时间 / 时间戳 / 操作 / 命令 / 结果 / 错误，条目间双换行。多线程安全（追加串行化）。 */
+    private static synchronized void write(String baseDir, String operation, String command,
+                                           String result, String error) {
         try {
             Path dir = Paths.get(baseDir, "PKI");
             Files.createDirectories(dir);

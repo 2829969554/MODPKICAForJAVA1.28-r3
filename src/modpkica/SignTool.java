@@ -1,6 +1,7 @@
 package modpkica;
 
 import org.bouncycastle.asn1.ASN1Boolean;
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -19,6 +20,7 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.asn1.ASN1UTCTime;
 import org.bouncycastle.asn1.DERUTCTime;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.cms.Attribute;
@@ -54,6 +56,7 @@ import org.bouncycastle.tsp.TimeStampRequest;
 import org.bouncycastle.tsp.TimeStampRequestGenerator;
 import org.bouncycastle.tsp.TimeStampResponse;
 import org.bouncycastle.tsp.TimeStampToken;
+import org.bouncycastle.tsp.TimeStampTokenInfo;
 import org.bouncycastle.util.encoders.Hex;
 import org.apache.pdfbox.pdmodel.interactive.digitalsignature.SignatureInterface;
 import org.apache.pdfbox.Loader;
@@ -65,6 +68,7 @@ import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 import org.apache.pdfbox.cos.COSArray;
+import org.apache.pdfbox.cos.COSBase;
 import org.apache.pdfbox.cos.COSDictionary;
 import org.apache.pdfbox.cos.COSDocument;
 import org.apache.pdfbox.cos.COSName;
@@ -157,12 +161,14 @@ public final class SignTool {
     public static final String OID_SM2 = "1.2.156.10197.1.501";
     /** 政务体系私有扩展 OID（SESeal / 印章承载，GB/T 38540 extDatas / 35275 signedAttrs） */
     public static final String OID_GOV_EXT = "1.2.156.112600.8.1";
-    /** id-aa-timeStampToken（PDF 签名 signedAttrs 时间戳属性） */
+    /** id-aa-timeStampToken（CAdES-T/PAdES-T 签名时间戳：SignerInfo unsignedAttrs） */
     public static final String OID_TSA_TOKEN = "1.2.840.113549.1.9.16.2.14";
     /** PDF 国密签章 SubFilter（GB/T 38540-2020：SES_Signature 结构） */
     public static final String SUBFILTER_GM_SEAL = "GM.sm2seal";
     /** PDF 国密签章 SubFilter（GB/T 35275-2017：CMS SignedData + 私有 OID 印章） */
     public static final String SUBFILTER_GM_CMS = "GM.sm2cms.detached";
+    /** PAdES 文档时间戳 SubFilter（RFC 3161 TimeStampToken 独立签名）。 */
+    public static final String SUBFILTER_ETSI_RFC3161 = "ETSI.RFC3161";
 
     /** 最近一次 EXE 签名的时间戳状态（供上层展示日志）。 */
     public static volatile String lastTsInfo = "未请求";
@@ -802,6 +808,23 @@ public final class SignTool {
      */
     static byte[] requestTimestamp(byte[] messageImprint, String baseDir,
                                    String tsType, String tsUrl) throws Exception {
+        return requestTimestamp(messageImprint, baseDir, tsType, tsUrl,
+                new ASN1ObjectIdentifier("2.16.840.1.101.3.4.2.1")); // 默认 SHA-256
+    }
+
+    /**
+     * 时间戳请求（RFC3161 / Authenticode 两种类型，地址与摘要算法可配置）。
+     *
+     * @param messageImprint 消息摘要（按 hashAlg 计算后传入）
+     * @param baseDir        PKI 基目录（tsUrl 为空时读 CONFIG.txt 的 WEBPORT 定位本机 MAIN）
+     * @param tsType         RFC3161（默认，标准 TimeStampToken）/ AUTHENTICODE（微软老式 PKCS#7）
+     * @param tsUrl          时间戳服务地址；null/空 = 默认本机 MAIN
+     * @param hashAlg        时间戳请求摘要算法 OID（如 SHA-256、SM3）；必须与 messageImprint 一致
+     * @return RFC3161 → TimeStampToken ContentInfo DER；Authenticode → 服务端 PKCS#7 CMS 字节
+     */
+    static byte[] requestTimestamp(byte[] messageImprint, String baseDir,
+                                   String tsType, String tsUrl,
+                                   ASN1ObjectIdentifier hashAlg) throws Exception {
         boolean auth = "AUTHENTICODE".equalsIgnoreCase(tsType);
         String url = (tsUrl == null || tsUrl.trim().isEmpty()) ? null : tsUrl.trim();
         if (url == null) {
@@ -828,9 +851,8 @@ public final class SignTool {
 
         TimeStampRequestGenerator reqGen = new TimeStampRequestGenerator();
         reqGen.setCertReq(true);
-        AlgorithmIdentifier hashAlg = new AlgorithmIdentifier(
-                new ASN1ObjectIdentifier("2.16.840.1.101.3.4.2.1"), DERNull.INSTANCE); // SHA-256
-        TimeStampRequest tsReq = reqGen.generate(hashAlg, messageImprint);
+        AlgorithmIdentifier hashAlgId = new AlgorithmIdentifier(hashAlg, DERNull.INSTANCE);
+        TimeStampRequest tsReq = reqGen.generate(hashAlgId, messageImprint);
         byte[] reqDer = tsReq.getEncoded();
 
         // Authenticode：请求体 = base64(TimeStampReq) 文本（对齐本机 MAIN /timestamp 与 signtool /t 旧格式）
@@ -1120,7 +1142,9 @@ public final class SignTool {
      * @param sealType ADOBE（标准 PKCS#7 detached，默认）/ GM38540（GB/T 38540-2020 SES_Signature）/
      *                 GM35275（GB/T 35275-2017 CMS+私有OID印章）/ GM0031（GM/T 0031-2025 两层 SES_Signature）
      * @param tsUrl    PDF 时间戳地址（RFC3161）；null/空 = 本机 MAIN /rfc3161。
-     *                 仅 ADOBE 与 GM35275 嵌入时间戳；GM38540/GM0031 的 SES_Signature 无标准时间戳扩展，忽略。
+     *                 嵌入方式：ADOBE/GM35275 → SignerInfo unsignedAttrs（CAdES-T）；
+     *                 GM38540 → SES_Signature 可选第 5 字段 timeStamp（GB/T 38540 7.1.6，
+     *                 对签名值盖时间戳，GB/T 20520= RFC3161，SM3）；GM0031 无标准时间戳字段，忽略。
      */
     public static byte[] signPdf(byte[] pdf, String keyType, X509Certificate cert,
                                  PrivateKey key, List<X509Certificate> chain,
@@ -1128,20 +1152,140 @@ public final class SignTool {
         if (sealType != null && ("GM38540".equalsIgnoreCase(sealType)
                 || "GM35275".equalsIgnoreCase(sealType)
                 || "GM0031".equalsIgnoreCase(sealType))) {
-            return signPdfGm(pdf, sealType, keyType, cert, key, chain, imageBytes);
+            return signPdfGm(pdf, sealType, keyType, cert, key, chain, imageBytes, tsUrl,
+                    AppPaths.baseDir());
         }
+        // Adobe 标准文档签名（选中数字证书）：时间戳按 CAdES-T/PAdES-T 标准嵌入签名内部
+        // （SignerInfo unsignedAttrs 的 id-aa-timeStampToken，messageImprint=SHA-256(签名值)），
+        // 不做独立 DocTimeStamp；DSS/LTV 数据与数字签名同一次保存（被签名覆盖，签名后零增量）。
+        return signPdfAdobeFinal(pdf, keyType, cert, key, chain, imageBytes, tsUrl, AppPaths.baseDir());
+    }
+
+    /**
+     * 纯文档时间戳（无签名证书场景）：独立 DocTimeStamp 签名字段，
+     * Filter=Adobe.PPKLite、SubFilter=ETSI.RFC3161、Contents=RFC 3161 TimeStampToken（覆盖整个文档）。
+     * 适用于"不选证书、仅对文档盖时间戳"。
+     *
+     * @param tsUrl RFC3161 时间戳地址；null/空 = 本机 MAIN /rfc3161
+     */
+    public static byte[] signPdfTimestampOnly(byte[] pdf, String tsUrl) throws Exception {
+        return addDocTimeStamp(pdf, tsUrl, AppPaths.baseDir());
+    }
+
+    /**
+     * PAdES 文档时间戳（DocTimeStamp）：独立签名字段，Filter=Adobe.PPKLite、
+     * SubFilter=ETSI.RFC3161、Contents=RFC 3161 TimeStampToken（覆盖整个文档）。
+     * 仅在"无签名证书、纯文档时间戳"场景使用。
+     * <p>同时嵌入 LTV（DSS：TSA 证书链 + 链上 OCSP 响应 + CRL），与时间戳同一次保存
+     * （被 DocTimeStamp 覆盖，签名后零增量）；TSA 链通过一次探测时间戳请求获取，
+     * 探测或采集失败降级为纯时间戳（不阻断）。
+     */
+    private static byte[] addDocTimeStamp(byte[] pdf, String tsUrl, String base) throws Exception {
+        try (PDDocument doc = Loader.loadPDF(pdf)) {
+            if (doc.isEncrypted()) {
+                throw new IllegalArgumentException("加密 PDF 暂不支持时间戳");
+            }
+            // LTV：探测请求获取 TSA 证书链（与正式请求同参数，同一 TSA 通常返回同链）
+            LtvData ltv = null;
+            try {
+                byte[] probeImprint = MessageDigest.getInstance("SHA-256")
+                        .digest("modpkica-ltv-probe".getBytes(StandardCharsets.UTF_8));
+                byte[] probeTok = requestTimestamp(probeImprint, base, "RFC3161", tsUrl);
+                List<X509Certificate> tsaChain = extractTsaChain(probeTok);
+                ltv = collectLtvData(tsaChain, base);
+            } catch (Exception ltvEx) {
+                MLog.append(base, "DocTimeStamp LTV 降级", String.valueOf(ltvEx));
+            }
+
+            PDSignature ts = new PDSignature();
+            ts.setFilter(PDSignature.FILTER_ADOBE_PPKLITE);
+            ts.setSubFilter(COSName.getPDFName(SUBFILTER_ETSI_RFC3161));
+            ts.setName("MODPKICA TSA");
+            ts.setSignDate(Calendar.getInstance());
+            doc.addSignature(ts);
+            if (ltv != null) {
+                installDss(doc, ltv, null);
+            }
+
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            ExternalSigningSupport es = doc.saveIncrementalForExternalSigning(out);
+            byte[] toSign = readAllBytes(es.getContent());
+            if (toSign.length == 0) {
+                throw new IOException("DocTimeStamp: ByteRange 为空");
+            }
+            // RFC 3161 messageImprint = 摘要(待盖时间戳内容)
+            byte[] imprint = MessageDigest.getInstance("SHA-256").digest(toSign);
+            byte[] tok = requestTimestamp(imprint, base, "RFC3161", tsUrl);
+            if (tok == null || tok.length == 0) {
+                throw new IOException("DocTimeStamp: TSA 未返回令牌");
+            }
+            es.setSignature(tok);
+            return out.toByteArray();
+        }
+    }
+
+    /**
+     * 从 RFC3161 TimeStampToken 提取 TSA 证书链（叶子在前、根在后）。
+     * token 内证书不全时返回单元素链（TSA 证书自身）。
+     */
+    private static List<X509Certificate> extractTsaChain(byte[] tok) throws Exception {
+        TimeStampToken tst = new TimeStampToken(new CMSSignedData(tok));
+        JcaX509CertificateConverter conv = new JcaX509CertificateConverter().setProvider("BC");
+        List<X509Certificate> chain = new ArrayList<>();
+        @SuppressWarnings("unchecked")
+        java.util.Collection<org.bouncycastle.cert.X509CertificateHolder> matched =
+                (java.util.Collection<org.bouncycastle.cert.X509CertificateHolder>)
+                        (java.util.Collection<?>) tst.getCertificates().getMatches(tst.getSID());
+        X509Certificate current = conv.getCertificate(matched.iterator().next());
+        chain.add(current);
+        Set<String> used = new HashSet<>();
+        used.add(serialHex(current));
+        while (true) {
+            X509Certificate issuer = null;
+            for (org.bouncycastle.cert.X509CertificateHolder h : tst.getCertificates().getMatches(null)) {
+                X509Certificate c = conv.getCertificate(h);
+                if (c.getSubjectX500Principal().equals(current.getIssuerX500Principal())
+                        && !used.contains(serialHex(c))) {
+                    issuer = c;
+                    break;
+                }
+            }
+            if (issuer == null) {
+                break; // 颁发者不在 token 内
+            }
+            chain.add(issuer);
+            used.add(serialHex(issuer));
+            if (issuer.getSubjectX500Principal().equals(issuer.getIssuerX500Principal())) {
+                break; // 自签根，到顶
+            }
+            current = issuer;
+        }
+        return chain;
+    }
+
+    /** 证书序列号十六进制（小写，无 0x 前缀）。 */
+    private static String serialHex(X509Certificate c) {
+        return c.getSerialNumber().toString(16);
+    }
+
+    /**
+     * Adobe 标准签名最终保存：数字签名 + DSS 同一次保存（数字签名是文档最后一次修改，签名后零增量）。
+     * 时间戳已按标准嵌入签名内部（CAdES-T unsignedAttrs 的 id-aa-timeStampToken）；DSS 的 Certs/OCSPs/CRLs
+     * 作为 PAdES 全局验证数据被签名覆盖（数字签名 ByteRange 无法在保存前预知，故省略 VRI 索引，
+     * 验证器按证书/响应内容匹配 DSS 数据）。
+     * LTV 采集失败时降级为纯签名（不阻断）。
+     */
+    private static byte[] signPdfAdobeFinal(byte[] pdf, String keyType, X509Certificate cert,
+                                            PrivateKey key, List<X509Certificate> chain,
+                                            byte[] imageBytes, String tsUrl, String base) throws Exception {
+        // 1) 收集 LTV 数据（OCSP/CRL/证书链 DER）
+        LtvData ltv = collectLtvData(chain, base);
+        // 2) 正式保存：数字签名（内嵌时间戳属性）+ DSS 同保存（无 VRI，签名后零增量）
         try (PDDocument doc = Loader.loadPDF(pdf)) {
             if (doc.isEncrypted()) {
                 throw new IllegalArgumentException("加密 PDF 暂不支持签名");
             }
-            PDSignature sig = new PDSignature();
-            sig.setFilter(PDSignature.FILTER_ADOBE_PPKLITE);
-            sig.setSubFilter(PDSignature.SUBFILTER_ADBE_PKCS7_DETACHED);
-            sig.setName(shortDn(cert.getSubjectX500Principal().toString()));
-            sig.setLocation("MODPKICA");
-            sig.setReason("MODPKICA PDF Document Signing");
-            sig.setSignDate(Calendar.getInstance());
-
+            PDSignature sig = buildAdobeSignature(cert);
             SignatureOptions sigOptions = null;
             if (imageBytes != null && imageBytes.length > 0) {
                 sigOptions = buildVisibleSignatureOptions(doc, imageBytes);
@@ -1151,6 +1295,9 @@ public final class SignTool {
             } else {
                 doc.addSignature(sig);
             }
+            if (ltv != null) {
+                installDss(doc, ltv, null);
+            }
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             ExternalSigningSupport es = doc.saveIncrementalForExternalSigning(out);
@@ -1158,19 +1305,24 @@ public final class SignTool {
             if (toSign.length == 0) {
                 throw new IOException("PDFBox 未提供待签名数据（ByteRange 为空）");
             }
-            // PDF 签名：eContentType = id-data，分离签名，messageDigest = ByteRange 数据哈希
+            // 数字签名：eContentType = id-data，分离签名；时间戳按标准嵌入 unsignedAttrs（CAdES-T）
             byte[] cms = buildCms(toSign, "1.2.840.113549.1.7.1", false,
                     keyType, cert, key, chain, tsUrl);
             es.setSignature(cms);
-            byte[] signed = out.toByteArray();
-            // PAdES LTV：增量追加 DSS/VRI 字典，嵌入证书链 + OCSP 响应 + CRL（失败不影响签名）
-            try {
-                signed = applyLtvPdf(signed, chain, AppPaths.baseDir());
-            } catch (Exception ignoredLtv) {
-                // LTV 为增强能力：任何异常（含 MAIN 未启动）都保留原始签名结果
-            }
-            return signed;
+            return out.toByteArray();
         }
+    }
+
+    /** 构建 Adobe 数字签名字段。 */
+    private static PDSignature buildAdobeSignature(X509Certificate cert) {
+        PDSignature sig = new PDSignature();
+        sig.setFilter(PDSignature.FILTER_ADOBE_PPKLITE);
+        sig.setSubFilter(PDSignature.SUBFILTER_ADBE_PKCS7_DETACHED);
+        sig.setName(shortDn(cert.getSubjectX500Principal().toString()));
+        sig.setLocation("MODPKICA");
+        sig.setReason("MODPKICA PDF Document Signing");
+        sig.setSignDate(Calendar.getInstance());
+        return sig;
     }
 
     /**
@@ -1261,7 +1413,7 @@ public final class SignTool {
     private static byte[] signPdfGm(byte[] pdf, String sealType, String keyType,
                                     X509Certificate cert, PrivateKey key,
                                     List<X509Certificate> chain,
-                                    byte[] imageBytes) throws Exception {
+                                    byte[] imageBytes, String tsUrl, String base) throws Exception {
         if (!"SM2".equalsIgnoreCase(keyType)) {
             throw new IllegalArgumentException(
                     "国密 PDF 签章（" + sealType + "）需要 SM2 证书，当前证书算法: " + keyType);
@@ -1275,28 +1427,19 @@ public final class SignTool {
         }
         final int imgW = bi.getWidth();
         final int imgH = bi.getHeight();
-        final boolean is38540 = sealType.contains("38540");
+        final boolean is38540 = sealType.contains("38540") || sealType.contains("0031");
         final boolean is0031 = sealType.contains("0031");
-        final String gmStd = is38540 ? "38540-2020" : is0031 ? "0031-2025" : "35275-2017";
+        final String gmStd = is0031 ? "0031-2025" : is38540 ? "38540-2020" : "35275-2017";
         final boolean isSeal = is38540 || is0031; // 独立 SES_Signature 结构（GM.sm2seal）
+        final String fTsUrl = tsUrl;
+        final String fBase = base;
 
         // 预先构建印章信息 SES_SealInfo 与制章签名（避免在签名回调里重复构建）
+        // GM/T 0031-2025 与 GB/T 38540-2020 数据结构一致（官方解读），统一走 38540 结构
         byte[] eSealInfo = is38540
                 ? buildGmSealInfo38540(cert, chain, imageBytes, imgW, imgH)
-                : is0031
-                ? buildGmSealInfo0031(cert, chain, imageBytes, imgW, imgH)
                 : buildGmSealInfo35275(cert, chain, imageBytes, imgW, imgH);
-        byte[] sealSigned;
-        if (is0031) {
-            // GM/T 0031 制章签名对象 = SEQUENCE{ SES_SealInfo, 制章人证书, 签名算法标识 }
-            ASN1EncodableVector sealTbs = new ASN1EncodableVector();
-            sealTbs.add(new ASN1InputStream(eSealInfo).readObject());
-            sealTbs.add(new DEROctetString(cert.getEncoded()));
-            sealTbs.add(new ASN1ObjectIdentifier(OID_SM2));
-            sealSigned = sm2Sign(key, new DERSequence(sealTbs).getEncoded("DER"));
-        } else {
-            sealSigned = sm2Sign(key, eSealInfo);
-        }
+        byte[] sealSigned = sm2Sign(key, eSealInfo);
         byte[] certChainBytes = buildGmCertChainBytes(cert, chain);
 
         try (PDDocument doc = Loader.loadPDF(pdf)) {
@@ -1334,18 +1477,27 @@ public final class SignTool {
                         MessageDigest sm3 = MessageDigest.getInstance("SM3", "BC");
                         byte[] docHash = sm3.digest(rangeData);
                         if (is38540) {
-                            return buildGm38540Signature(docHash, cert, key, eSealInfo, sealSigned);
-                        }
-                        if (is0031) {
-                            return buildGm0031Signature(docHash, cert, key, eSealInfo, sealSigned);
+                            return buildGm38540Signature(docHash, cert, key, eSealInfo,
+                                    sealSigned, fTsUrl, fBase);
                         }
                         return buildGm35275Signature(rangeData, docHash, cert, key,
-                                chain, eSealInfo, sealSigned, certChainBytes);
+                                chain, eSealInfo, sealSigned, certChainBytes, fTsUrl, fBase);
                     } catch (Exception e) {
                         throw new IOException("国密签名构造失败: " + e, e);
                     }
                 }
             }, sigOptions);
+            // LTV（DSS：签名证书链 + OCSP 响应 + CRL）：GB/T 35275（CMS）、GB/T 38540-2020
+            // 与 GM/T 0031 均支持——DSS 是 PDF 层标准（ISO 32000 DSS 字典），与签名格式无关；
+            // 与签名同一次保存（被签名覆盖，签名后零增量）。采集失败降级为纯签名（不阻断）。
+            try {
+                LtvData ltv = collectLtvData(chain, fBase);
+                if (ltv != null) {
+                    installDss(doc, ltv, null);
+                }
+            } catch (Exception ltvEx) {
+                MLog.append(fBase, "GM LTV 降级", String.valueOf(ltvEx));
+            }
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             doc.saveIncremental(out);
             return out.toByteArray();
@@ -1400,59 +1552,6 @@ public final class SignTool {
         return new DERSequence(v).getEncoded("DER");
     }
 
-    /**
-     * GM/T 0031-2025：构建 SES_SealInfo 印章信息。
-     * 结构：header{ID="ES",version=11,Vid} + esID + property{type,name,certList(SEQUENCE OF certID),
-     * createDate,validStart,validEnd} + picture{type,data,width,height} + extDatas(可选)。
-     * 与 GB/T 38540 的差异：property 无 certListType；certList 为 SEQUENCE OF IA5String(certID=证书序列号)；
-     * 时间字段为 UTCTIME（非 GeneralizedTime）。
-     */
-    private static byte[] buildGmSealInfo0031(X509Certificate cert, List<X509Certificate> chain,
-                                              byte[] imageBytes, int w, int h) throws Exception {
-        ASN1EncodableVector v = new ASN1EncodableVector();
-        // [0] header SES_Header { ID="ES", version=11, Vid="MODPKICA" }
-        ASN1EncodableVector header = new ASN1EncodableVector();
-        header.add(new DERIA5String("ES"));
-        header.add(new ASN1Integer(11));
-        header.add(new DERIA5String("MODPKICA"));
-        v.add(new DERSequence(header));
-        // [1] esID 电子印章标识（唯一）
-        v.add(new DERIA5String(UUID.randomUUID().toString()));
-        // [2] property SES_ESPropertyInfo { type, name, certList, createDate, validStart, validEnd }
-        ASN1EncodableVector property = new ASN1EncodableVector();
-        property.add(new ASN1Integer(1));                          // type=1 单位印章
-        property.add(new DERUTF8String("MODPKICA 电子印章"));       // name
-        ASN1EncodableVector certList = new ASN1EncodableVector();  // SEQUENCE OF certID（IA5String=证书序列号）
-        List<X509Certificate> all = (chain == null || chain.isEmpty())
-                ? Collections.singletonList(cert) : chain;
-        for (X509Certificate c : all) {
-            certList.add(new DERIA5String(c.getSerialNumber().toString(16)));
-        }
-        property.add(new DERSequence(certList));
-        Date now = new Date();
-        property.add(new DERUTCTime(now));                        // createDate
-        property.add(new DERUTCTime(cert.getNotBefore()));        // validStart
-        property.add(new DERUTCTime(cert.getNotAfter()));         // validEnd
-        v.add(new DERSequence(property));
-        // [3] picture SES_ESPictureInfo { type, data, width, height }
-        ASN1EncodableVector picture = new ASN1EncodableVector();
-        picture.add(new DERIA5String("PNG"));
-        picture.add(new DEROctetString(imageBytes));
-        picture.add(new ASN1Integer(w));
-        picture.add(new ASN1Integer(h));
-        v.add(new DERSequence(picture));
-        // [4] extDatas ExtensionDatas（可选，政务私有 OID 扩展，与 38540 保持一致）
-        ASN1EncodableVector ext = new ASN1EncodableVector();
-        ext.add(new ASN1ObjectIdentifier(OID_GOV_EXT));            // extID
-        ext.add(ASN1Boolean.FALSE);                                // critical
-        ext.add(new DEROctetString(
-                "sealMakingUnitInfo=MODPKICA".getBytes(StandardCharsets.UTF_8))); // extnValue
-        ASN1EncodableVector extDatas = new ASN1EncodableVector();
-        extDatas.add(new DERSequence(ext));
-        v.add(new DERSequence(extDatas));
-        return new DERSequence(v).getEncoded("DER");
-    }
-
     /** GB/T 35275-2017：构建 eSealInfo（sealId + UUID + certInfo + imgInfo + 扩展）。 */
     private static byte[] buildGmSealInfo35275(X509Certificate cert, List<X509Certificate> chain,
                                                byte[] imageBytes, int w, int h) throws Exception {
@@ -1497,9 +1596,16 @@ public final class SignTool {
     }
 
     /** GB/T 38540-2020：构造 SES_Signature（toSign TBS_Sign + cert + signatureAlgID + signature）。 */
+    /**
+     * GB/T 38540-2020 电子签章。时间戳支持（标准 7.1.6）：SES_Signature 可选第 5 字段
+     * <b>timeStamp</b>（OCTET STRING）——对签名值的时间戳，符合 GB/T 20520（= RFC3161），
+     * DER 编码存放；SM2/SM3 场景 messageImprint 用 SM3。
+     *
+     * @param tsUrl RFC3161 时间戳地址；null = 不嵌时间戳；空串 = 本机 MAIN /rfc3161
+     */
     private static byte[] buildGm38540Signature(byte[] docHash, X509Certificate cert,
                                                 PrivateKey key, byte[] eSealInfo,
-                                                byte[] sealSigned) throws Exception {
+                                                byte[] sealSigned, String tsUrl, String base) throws Exception {
         // SESeal：eSealInfo + 制章者证书 + 签名算法 + 制章签名
         ASN1EncodableVector sesEal = new ASN1EncodableVector();
         sesEal.add(new ASN1InputStream(eSealInfo).readObject());
@@ -1521,56 +1627,28 @@ public final class SignTool {
         // 签章签名：SM2 对 TBS_Sign 签名
         byte[] signature = sm2Sign(key, tbsDer);
 
-        // SES_Signature
+        // SES_Signature（可选第 5 字段 timeStamp：对签名值的时间戳，GB/T 38540 7.1.6）
         ASN1EncodableVector sesSig = new ASN1EncodableVector();
         sesSig.add(tbsSeq);
         sesSig.add(new DEROctetString(cert.getEncoded()));
         sesSig.add(new ASN1ObjectIdentifier(OID_SM2));
         sesSig.add(new DERBitString(signature));
-        return new DERSequence(sesSig).getEncoded("DER");
-    }
-
-    /**
-     * GM/T 0031-2025：构造 SES_Signature（两层结构）。
-     * SESeal = SEQUENCE{ SES_SealInfo, SES_SignInfo{cert, signatureAlgorithm, signData} }；
-     * TBS_Sign = SEQUENCE{ version=4, eseal, timeInfo(BIT STRING=UTCTime DER), dataHash(BIT STRING),
-     * propertyInfo(IA5String), cert(OCTET STRING), signatureAlgorithm(OID) }；
-     * SES_Signature = SEQUENCE{ toSign(TBS_Sign), signature(BIT STRING) }；
-     * signature = SM2 对 TBS_Sign 完整 DER 的签名。
-     */
-    private static byte[] buildGm0031Signature(byte[] docHash, X509Certificate cert,
-                                               PrivateKey key, byte[] eSealInfo,
-                                               byte[] sealSigned) throws Exception {
-        // SESeal = SEQUENCE { SES_SealInfo, SES_SignInfo }
-        ASN1EncodableVector signInfo = new ASN1EncodableVector();
-        signInfo.add(new DEROctetString(cert.getEncoded()));        // 制章人证书
-        signInfo.add(new ASN1ObjectIdentifier(OID_SM2));            // 签名算法标识
-        signInfo.add(new DERBitString(sealSigned));                 // 制章签名值
-        ASN1EncodableVector sesEal = new ASN1EncodableVector();
-        sesEal.add(new ASN1InputStream(eSealInfo).readObject());    // SES_SealInfo
-        sesEal.add(new DERSequence(signInfo));                      // SES_SignInfo
-        byte[] sesEalDer = new DERSequence(sesEal).getEncoded("DER");
-
-        // TBS_Sign（7 字段：version/eseal/timeInfo/dataHash/propertyInfo/cert/signatureAlgorithm）
-        ASN1EncodableVector tbs = new ASN1EncodableVector();
-        tbs.add(new ASN1Integer(4));
-        tbs.add(new ASN1InputStream(sesEalDer).readObject());
-        // timeInfo：BIT STRING，内容为 UTCTime 的 DER 编码（标准允许时间戳或 UTCTIME）
-        tbs.add(new DERBitString(new DERUTCTime(new Date()).getEncoded("DER")));
-        tbs.add(new DERBitString(docHash));
-        tbs.add(new DERIA5String("PDF-SM2-SEAL"));
-        tbs.add(new DEROctetString(cert.getEncoded()));
-        tbs.add(new ASN1ObjectIdentifier(OID_SM2));
-        DERSequence tbsSeq = new DERSequence(tbs);
-        byte[] tbsDer = tbsSeq.getEncoded("DER");
-
-        // 签章签名：SM2 对 TBS_Sign 签名
-        byte[] signature = sm2Sign(key, tbsDer);
-
-        // SES_Signature = SEQUENCE { toSign, signature }
-        ASN1EncodableVector sesSig = new ASN1EncodableVector();
-        sesSig.add(tbsSeq);
-        sesSig.add(new DERBitString(signature));
+        if (tsUrl != null) {
+            try {
+                byte[] imprint = MessageDigest.getInstance("SM3", "BC").digest(signature);
+                byte[] tok = requestTimestamp(imprint, base, "RFC3161", tsUrl,
+                        new ASN1ObjectIdentifier(OID_SM3));
+                // GB/T 38540 7.1.1：timeStamp[0] BIT STRING OPTIONAL（对签名值的时间戳，
+                // GB/T 20520 = RFC3161，DER 编码存放）。ASN.1 默认 EXPLICIT 标签：
+                // [0] 上下文标签（constructed, tag 0 = 0xA0）包 BIT STRING。
+                sesSig.add(new DERTaggedObject(true, 0, new DERBitString(tok)));
+            } catch (Exception tsEx) {
+                // 时间戳失败降级：不带时间戳继续签名（不阻断）
+                MLog.append(base, "GM38540 时间戳降级",
+                        "请求 " + (tsUrl.trim().isEmpty() ? "本机 MAIN /rfc3161" : tsUrl)
+                                + " 失败: " + tsEx);
+            }
+        }
         return new DERSequence(sesSig).getEncoded("DER");
     }
 
@@ -1579,11 +1657,18 @@ public final class SignTool {
      * signedAttrs = { contentType, messageDigest, signingTime, 私有OID(SESeal-DER) }，
      * 签名算法 SM3withSM2；证书链完整写入 CMS certificates。
      */
+    /**
+     * GB/T 35275-2017 CMS 签名。时间戳支持：标准 CMS SignerInfo 的 unsignedAttrs 可承载
+     * CAdES-T 签名时间戳（id-aa-timeStampToken）——GB/T 35275 基于 CMS（ISO 8825），
+     * unsignedAttrs 为通用结构；messageImprint 用 SM3（SM2/SM3 证书固定 SM3）。
+     *
+     * @param tsUrl RFC3161 时间戳地址；null = 不嵌时间戳；空串 = 本机 MAIN /rfc3161
+     */
     private static byte[] buildGm35275Signature(byte[] rangeData, byte[] docHash,
                                                 X509Certificate cert, PrivateKey key,
                                                 List<X509Certificate> chain,
                                                 byte[] eSealInfo, byte[] sealSigned,
-                                                byte[] certChainBytes) throws Exception {
+                                                byte[] certChainBytes, String tsUrl, String base) throws Exception {
         // SESeal：eSealInfo + 印章证书块 + signAlgID + 制章签名
         ASN1EncodableVector sesEalV = new ASN1EncodableVector();
         sesEalV.add(new ASN1InputStream(eSealInfo).readObject());
@@ -1617,6 +1702,30 @@ public final class SignTool {
         gen.addCertificates(new JcaCertStore(all));
 
         CMSSignedData cms = gen.generate(new CMSProcessableByteArray(rangeData), false); // detached
+
+        // CAdES-T 签名时间戳：SM3(签名值) → RFC3161(SM3) → unsignedAttrs 的 id-aa-timeStampToken
+        if (tsUrl != null) {
+            try {
+                SignerInformation si = cms.getSignerInfos().getSigners().iterator().next();
+                byte[] imprint = MessageDigest.getInstance("SM3", "BC").digest(si.getSignature());
+                byte[] tok = requestTimestamp(imprint, base, "RFC3161", tsUrl,
+                        new ASN1ObjectIdentifier(OID_SM3));
+                AttributeTable unsigned = new AttributeTable(
+                        new Attribute(new ASN1ObjectIdentifier(OID_TSA_TOKEN),
+                                new DERSet(ASN1Primitive.fromByteArray(tok))));
+                SignerInformation newSi = SignerInformation.replaceUnsignedAttributes(si, unsigned);
+                List<SignerInformation> newList = new ArrayList<>();
+                for (SignerInformation o : cms.getSignerInfos().getSigners()) {
+                    newList.add(o.getSID().equals(newSi.getSID()) ? newSi : o);
+                }
+                cms = CMSSignedData.replaceSigners(cms, new SignerInformationStore(newList));
+            } catch (Exception tsEx) {
+                // 时间戳失败降级：不带时间戳继续签名（不阻断）
+                MLog.append(base, "GM35275 时间戳降级",
+                        "请求 " + (tsUrl.trim().isEmpty() ? "本机 MAIN /rfc3161" : tsUrl)
+                                + " 失败: " + tsEx);
+            }
+        }
         return cms.getEncoded("DER");
     }
 
@@ -1652,7 +1761,9 @@ public final class SignTool {
      *
      * @param tsUrl PDF 时间戳地址（RFC3161）；<b>null = 不嵌时间戳</b>；
      *              非 null（含空串）= 嵌入，空串 = 本机 MAIN /rfc3161。
-     *              嵌入方式：signedAttrs 增加 id-aa-timeStampToken（1.2.840.113549.1.9.16.2.14）。
+     *              嵌入方式：CAdES-T / PAdES-T 签名时间戳——token 放入 SignerInfo 的
+     *              <b>unsignedAttrs</b>（id-aa-timeStampToken，1.2.840.113549.1.9.16.2.14），
+     *              messageImprint = SHA-256(签名值)，对齐主流签名工具（Wosign 等）。
      */
     private static byte[] buildCms(byte[] content, String contentType, boolean encapsulate,
                                    String keyType, X509Certificate cert, PrivateKey key,
@@ -1660,26 +1771,7 @@ public final class SignTool {
         ContentSigner signer = CertUtil.createContentSigner(key, keyType, digestName(keyType));
         DigestCalculatorProvider dcp = new JcaDigestCalculatorProviderBuilder().setProvider("BC").build();
         SignerInfoGeneratorBuilder b = new SignerInfoGeneratorBuilder(dcp);
-        if (tsUrl != null) {
-            try {
-                // messageImprint = 摘要(ByteRange 待签数据)（与 CMS messageDigest 同算法）
-                byte[] imprint = MessageDigest.getInstance(digestJca(keyType)).digest(content);
-                byte[] tok = requestTimestamp(imprint, AppPaths.baseDir(), "RFC3161", tsUrl);
-                ASN1EncodableVector attrs = new ASN1EncodableVector();
-                attrs.add(new Attribute(CMSAttributes.signingTime,
-                        new DERSet(new DERUTCTime(new Date()))));
-                attrs.add(new Attribute(new ASN1ObjectIdentifier(OID_TSA_TOKEN),
-                        new DERSet(ASN1Primitive.fromByteArray(tok))));
-                // BC 会自动补充 contentType 与 messageDigest
-                b.setSignedAttributeGenerator(
-                        new DefaultSignedAttributeTableGenerator(new AttributeTable(attrs)));
-            } catch (Exception tsEx) {
-                // 时间戳失败降级：不带时间戳继续签名（与 EXE 一致，不阻断签名）
-                MLog.append(AppPaths.baseDir(), "PDF 时间戳降级",
-                        "请求 " + (tsUrl.trim().isEmpty() ? "本机 MAIN /rfc3161" : tsUrl)
-                                + " 失败: " + tsEx);
-            }
-        }
+        // BC 默认 signedAttrs：contentType / messageDigest / signingTime
         SignerInfoGenerator sigGen = b.build(signer, new JcaX509CertificateHolder(cert));
 
         CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
@@ -1704,6 +1796,29 @@ public final class SignTool {
             }
         };
         CMSSignedData signed = gen.generate(cmsContent, encapsulate);
+
+        if (tsUrl != null) {
+            try {
+                SignerInformation si = signed.getSignerInfos().getSigners().iterator().next();
+                // CAdES-T：messageImprint = SHA-256(签名值)
+                byte[] imprint = MessageDigest.getInstance("SHA-256").digest(si.getSignature());
+                byte[] tok = requestTimestamp(imprint, AppPaths.baseDir(), "RFC3161", tsUrl);
+                AttributeTable unsigned = new AttributeTable(
+                        new Attribute(new ASN1ObjectIdentifier(OID_TSA_TOKEN),
+                                new DERSet(ASN1Primitive.fromByteArray(tok))));
+                SignerInformation newSi = SignerInformation.replaceUnsignedAttributes(si, unsigned);
+                List<SignerInformation> newList = new ArrayList<>();
+                for (SignerInformation o : signed.getSignerInfos().getSigners()) {
+                    newList.add(o.getSID().equals(newSi.getSID()) ? newSi : o);
+                }
+                signed = CMSSignedData.replaceSigners(signed, new SignerInformationStore(newList));
+            } catch (Exception tsEx) {
+                // 时间戳失败降级：不带时间戳继续签名（与 EXE 一致，不阻断签名）
+                MLog.append(AppPaths.baseDir(), "PDF 时间戳降级",
+                        "请求 " + (tsUrl.trim().isEmpty() ? "本机 MAIN /rfc3161" : tsUrl)
+                                + " 失败: " + tsEx);
+            }
+        }
         return signed.getEncoded("DER");
     }
 
@@ -1749,6 +1864,29 @@ public final class SignTool {
             md.update(signedPdf, (int) br[2], (int) br[3]);
             String vriKey = Hex.toHexString(md.digest()).toUpperCase();
 
+            LtvData ltv = collectLtvData(chain, baseDir);
+            if (ltv == null) {
+                return signedPdf;
+            }
+            installDss(doc, ltv, vriKey);
+
+            COSDictionary catalog = doc.getDocumentCatalog().getCOSObject();
+            Set<COSDictionary> updated = new HashSet<>();
+            updated.add(catalog);
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            doc.saveIncremental(out, updated);
+            return out.toByteArray();
+        } catch (Exception e) {
+            return signedPdf; // LTV 失败不影响签名
+        }
+    }
+
+    /** 一次性收集 LTV 数据：证书链 DER + 链上各证书 OCSP 响应 + 链上 CA/根 CRL。失败返回 null。 */
+    private static LtvData collectLtvData(List<X509Certificate> chain, String baseDir) {
+        if (chain == null || chain.isEmpty()) {
+            return null;
+        }
+        try {
             // 1) 证书链 DER（去重）
             List<byte[]> certs = new ArrayList<>();
             Set<String> seenCerts = new HashSet<>();
@@ -1758,7 +1896,6 @@ public final class SignTool {
                     certs.add(der);
                 }
             }
-
             // 2) OCSP 响应：链上每张证书（叶子的颁发者为上一级，自签根用自己）
             List<byte[]> ocspList = new ArrayList<>();
             for (int i = 0; i < chain.size(); i++) {
@@ -1769,7 +1906,6 @@ public final class SignTool {
                     ocspList.add(resp);
                 }
             }
-
             // 3) CRL：链上每个 CA/根（chain[1..size-1]，CRL 文件名 = 颁发者序列号）
             List<byte[]> crlList = new ArrayList<>();
             for (int i = 1; i < chain.size(); i++) {
@@ -1778,66 +1914,82 @@ public final class SignTool {
                     crlList.add(crl);
                 }
             }
-
             if (certs.isEmpty() && ocspList.isEmpty() && crlList.isEmpty()) {
-                return signedPdf; // 无任何 LTV 数据
+                return null;
             }
+            return new LtvData(certs, ocspList, crlList);
+        } catch (Exception e) {
+            return null;
+        }
+    }
 
-            // 4) 构造 DSS / VRI 字典（全部新增间接对象，catalog 增量修订）
-            COSDocument cosDoc = doc.getDocument();
-            long nextNum = cosDoc.getHighestXRefObjectNumber() + 1;
-            COSArray certArr = new COSArray();
-            for (byte[] b : certs) {
-                certArr.add(new COSObject(newLtvStream(b), new COSObjectKey(nextNum++, 0)));
-            }
-            COSArray ocspArr = new COSArray();
-            for (byte[] b : ocspList) {
-                ocspArr.add(new COSObject(newLtvStream(b), new COSObjectKey(nextNum++, 0)));
-            }
-            COSArray crlArr = new COSArray();
-            for (byte[] b : crlList) {
-                crlArr.add(new COSObject(newLtvStream(b), new COSObjectKey(nextNum++, 0)));
-            }
+    /** LTV 采集数据（证书链 / OCSP 响应 / CRL）。 */
+    private static final class LtvData {
+        final List<byte[]> certs;
+        final List<byte[]> ocspList;
+        final List<byte[]> crlList;
 
-            COSDictionary dss = new COSDictionary();
-            dss.setItem(COSName.TYPE, COSName.getPDFName("DSS"));
-            if (certArr.size() > 0) {
-                dss.setItem(COSName.getPDFName("Certs"), certArr);
-            }
-            if (ocspArr.size() > 0) {
-                dss.setItem(COSName.getPDFName("OCSPs"), ocspArr);
-            }
-            if (crlArr.size() > 0) {
-                dss.setItem(COSName.getPDFName("CRLs"), crlArr);
-            }
+        LtvData(List<byte[]> certs, List<byte[]> ocspList, List<byte[]> crlList) {
+            this.certs = certs;
+            this.ocspList = ocspList;
+            this.crlList = crlList;
+        }
+    }
 
-            COSDictionary vri = new COSDictionary();
-            vri.setItem(COSName.TYPE, COSName.getPDFName("VRI"));
-            if (ocspArr.size() > 0) {
-                vri.setItem(COSName.getPDFName("OCSP"), ocspArr);
-            }
-            if (crlArr.size() > 0) {
-                vri.setItem(COSName.getPDFName("CRL"), crlArr);
-            }
-            if (certArr.size() > 0) {
-                vri.setItem(COSName.getPDFName("Cert"), certArr);
-            }
+    /** 在文档中安装 DSS/VRI 对象（新增间接对象 + catalog /DSS 修订 + root 标记更新）。 */
+    private static void installDss(PDDocument doc, LtvData ltv, String vriKey) throws Exception {
+        COSDocument cosDoc = doc.getDocument();
+        long nextNum = cosDoc.getHighestXRefObjectNumber() + 1;
+        COSArray certArr = new COSArray();
+        for (byte[] b : ltv.certs) {
+            certArr.add(new COSObject(newLtvStream(b), new COSObjectKey(nextNum++, 0)));
+        }
+        COSArray ocspArr = new COSArray();
+        for (byte[] b : ltv.ocspList) {
+            ocspArr.add(new COSObject(newLtvStream(b), new COSObjectKey(nextNum++, 0)));
+        }
+        COSArray crlArr = new COSArray();
+        for (byte[] b : ltv.crlList) {
+            crlArr.add(new COSObject(newLtvStream(b), new COSObjectKey(nextNum++, 0)));
+        }
+
+        COSDictionary dss = new COSDictionary();
+        dss.setItem(COSName.TYPE, COSName.getPDFName("DSS"));
+        if (certArr.size() > 0) {
+            dss.setItem(COSName.getPDFName("Certs"), certArr);
+        }
+        if (ocspArr.size() > 0) {
+            dss.setItem(COSName.getPDFName("OCSPs"), ocspArr);
+        }
+        if (crlArr.size() > 0) {
+            dss.setItem(COSName.getPDFName("CRLs"), crlArr);
+        }
+
+        COSDictionary vri = new COSDictionary();
+        vri.setItem(COSName.TYPE, COSName.getPDFName("VRI"));
+        if (ocspArr.size() > 0) {
+            vri.setItem(COSName.getPDFName("OCSP"), ocspArr);
+        }
+        if (crlArr.size() > 0) {
+            vri.setItem(COSName.getPDFName("CRL"), crlArr);
+        }
+        if (certArr.size() > 0) {
+            vri.setItem(COSName.getPDFName("Cert"), certArr);
+        }
+        if (vriKey != null && vriKey.length() == 40) {
+            // VRI key = DocTimeStamp 的 ByteRange SHA-1（PAdES 规范；无时间戳时省略 VRI，DSS 数组仍全局可用）
             COSDictionary vris = new COSDictionary();
             vris.setItem(COSName.getPDFName(vriKey), vri);
             dss.setItem(COSName.getPDFName("VRI"), vris);
-            COSObject dssRef = new COSObject(dss, new COSObjectKey(nextNum++, 0));
+        }
+        COSObject dssRef = new COSObject(dss, new COSObjectKey(nextNum++, 0));
 
-            // catalog 加 /DSS 并标记修订（saveIncremental 只追加增量，不触碰原签名区）
-            COSDictionary catalog = doc.getDocumentCatalog().getCOSObject();
-            catalog.setItem(COSName.getPDFName("DSS"), dssRef);
-            Set<COSDictionary> updated = new HashSet<>();
-            updated.add(catalog);
-
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            doc.saveIncremental(out, updated);
-            return out.toByteArray();
-        } catch (Exception e) {
-            return signedPdf; // LTV 失败不影响签名
+        // catalog 加 /DSS 并标记间接对象为需要更新（外部签名保存才会写出修订）
+        COSDictionary catalog = doc.getDocumentCatalog().getCOSObject();
+        catalog.setItem(COSName.getPDFName("DSS"), dssRef);
+        COSBase root = cosDoc.getTrailer().getItem(COSName.ROOT);
+        if (root instanceof COSObject) {
+            ((COSObject) root).setNeedToBeUpdated(true);
         }
     }
 
@@ -2021,7 +2173,7 @@ public final class SignTool {
 
     // ============================ PDF 验证 ============================
 
-    /** 验证 PDF 签名：CMS 签名、ByteRange 摘要比对、证书链。 */
+    /** 验证 PDF 签名：逐个签名字段（DocTimeStamp / 数字签名 / 国密），CMS 验签、ByteRange 摘要比对、证书链。 */
     public static String verifyPdf(byte[] pdf) throws Exception {
         StringBuilder sb = new StringBuilder();
         try (PDDocument doc = Loader.loadPDF(pdf)) {
@@ -2031,7 +2183,54 @@ public final class SignTool {
             }
             sb.append("PDF 页数: ").append(doc.getNumberOfPages()).append('\n');
             sb.append("签名数量: ").append(sigs.size()).append('\n');
-            PDSignature sig = sigs.get(0);
+
+            // PAdES LTV 状态（DSS / VRI 字典）
+            COSDictionary dss = doc.getDocumentCatalog().getCOSObject()
+                    .getCOSDictionary(COSName.getPDFName("DSS"));
+            if (dss != null) {
+                COSArray ce = dss.getCOSArray(COSName.getPDFName("Certs"));
+                COSArray oc = dss.getCOSArray(COSName.getPDFName("OCSPs"));
+                COSArray cr = dss.getCOSArray(COSName.getPDFName("CRLs"));
+                COSDictionary vris = dss.getCOSDictionary(COSName.getPDFName("VRI"));
+                StringBuilder ltv = new StringBuilder("LTV: 已启用（DSS 字典");
+                if (ce != null) ltv.append("，Certs=").append(ce.size());
+                if (oc != null) ltv.append("，OCSPs=").append(oc.size());
+                if (cr != null) ltv.append("，CRLs=").append(cr.size());
+                if (vris != null && vris.size() > 0) {
+                    ltv.append("，VRI=").append(vris.keySet().iterator().next().getName());
+                }
+                ltv.append("）\n");
+                sb.append(ltv);
+            } else {
+                sb.append("LTV: 未启用（无 DSS 字典）\n");
+            }
+
+            // 主签名 = 最后一个非文档时间戳签名（数字签名/国密签章）
+            PDSignature mainSig = null;
+            for (int i = sigs.size() - 1; i >= 0; i--) {
+                PDSignature s = sigs.get(i);
+                if (!SUBFILTER_ETSI_RFC3161.equals(printable(s.getSubFilter()))) {
+                    mainSig = s;
+                    break;
+                }
+            }
+            // 逐个验证文档时间戳（DocTimeStamp）
+            boolean tsOk = true;
+            for (PDSignature s : sigs) {
+                if (SUBFILTER_ETSI_RFC3161.equals(printable(s.getSubFilter()))) {
+                    tsOk = verifyDocTimeStamp(sb, pdf, s) && tsOk;
+                }
+            }
+            if (mainSig == null) {
+                sb.append("\n========================================\n");
+                sb.append("最终结论: ").append(tsOk
+                        ? "PDF 文档时间戳有效 ✓（未发现数字签名）"
+                        : "PDF 文档时间戳无效 ✗").append('\n');
+                return sb.toString();
+            }
+
+            // 主签名（数字签名/国密签章）验证
+            PDSignature sig = mainSig;
             sb.append("签名者: ").append(printable(sig.getName())).append('\n');
             sb.append("原因: ").append(printable(sig.getReason())).append('\n');
             if (sig.getSignDate() != null) {
@@ -2063,28 +2262,7 @@ public final class SignTool {
             byte[] range = rangeOut.toByteArray();
             sb.append("待签名数据长度: ").append(range.length).append(" 字节\n");
 
-            // PAdES LTV 状态（DSS / VRI 字典）
-            COSDictionary dss = doc.getDocumentCatalog().getCOSObject()
-                    .getCOSDictionary(COSName.getPDFName("DSS"));
-            if (dss != null) {
-                COSArray ce = dss.getCOSArray(COSName.getPDFName("Certs"));
-                COSArray oc = dss.getCOSArray(COSName.getPDFName("OCSPs"));
-                COSArray cr = dss.getCOSArray(COSName.getPDFName("CRLs"));
-                COSDictionary vris = dss.getCOSDictionary(COSName.getPDFName("VRI"));
-                StringBuilder ltv = new StringBuilder("LTV: 已启用（DSS 字典");
-                if (ce != null) ltv.append("，Certs=").append(ce.size());
-                if (oc != null) ltv.append("，OCSPs=").append(oc.size());
-                if (cr != null) ltv.append("，CRLs=").append(cr.size());
-                if (vris != null && vris.size() > 0) {
-                    ltv.append("，VRI=").append(vris.keySet().iterator().next().getName());
-                }
-                ltv.append("）\n");
-                sb.append(ltv);
-            } else {
-                sb.append("LTV: 未启用（无 DSS 字典）\n");
-            }
-
-            // 国密 GB/T 38540-2020：Contents = SES_Signature（非 CMS），走专用解析
+            // 国密 GB/T 38540-2020 / GM/T 0031：Contents = SES_Signature（非 CMS），走专用解析
             if (SUBFILTER_GM_SEAL.equals(sig.getSubFilter())) {
                 return verifyGmSeal38540(sb, cmsBytes, range);
             }
@@ -2113,6 +2291,30 @@ public final class SignTool {
             }
             sb.append("摘要算法: ").append(si.getDigestAlgOID())
                     .append("  签名算法: ").append(si.getEncryptionAlgOID()).append('\n');
+
+            // 签名时间戳（CAdES-T/PAdES-T：SignerInfo unsignedAttrs 的 id-aa-timeStampToken，
+            // messageImprint = 按 token 哈希算法的签名值摘要，对齐主流签名工具结构）
+            Attribute tsAttr = si.getUnsignedAttributes() == null ? null
+                    : si.getUnsignedAttributes().get(new ASN1ObjectIdentifier(OID_TSA_TOKEN));
+            if (tsAttr != null && tsAttr.getAttrValues().size() > 0) {
+                try {
+                    byte[] tokBytes = tsAttr.getAttrValues().getObjectAt(0)
+                            .toASN1Primitive().getEncoded("DER");
+                    TimeStampToken tst = new TimeStampToken(new CMSSignedData(tokBytes));
+                    TimeStampTokenInfo info = tst.getTimeStampInfo();
+                    sb.append("签名时间戳(CAdES-T unsignedAttrs): TSA=")
+                            .append(info.getTsa() == null ? "（未命名）" : info.getTsa().getName())
+                            .append("  时间=").append(info.getGenTime())
+                            .append("  算法=").append(info.getHashAlgorithm().getAlgorithm().getId())
+                            .append("  绑定签名值=")
+                            .append(boundToSignature(info, si.getSignature()))
+                            .append('\n');
+                } catch (Exception tsE) {
+                    sb.append("签名时间戳(CAdES-T unsignedAttrs) 解析异常: ").append(tsE).append('\n');
+                }
+            } else {
+                sb.append("签名时间戳(CAdES-T unsignedAttrs): 无（未嵌入）\n");
+            }
 
             boolean sigOk = false;
             if (signerCert != null) {
@@ -2151,6 +2353,83 @@ public final class SignTool {
         }
     }
 
+    /**
+     * 验证 PAdES 文档时间戳（DocTimeStamp，SubFilter=ETSI.RFC3161）：
+     * Contents 为 RFC 3161 TimeStampToken；校验 messageImprint 与 ByteRange 摘要一致，
+     * 并用 token 内 TSA 证书验证签名。
+     */
+    private static boolean verifyDocTimeStamp(StringBuilder sb, byte[] pdf, PDSignature sig) {
+        sb.append("\n[文档时间戳 DocTimeStamp（ETSI.RFC3161）]\n");
+        try {
+            sb.append("签名者: ").append(printable(sig.getName())).append('\n');
+            int[] br = sig.getByteRange();
+            if (br == null || br.length != 4 || br[1] <= 0) {
+                sb.append("  [失败] ByteRange 缺失或非法\n");
+                return false;
+            }
+            ByteArrayOutputStream rangeOut = new ByteArrayOutputStream();
+            rangeOut.write(pdf, (int) br[0], (int) br[1]);
+            rangeOut.write(pdf, (int) br[2], (int) br[3]);
+            byte[] range = rangeOut.toByteArray();
+            sb.append("ByteRange: [").append(br[0]).append(", ").append(br[1])
+                    .append(", ").append(br[2]).append(", ").append(br[3]).append("]\n");
+            sb.append("待盖章数据长度: ").append(range.length).append(" 字节\n");
+
+            byte[] contents = sig.getContents();
+            if (contents == null || contents.length == 0) {
+                sb.append("  [失败] 无时间戳内容\n");
+                return false;
+            }
+            int realLen = contents.length;
+            while (realLen > 0 && contents[realLen - 1] == 0) {
+                realLen--;
+            }
+            byte[] tokBytes = Arrays.copyOf(contents, realLen);
+            sb.append("时间戳区长度: ").append(contents.length)
+                    .append(" 字节（去除填充后 ").append(tokBytes.length).append(" 字节）\n");
+
+            TimeStampToken tst = new TimeStampToken(new CMSSignedData(tokBytes));
+            TimeStampTokenInfo info = tst.getTimeStampInfo();
+            sb.append("TSA: ").append(info.getTsa() == null ? "（未命名）" : info.getTsa().getName()).append('\n');
+            sb.append("时间戳时间: ").append(info.getGenTime()).append('\n');
+            sb.append("序列号: ").append(info.getSerialNumber()).append('\n');
+            sb.append("哈希算法: ").append(info.getHashAlgorithm().getAlgorithm().getId()).append('\n');
+
+            // messageImprint 与 ByteRange 摘要比对
+            byte[] imprint = info.getMessageImprintDigest();
+            String alg = digestJcaFromOid(info.getHashAlgorithm().getAlgorithm().getId());
+            byte[] calc = MessageDigest.getInstance(alg).digest(range);
+            boolean imprintOk = imprint != null && MessageDigest.isEqual(imprint, calc);
+            sb.append("messageImprint(").append(alg).append("): ")
+                    .append(Hex.toHexString(imprint == null ? new byte[0] : imprint)).append('\n');
+            sb.append("文档摘要         : ").append(Hex.toHexString(calc)).append('\n');
+            sb.append("messageImprint 比对: ").append(imprintOk ? "通过 ✓" : "失败 ✗").append('\n');
+
+            // 用 token 内 TSA 证书验证时间戳签名
+            boolean sigOk = false;
+            try {
+                org.bouncycastle.cms.SignerId sid = tst.getSID();
+                java.util.Collection<X509CertificateHolder> tsaMatch = tst.getCertificates().getMatches(sid);
+                if (!tsaMatch.isEmpty()) {
+                    X509Certificate tsaCert = new JcaX509CertificateConverter().setProvider("BC")
+                            .getCertificate(tsaMatch.iterator().next());
+                    sb.append("TSA 证书: ").append(tsaCert.getSubjectX500Principal()).append('\n');
+                    sigOk = tst.isSignatureValid(new JcaSimpleSignerInfoVerifierBuilder()
+                            .setProvider("BC").build(tsaCert));
+                } else {
+                    sb.append("  [失败] token 内无 TSA 证书\n");
+                }
+            } catch (Exception e) {
+                sb.append("  时间戳验签异常: ").append(e).append('\n');
+            }
+            sb.append("时间戳签名验证: ").append(sigOk ? "通过 ✓" : "失败 ✗").append('\n');
+            return imprintOk && sigOk;
+        } catch (Exception e) {
+            sb.append("  [失败] TimeStampToken 解析异常: ").append(e).append('\n');
+            return false;
+        }
+    }
+
     // ============================ 工具方法 ============================
 
     /**
@@ -2164,10 +2443,11 @@ public final class SignTool {
                                             byte[] range) throws Exception {
         ASN1Sequence sesSig = ASN1Sequence.getInstance(ASN1Primitive.fromByteArray(contents));
         final boolean is0031 = sesSig.size() == 2;
-        final boolean is38540 = sesSig.size() == 4;
+        // 38540 = 4 字段（无时间戳）或 5 字段（可选第 5 字段 timeStamp，GB/T 38540 7.1.6）
+        final boolean is38540 = sesSig.size() == 4 || sesSig.size() == 5;
         if (!is0031 && !is38540) {
             return sb.append("[失败] SES_Signature 字段数=").append(sesSig.size())
-                    .append("（应为 2: toSign/signature（GM/T 0031）或 4: toSign/cert/signatureAlgID/signature（GB/T 38540））")
+                    .append("（应为 2: toSign/signature（GM/T 0031）或 4-5: toSign/cert/signatureAlgID/signature[/timeStamp]（GB/T 38540））")
                     .toString();
         }
         sb.append(is0031 ? "\n[国密 GM/T 0031 SES_Signature 验证]\n"
@@ -2227,8 +2507,200 @@ public final class SignTool {
             }
             sb.append("SM2 签名验证: ").append(sigOk ? "通过 ✓" : "失败 ✗").append('\n');
 
+            // 印章签名自检：GB/T 38540 = 制章者对 eSealInfo（SEQUENCE）的 SM3withSM2 签名；
+            // GM/T 0031 = 制章人对 SEQUENCE{ SES_SealInfo, 制章人证书, 签名算法标识 } 的签名。
+            boolean sealSigOk = true;
+            if (is38540) {
+                try {
+                    ASN1Sequence eseal = ASN1Sequence.getInstance(tbs.getObjectAt(1));
+                    byte[] eSealInfoDer = eseal.getObjectAt(0).toASN1Primitive().getEncoded("DER");
+                    byte[] sealCertBytes = ASN1OctetString.getInstance(eseal.getObjectAt(1)).getOctets();
+                    byte[] sealSignedValue = DERBitString.getInstance(eseal.getObjectAt(3)).getBytes();
+                    X509Certificate sealCert = (X509Certificate) cf
+                            .generateCertificate(new ByteArrayInputStream(sealCertBytes));
+                    boolean sOk = false;
+                    try {
+                        Signature ver = Signature.getInstance("SM3WITHSM2", "BC");
+                        ver.initVerify(sealCert.getPublicKey());
+                        ver.update(eSealInfoDer);
+                        sOk = ver.verify(sealSignedValue);
+                    } catch (Exception e) {
+                        sb.append("  印章验签异常: ").append(e).append('\n');
+                    }
+                    sb.append("印章签名验证(制章者 ").append(shortDn(sealCert.getSubjectX500Principal().toString()))
+                            .append("): ").append(sOk ? "通过 ✓" : "失败 ✗").append('\n');
+                    sealSigOk = sOk;
+                } catch (Exception e) {
+                    sb.append("  印章解析异常: ").append(e).append('\n');
+                    sealSigOk = false;
+                }
+            } else if (is0031) {
+                try {
+                    ASN1Sequence eseal = ASN1Sequence.getInstance(tbs.getObjectAt(1));
+                    byte[] eSealInfoDer = eseal.getObjectAt(0).toASN1Primitive().getEncoded("DER");
+                    ASN1Sequence signInfo = ASN1Sequence.getInstance(eseal.getObjectAt(1));
+                    byte[] sealCertBytes = ASN1OctetString.getInstance(signInfo.getObjectAt(0)).getOctets();
+                    byte[] sealSignedValue = DERBitString.getInstance(signInfo.getObjectAt(2)).getBytes();
+                    X509Certificate sealCert = (X509Certificate) cf
+                            .generateCertificate(new ByteArrayInputStream(sealCertBytes));
+                    boolean sOk = false;
+                    try {
+                        // GM/T 0031 6.1.1.2：signData = 制章人对 SEQUENCE{ 印章信息, 制章人证书, 签名算法标识 } 的签名
+                        ASN1EncodableVector st = new ASN1EncodableVector();
+                        st.add(eseal.getObjectAt(0));
+                        st.add(signInfo.getObjectAt(0));
+                        st.add(signInfo.getObjectAt(1));
+                        byte[] signTarget = new DERSequence(st).getEncoded("DER");
+                        Signature ver = Signature.getInstance("SM3WITHSM2", "BC");
+                        ver.initVerify(sealCert.getPublicKey());
+                        ver.update(signTarget);
+                        sOk = ver.verify(sealSignedValue);
+                    } catch (Exception e) {
+                        sb.append("  印章验签异常: ").append(e).append('\n');
+                    }
+                    sb.append("印章签名验证(制章者 ").append(shortDn(sealCert.getSubjectX500Principal().toString()))
+                            .append("): ").append(sOk ? "通过 ✓" : "失败 ✗").append('\n');
+                    sealSigOk = sOk;
+                } catch (Exception e) {
+                    sb.append("  印章解析异常: ").append(e).append('\n');
+                    sealSigOk = false;
+                }
+            }
+
+            // GB/T 38540 7.1.6 时间戳：SES_Signature 可选第 5 字段 timeStamp[0] BIT STRING
+            // （对签名值的时间戳，GB/T 20520 = RFC3161，DER 编码；SM2/SM3 场景 messageImprint=SM3）。
+            // 兼容解析：EXPLICIT [0]（A0 包 03，标准默认）/ IMPLICIT [0]（80 00…）/ universal BIT STRING（03）/ 旧 OCTET STRING（04）。
+            boolean tsOk = true;
+            if (is38540 && sesSig.size() >= 5) {
+                try {
+                    byte[] tok = null;
+                    ASN1Encodable tsObj = sesSig.getObjectAt(4);
+                    if (tsObj instanceof ASN1TaggedObject) {
+                        ASN1TaggedObject tagged = (ASN1TaggedObject) tsObj;
+                        // EXPLICIT [0]（A0 包 03/04）或 IMPLICIT [0]（80/81）都兼容
+                        ASN1Primitive inner = null;
+                        try {
+                            inner = tagged.getBaseUniversal(true, org.bouncycastle.asn1.BERTags.BIT_STRING);
+                        } catch (Exception e1) {
+                            try {
+                                inner = tagged.getBaseUniversal(true, org.bouncycastle.asn1.BERTags.OCTET_STRING);
+                            } catch (Exception e2) {
+                                inner = tagged.getBaseUniversal(false, org.bouncycastle.asn1.BERTags.BIT_STRING);
+                            }
+                        }
+                        if (inner instanceof DERBitString) {
+                            tok = DERBitString.getInstance(inner).getBytes();
+                        } else if (inner instanceof ASN1OctetString) {
+                            tok = ASN1OctetString.getInstance(inner).getOctets();
+                        } else {
+                            tok = inner.getEncoded("DER");
+                        }
+                    } else if (tsObj instanceof DERBitString) {
+                        tok = DERBitString.getInstance(tsObj).getBytes();
+                    } else if (tsObj instanceof ASN1OctetString) {
+                        tok = ASN1OctetString.getInstance(tsObj).getOctets();
+                    }
+                    if (tok == null || tok.length == 0) {
+                        sb.append("签名时间戳(timeStamp 字段): 解析失败（未知编码）\n");
+                        tsOk = false;
+                    } else {
+                        TimeStampToken tst = new TimeStampToken(new CMSSignedData(tok));
+                        TimeStampTokenInfo info = tst.getTimeStampInfo();
+                        sb.append("签名时间戳(timeStamp 字段): TSA=")
+                                .append(info.getTsa() == null ? "（未命名）" : info.getTsa().getName())
+                                .append("  时间=").append(info.getGenTime())
+                                .append("  算法=").append(info.getHashAlgorithm().getAlgorithm().getId())
+                                .append('\n');
+                        // 绑定校验：messageImprint = SM3(签名值)
+                        MessageDigest md = MessageDigest.getInstance("SM3", "BC");
+                        boolean bound = Arrays.equals(info.getMessageImprintDigest(), md.digest(sigValue));
+                        sb.append("绑定签名值(SM3): ").append(bound ? "通过 ✓" : "失败 ✗").append('\n');
+                        // TSA 证书验签
+                        boolean tsaOk = false;
+                        try {
+                            Collection<X509CertificateHolder> tsaCerts =
+                                    tst.getCertificates().getMatches(tst.getSID());
+                            if (!tsaCerts.isEmpty()) {
+                                X509CertificateHolder tsaHolder = tsaCerts.iterator().next();
+                                X509Certificate tsaCert = (X509Certificate) cf
+                                        .generateCertificate(new ByteArrayInputStream(tsaHolder.getEncoded()));
+                                org.bouncycastle.cms.SignerInformationVerifier verifier =
+                                        new JcaSimpleSignerInfoVerifierBuilder()
+                                                .setProvider("BC").build(tsaCert);
+                                tsaOk = tst.isSignatureValid(verifier);
+                            }
+                        } catch (Exception e) {
+                            sb.append("  TSA 验签异常: ").append(e).append('\n');
+                        }
+                        sb.append("TSA 证书验签: ").append(tsaOk ? "通过 ✓" : "失败 ✗").append('\n');
+                        tsOk = bound && tsaOk;
+                    }
+                } catch (Exception tsE) {
+                    sb.append("签名时间戳(timeStamp 字段) 解析异常: ").append(tsE).append('\n');
+                    tsOk = false;
+                }
+            } else if (is0031) {
+                // GM/T 0031 timeInfo（TBS_Sign[2] BIT STRING）：
+                // 内容可为"时间戳（TimeStampToken DER）"或"UTCTIME 时间（DER）"。
+                // 时间戳绑定原文杂凑（messageImprint = dataHash，因 timeInfo 先于签名值存在）。
+                try {
+                    byte[] tiBytes = DERBitString.getInstance(tbs.getObjectAt(2)).getBytes();
+                    boolean parsedTs = false;
+                    if (tiBytes != null && tiBytes.length > 0) {
+                        try {
+                            TimeStampToken tst = new TimeStampToken(new CMSSignedData(tiBytes));
+                            TimeStampTokenInfo info = tst.getTimeStampInfo();
+                            sb.append("签章时间信息(timeInfo): TSA=")
+                                    .append(info.getTsa() == null ? "（未命名）" : info.getTsa().getName())
+                                    .append("  时间=").append(info.getGenTime())
+                                    .append("  算法=").append(info.getHashAlgorithm().getAlgorithm().getId())
+                                    .append('\n');
+                            boolean bound = Arrays.equals(info.getMessageImprintDigest(), embeddedHash);
+                            sb.append("绑定原文杂凑(SM3): ").append(bound ? "通过 ✓" : "失败 ✗").append('\n');
+                            boolean tsaOk = false;
+                            try {
+                                Collection<X509CertificateHolder> tsaCerts =
+                                        tst.getCertificates().getMatches(tst.getSID());
+                                if (!tsaCerts.isEmpty()) {
+                                    X509CertificateHolder tsaHolder = tsaCerts.iterator().next();
+                                    X509Certificate tsaCert = (X509Certificate) cf.generateCertificate(
+                                            new ByteArrayInputStream(tsaHolder.getEncoded()));
+                                    org.bouncycastle.cms.SignerInformationVerifier verifier =
+                                            new JcaSimpleSignerInfoVerifierBuilder()
+                                                    .setProvider("BC").build(tsaCert);
+                                    tsaOk = tst.isSignatureValid(verifier);
+                                }
+                            } catch (Exception e) {
+                                sb.append("  TSA 验签异常: ").append(e).append('\n');
+                            }
+                            sb.append("TSA 证书验签: ").append(tsaOk ? "通过 ✓" : "失败 ✗").append('\n');
+                            tsOk = bound && tsaOk;
+                            parsedTs = true;
+                        } catch (Exception te) {
+                            // 不是时间戳 → 尝试按 UTCTime 解析
+                            try {
+                                ASN1UTCTime utc = ASN1UTCTime.getInstance(
+                                        ASN1Primitive.fromByteArray(tiBytes));
+                                sb.append("签章时间信息(timeInfo): UTCTime ").append(utc.getDate()).append('\n');
+                            } catch (Exception ue) {
+                                sb.append("签章时间信息(timeInfo): 无法解析（")
+                                        .append(Hex.toHexString(tiBytes).substring(0,
+                                                Math.min(32, Hex.toHexString(tiBytes).length())))
+                                        .append("…）\n");
+                            }
+                        }
+                    } else {
+                        sb.append("签章时间信息(timeInfo): 空\n");
+                    }
+                } catch (Exception e) {
+                    sb.append("签章时间信息(timeInfo) 解析异常: ").append(e).append('\n');
+                }
+            } else {
+                sb.append("签名时间戳(timeStamp 字段): 无（未嵌入）\n");
+            }
+
             sb.append("\n========================================\n");
-            sb.append("最终结论: ").append((sigOk && hashOk)
+            sb.append("最终结论: ").append((sigOk && hashOk && tsOk && sealSigOk)
                     ? "国密 PDF 电子签章有效 ✓" : "国密 PDF 电子签章无效 ✗").append('\n');
             return sb.toString();
         } catch (Exception e) {
@@ -2298,5 +2770,35 @@ public final class SignTool {
             bos.write(buf, 0, n);
         }
         return bos.toByteArray();
+    }
+
+    /** 校验时间戳 messageImprint 是否绑定签名值（按 token 哈希算法自适应 SHA-256/SM3 等）。 */
+    private static boolean boundToSignature(TimeStampTokenInfo info, byte[] signature) {
+        try {
+            String oid = info.getHashAlgorithm().getAlgorithm().getId();
+            if ("1.2.156.10197.1.401".equals(oid)) {
+                MessageDigest md = MessageDigest.getInstance("SM3", "BC");
+                return Arrays.equals(info.getMessageImprintDigest(), md.digest(signature));
+            }
+            if ("2.16.840.1.101.3.4.2.1".equals(oid)) {
+                return Arrays.equals(info.getMessageImprintDigest(),
+                        MessageDigest.getInstance("SHA-256").digest(signature));
+            }
+            if ("2.16.840.1.101.3.4.2.4".equals(oid)) {
+                return Arrays.equals(info.getMessageImprintDigest(),
+                        MessageDigest.getInstance("SHA-224").digest(signature));
+            }
+            if ("2.16.840.1.101.3.4.2.2".equals(oid)) {
+                return Arrays.equals(info.getMessageImprintDigest(),
+                        MessageDigest.getInstance("SHA-384").digest(signature));
+            }
+            if ("2.16.840.1.101.3.4.2.3".equals(oid)) {
+                return Arrays.equals(info.getMessageImprintDigest(),
+                        MessageDigest.getInstance("SHA-512").digest(signature));
+            }
+            return false; // 其他算法无法判定
+        } catch (Exception e) {
+            return false;
+        }
     }
 }
