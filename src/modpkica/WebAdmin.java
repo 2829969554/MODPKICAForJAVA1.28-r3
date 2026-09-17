@@ -405,7 +405,8 @@ public final class WebAdmin {
                     return;
                 case "/api/makeroot":
                     runAction(ex, m -> Admin.doMakeRoot(baseDir,
-                            str(m, "dn"), str(m, "bits"), str(m, "hash"), str(m, "algo")));
+                            str(m, "dn"), str(m, "bits"), str(m, "hash"), str(m, "algo"),
+                            str(m, "evoid")));
                     return;
                 case "/api/signcert":
                     runAction(ex, m -> Admin.doSignCert(baseDir,
@@ -2603,7 +2604,54 @@ public final class WebAdmin {
                   <div><label>哈希算法</label><select id="mkHash"><option>sha256</option><option>sha1</option><option>sha384</option><option>sha512</option><option>SM3</option></select></div>
                   <div><label>密钥算法</label><select id="mkAlgo"><option>RSA</option><option>ECC</option><option>SM2</option></select></div>
                 </div>
-                <div style="margin-top:16px"><button onclick="postForm('/api/makeroot', {dn:v('mkDn'),bits:v('mkBits'),hash:v('mkHash'),algo:v('mkAlgo')}, 'mkOut')">签发根证书</button></div>
+                <div class="fsec" style="margin-top:14px">
+                  <div class="fsec-title">DN 辅助编辑 — 基础字段 / EV 注册字段 / 自定义 OID</div>
+                  <div class="row">
+                    <div><label>CN 通用名称</label><input id="mkDnCn" placeholder="Test Root CA" oninput="syncMkDn()"></div>
+                    <div><label>O 组织</label><input id="mkDnO" placeholder="My Org" oninput="syncMkDn()"></div>
+                    <div><label>OU 组织单位</label><input id="mkDnOu" placeholder="可选" oninput="syncMkDn()"></div>
+                    <div><label>C 国家</label><input id="mkDnC" placeholder="CN" maxlength="2" oninput="syncMkDn()"></div>
+                    <div><label>S 省/州</label><input id="mkDnS" placeholder="可选" oninput="syncMkDn()"></div>
+                    <div><label>L 城市</label><input id="mkDnL" placeholder="可选" oninput="syncMkDn()"></div>
+                    <div><label>E 邮箱（OID 字段）</label><input id="mkDnE" placeholder="admin@example.com" oninput="syncMkDn()"></div>
+                    <div><label>是否 EV 扩展验证</label>
+                      <label style="display:flex;justify-content:flex-start;align-items:center;width:100%;height:32px;cursor:pointer;margin:0"><input type="checkbox" id="mkDnEvToggle" onchange="toggleMkDnEv()" style="margin:0;flex:none"></label>
+                    </div>
+                  </div>
+                  <div id="mkDnEvFields" style="margin-top:14px;display:none">
+                    <div class="fsec-title" style="font-size:12px;margin-bottom:8px">EV 注册字段（EV Guidelines 专属 OID；注册类型四选一，注册号填营业执照/统一社会信用代码）</div>
+                    <div class="row">
+                      <div><label>注册类型（businessCategory 2.5.4.15）</label>
+                        <select id="mkDnBc" onchange="syncMkDn()">
+                          <option value="">（不填）</option>
+                          <option>Private Organization</option>
+                          <option>Government Entity</option>
+                          <option>Business Entity</option>
+                          <option>Non-Commercial Entity</option>
+                        </select>
+                      </div>
+                      <div><label>注册号（serialNumber 2.5.4.5）</label><input id="mkDnReg" placeholder="如 91310000MA5XXXXXXXX" oninput="syncMkDn()"></div>
+                      <div><label>注册国家（jurisdictionCountry）</label><input id="mkDnJc" placeholder="CN" maxlength="2" oninput="syncMkDn()"></div>
+                      <div><label>注册省（jurisdictionStateOrProvince）</label><input id="mkDnJs" placeholder="可选" oninput="syncMkDn()"></div>
+                      <div><label>注册市（jurisdictionLocality）</label><input id="mkDnJl" placeholder="可选" oninput="syncMkDn()"></div>
+                      <div><label>注册地址（streetAddress 2.5.4.9）</label><input id="mkDnAddr" placeholder="可选" oninput="syncMkDn()"></div>
+                      <div><label>组织标识符（2.5.4.97）</label><input id="mkDnOi" placeholder="NTRCN-91310000… / VATDE-123456789" oninput="syncMkDn()"></div>
+                      <div><label>组织标识符扩展 OID 版本</label>
+                        <label style="display:flex;justify-content:flex-start;align-items:center;width:100%;height:32px;cursor:pointer;margin:0" title="未勾选=旧版 1.3.6.1.4.1.57264.1.8（SC27-2019）；勾选=新版 2.23.140.3.1（EVG 2.0.1）"><input type="checkbox" id="mkDnOidNew" style="margin:0;flex:none"></label>
+                      </div>
+                    </div>
+                  </div>
+                  <div style="margin-top:12px">
+                    <div class="fsec-title" style="font-size:12px;margin-bottom:8px">自定义字段（key 可写字段名或对象标识符 OID，如 2.5.4.42=张三、2.23.140.1.1=EV）</div>
+                    <div id="mkDnOidRows"></div>
+                    <button type="button" class="ghost" onclick="addMkDnRow('','')">+ 添加自定义字段</button>
+                  </div>
+                  <div style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+                    <button type="button" class="ghost" onclick="parseMkDn()">从上方 DN 解析回填</button>
+                    <span style="color:var(--dim);font-size:12px">辅助编辑实时同步到上方 DN 输入框；也可直接编辑 DN 后点“解析回填”拆分到各字段。</span>
+                  </div>
+                </div>
+                <div style="margin-top:16px"><button onclick="postForm('/api/makeroot', {dn:v('mkDn'),bits:v('mkBits'),hash:v('mkHash'),algo:v('mkAlgo'),evoid: $('mkDnOidNew') && $('mkDnOidNew').checked ? 'new' : 'old'}, 'mkOut')">签发根证书</button></div>
                 <pre class="out" id="mkOut"></pre>
               </div>
             </div>
@@ -2620,6 +2668,52 @@ public final class WebAdmin {
                   </div>
                 </div>
 
+                <div class="fsec" style="margin-top:14px">
+                  <div class="fsec-title">DN 辅助编辑 — 基础字段 / EV 注册字段 / 自定义 OID</div>
+                  <div class="row">
+                    <div><label>CN 通用名称</label><input id="scDnCn" placeholder="www.test.com" oninput="syncDn('sc')"></div>
+                    <div><label>O 组织</label><input id="scDnO" placeholder="My Org" oninput="syncDn('sc')"></div>
+                    <div><label>OU 组织单位</label><input id="scDnOu" placeholder="可选" oninput="syncDn('sc')"></div>
+                    <div><label>C 国家</label><input id="scDnC" placeholder="CN" maxlength="2" oninput="syncDn('sc')"></div>
+                    <div><label>S 省/州</label><input id="scDnS" placeholder="可选" oninput="syncDn('sc')"></div>
+                    <div><label>L 城市</label><input id="scDnL" placeholder="可选" oninput="syncDn('sc')"></div>
+                    <div><label>E 邮箱（OID 字段）</label><input id="scDnE" placeholder="admin@example.com" oninput="syncDn('sc')"></div>
+                    <div><label>是否 EV 扩展验证</label>
+                      <label style="display:flex;justify-content:flex-start;align-items:center;width:100%;height:32px;cursor:pointer;margin:0"><input type="checkbox" id="scDnEvToggle" onchange="toggleDnEv('sc')" style="margin:0;flex:none"></label>
+                    </div>
+                  </div>
+                  <div id="scDnEvFields" style="margin-top:14px;display:none">
+                    <div class="fsec-title" style="font-size:12px;margin-bottom:8px">EV 注册字段（EV Guidelines 专属 OID；注册类型四选一，注册号填营业执照/统一社会信用代码）</div>
+                    <div class="row">
+                      <div><label>注册类型（businessCategory 2.5.4.15）</label>
+                        <select id="scDnBc" onchange="syncDn('sc')">
+                          <option value="">（不填）</option>
+                          <option>Private Organization</option>
+                          <option>Government Entity</option>
+                          <option>Business Entity</option>
+                          <option>Non-Commercial Entity</option>
+                        </select>
+                      </div>
+                      <div><label>注册号（serialNumber 2.5.4.5）</label><input id="scDnReg" placeholder="如 91310000MA5XXXXXXXX" oninput="syncDn('sc')"></div>
+                      <div><label>注册国家（jurisdictionCountry）</label><input id="scDnJc" placeholder="CN" maxlength="2" oninput="syncDn('sc')"></div>
+                      <div><label>注册省（jurisdictionStateOrProvince）</label><input id="scDnJs" placeholder="可选" oninput="syncDn('sc')"></div>
+                      <div><label>注册市（jurisdictionLocality）</label><input id="scDnJl" placeholder="可选" oninput="syncDn('sc')"></div>
+                      <div><label>注册地址（streetAddress 2.5.4.9）</label><input id="scDnAddr" placeholder="可选" oninput="syncDn('sc')"></div>
+                      <div><label>组织标识符（2.5.4.97）</label><input id="scDnOi" placeholder="NTRCN-91310000… / VATDE-123456789" oninput="syncDn('sc')"></div>
+                      <div><label>组织标识符扩展 OID 版本</label>
+                        <label style="display:flex;justify-content:flex-start;align-items:center;width:100%;height:32px;cursor:pointer;margin:0" title="未勾选=旧版 1.3.6.1.4.1.57264.1.8（SC27-2019）；勾选=新版 2.23.140.3.1（EVG 2.0.1）"><input type="checkbox" id="scDnOidNew" style="margin:0;flex:none"></label>
+                      </div>
+                    </div>
+                  </div>
+                  <div style="margin-top:12px">
+                    <div class="fsec-title" style="font-size:12px;margin-bottom:8px">自定义字段（key 可写字段名或对象标识符 OID，如 2.5.4.42=张三、2.23.140.1.1=EV）</div>
+                    <div id="scDnOidRows"></div>
+                    <button type="button" class="ghost" onclick="addDnRow('sc','','')">+ 添加自定义字段</button>
+                  </div>
+                  <div style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+                    <button type="button" class="ghost" onclick="parseDn('sc')">从上方 DN 解析回填</button>
+                  </div>
+                </div>
                 <div class="fsec"><div class="fsec-title">密钥与算法</div>
                   <div class="row">
                     <div><label>密钥算法</label><select id="scAlgo" onchange="algoChanged()"><option>RSA</option><option>ECC</option><option>SM2</option></select></div>
@@ -2709,6 +2803,7 @@ public final class WebAdmin {
                     <option value="6">6 - 证书暂停</option><option value="9">9 - 其它</option>
                   </select></div>
                 </div>
+
                 <div style="margin-top:16px"><button class="danger" onclick="postForm('/api/revoke', {serial:v('rvSerial'),reason:v('rvReason')}, 'rvOut')">吊销该证书</button></div>
                 <pre class="out" id="rvOut"></pre>
               </div>
@@ -2879,6 +2974,9 @@ public final class WebAdmin {
               </div>
             </div>
 
+
+    """;
+    private static final String PAGE_P1B = """
             <!-- 初始化环境 -->
             <div class="page" id="page-init">
               <div class="card">
@@ -2889,6 +2987,52 @@ public final class WebAdmin {
                   <div><label>密钥位数</label><input id="inBits" value="2048"></div>
                   <div><label>哈希算法</label><select id="inHash"><option>sha256</option><option>sha1</option><option>sha384</option><option>sha512</option><option>SM3</option></select></div>
                   <div><label>密钥算法</label><select id="inAlgo"><option>RSA</option><option>ECC</option><option>SM2</option></select></div>
+                </div>
+                <div class="fsec" style="margin-top:14px">
+                  <div class="fsec-title">DN 辅助编辑 — 基础字段 / EV 注册字段 / 自定义 OID</div>
+                  <div class="row">
+                    <div><label>CN 通用名称</label><input id="inDnCn" placeholder="My Root CA" oninput="syncDn('in')"></div>
+                    <div><label>O 组织</label><input id="inDnO" placeholder="My Org" oninput="syncDn('in')"></div>
+                    <div><label>OU 组织单位</label><input id="inDnOu" placeholder="可选" oninput="syncDn('in')"></div>
+                    <div><label>C 国家</label><input id="inDnC" placeholder="CN" maxlength="2" oninput="syncDn('in')"></div>
+                    <div><label>S 省/州</label><input id="inDnS" placeholder="可选" oninput="syncDn('in')"></div>
+                    <div><label>L 城市</label><input id="inDnL" placeholder="可选" oninput="syncDn('in')"></div>
+                    <div><label>E 邮箱（OID 字段）</label><input id="inDnE" placeholder="admin@example.com" oninput="syncDn('in')"></div>
+                    <div><label>是否 EV 扩展验证</label>
+                      <label style="display:flex;justify-content:flex-start;align-items:center;width:100%;height:32px;cursor:pointer;margin:0"><input type="checkbox" id="inDnEvToggle" onchange="toggleDnEv('in')" style="margin:0;flex:none"></label>
+                    </div>
+                  </div>
+                  <div id="inDnEvFields" style="margin-top:14px;display:none">
+                    <div class="fsec-title" style="font-size:12px;margin-bottom:8px">EV 注册字段（EV Guidelines 专属 OID；注册类型四选一，注册号填营业执照/统一社会信用代码）</div>
+                    <div class="row">
+                      <div><label>注册类型（businessCategory 2.5.4.15）</label>
+                        <select id="inDnBc" onchange="syncDn('in')">
+                          <option value="">（不填）</option>
+                          <option>Private Organization</option>
+                          <option>Government Entity</option>
+                          <option>Business Entity</option>
+                          <option>Non-Commercial Entity</option>
+                        </select>
+                      </div>
+                      <div><label>注册号（serialNumber 2.5.4.5）</label><input id="inDnReg" placeholder="如 91310000MA5XXXXXXXX" oninput="syncDn('in')"></div>
+                      <div><label>注册国家（jurisdictionCountry）</label><input id="inDnJc" placeholder="CN" maxlength="2" oninput="syncDn('in')"></div>
+                      <div><label>注册省（jurisdictionStateOrProvince）</label><input id="inDnJs" placeholder="可选" oninput="syncDn('in')"></div>
+                      <div><label>注册市（jurisdictionLocality）</label><input id="inDnJl" placeholder="可选" oninput="syncDn('in')"></div>
+                      <div><label>注册地址（streetAddress 2.5.4.9）</label><input id="inDnAddr" placeholder="可选" oninput="syncDn('in')"></div>
+                      <div><label>组织标识符（2.5.4.97）</label><input id="inDnOi" placeholder="NTRCN-91310000… / VATDE-123456789" oninput="syncDn('in')"></div>
+                      <div><label>组织标识符扩展 OID 版本</label>
+                        <label style="display:flex;justify-content:flex-start;align-items:center;width:100%;height:32px;cursor:pointer;margin:0" title="未勾选=旧版 1.3.6.1.4.1.57264.1.8（SC27-2019）；勾选=新版 2.23.140.3.1（EVG 2.0.1）"><input type="checkbox" id="inDnOidNew" style="margin:0;flex:none"></label>
+                      </div>
+                    </div>
+                  </div>
+                  <div style="margin-top:12px">
+                    <div class="fsec-title" style="font-size:12px;margin-bottom:8px">自定义字段（key 可写字段名或对象标识符 OID，如 2.5.4.42=张三、2.23.140.1.1=EV）</div>
+                    <div id="inDnOidRows"></div>
+                    <button type="button" class="ghost" onclick="addDnRow('in','','')">+ 添加自定义字段</button>
+                  </div>
+                  <div style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+                    <button type="button" class="ghost" onclick="parseDn('in')">从上方 DN 解析回填</button>
+                  </div>
                 </div>
                 <div style="margin-top:16px"><button class="danger" onclick="postForm('/api/init', {dn:v('inDn'),bits:v('inBits'),hash:v('inHash'),algo:v('inAlgo')}, 'inOut')">执行初始化</button></div>
                 <pre class="out" id="inOut"></pre>
@@ -3109,7 +3253,8 @@ public final class WebAdmin {
           </div>
         </div>
 
-""";
+
+    """;
     private static final String PAGE_P2 = """
         <script>
         // ===== 工具 =====
@@ -3144,6 +3289,78 @@ public final class WebAdmin {
             if (btn) btn.disabled = false;
           }
         }
+
+        // ===== 签发根证书：DN 辅助编辑 =====
+        // 基础字段映射 [输入框id, DN key]；输出顺序按 CA/B Forum 常见 subject DN 顺序（C,S,L,O,OU,CN,E）。
+        // E 邮箱后端按 OID 1.2.840.113549.1.9.1 处理。
+        // ===== 通用 DN 辅助编辑（mk 签发根证书 / sc 签发证书 / in 初始化环境 共用）=====
+        // 基础字段 [后缀, DN key]，输出顺序 C,S,L,O,OU,CN,E；E 邮箱后端按 OID 1.2.840.113549.1.9.1 处理
+        const DN_STD_PAT = [['C','C'],['S','S'],['L','L'],['O','O'],['Ou','OU'],['Cn','CN'],['E','1.2.840.113549.1.9.1']];
+        const DN_EV_PAT = [['Reg','2.5.4.5'],['Bc','2.5.4.15'],
+          ['Jc','1.3.6.1.4.1.311.60.2.1.3'],['Js','1.3.6.1.4.1.311.60.2.1.2'],['Jl','1.3.6.1.4.1.311.60.2.1.1'],
+          ['Addr','2.5.4.9'],['Oi','2.5.4.97']];
+        function dnF(p,n){ return p + 'Dn' + n; }
+        function dnStd(p){ return DN_STD_PAT.map(function(x){ return [dnF(p,x[0]), x[1]]; }); }
+        function dnEvFields(p){ return DN_EV_PAT.map(function(x){ return [dnF(p,x[0]), x[1]]; }); }
+        function dnEvOn(p){ const el = $(dnF(p,'EvToggle')); return el && el.checked; }
+        function syncDn(p) {
+          const parts = [];
+          const all = dnStd(p).concat(dnEvOn(p) ? dnEvFields(p) : []);
+          all.forEach(function(pa){
+            const el = $(pa[0]); if (!el) return;
+            const val = el.value.trim();
+            if (val) parts.push(pa[1] + '=' + val);
+          });
+          document.querySelectorAll('#' + p + 'DnOidRows .dn-oid-row').forEach(function(row){
+            const k = row.querySelector('.dn-key').value.trim();
+            const val = row.querySelector('.dn-val').value.trim();
+            if (k && val) parts.push(k + '=' + val);
+          });
+          $(p + 'Dn').value = parts.join(',');
+        }
+        function toggleDnEv(p) {
+          const on = dnEvOn(p);
+          $(p + 'DnEvFields').style.display = on ? '' : 'none';
+          syncDn(p);
+        }
+        function addDnRow(p, key, val) {
+          const div = document.createElement('div');
+          div.className = 'dn-oid-row';
+          div.style.cssText = 'display:flex;gap:6px;margin-bottom:6px;align-items:center';
+          const esc = s => String(s || '').replace(/"/g, '&quot;');
+          div.innerHTML = '<input class="dn-key" placeholder="字段名或 OID（如 2.5.4.42）" style="flex:1.2;max-width:320px" value="' + esc(key) + '" oninput="syncDn(\\'' + p + '\\')">'
+            + '<input class="dn-val" placeholder="值" style="flex:1.5" value="' + esc(val) + '" oninput="syncDn(\\'' + p + '\\')">'
+            + '<button type="button" class="ghost" style="flex:none" onclick="this.parentNode.remove();syncDn(\\'' + p + '\\')">✕</button>';
+          $(p + 'DnOidRows').appendChild(div);
+        }
+        function parseDn(p) {
+          const dn = $(p + 'Dn').value.trim();
+          if (!dn) return;
+          $(p + 'DnOidRows').innerHTML = '';
+          const all = dnStd(p).concat(dnEvFields(p));
+          all.forEach(function(pa){ $(pa[0]).value = ''; });
+          let evHit = false;
+          dn.split(',').forEach(function(seg){
+            seg = seg.trim(); if (!seg) return;
+            const i = seg.indexOf('='); if (i < 0) return;
+            const k = seg.slice(0, i).trim(), val = seg.slice(i + 1).trim();
+            const hit = all.find(function(pa){ return pa[1].toUpperCase() === k.toUpperCase(); });
+            if (hit) {
+              $(hit[0]).value = val;
+              if (dnEvFields(p).indexOf(hit) >= 0) evHit = true;
+            } else addDnRow(p, k, val);
+          });
+          if (evHit) { $(dnF(p,'EvToggle')).checked = true; $(p + 'DnEvFields').style.display = ''; }
+        }
+        // mk 兼容包装（签发根证书原有函数名不变）
+        function mkDnEvOn(){ return dnEvOn('mk'); }
+        function syncMkDn(){ return syncDn('mk'); }
+        function toggleMkDnEv(){ return toggleDnEv('mk'); }
+        function addMkDnRow(k,v){ return addDnRow('mk',k,v); }
+        function parseMkDn(){ return parseDn('mk'); }
+        // 页面就绪：把各页默认 DN 拆分到辅助字段
+        parseMkDn(); parseDn('sc'); parseDn('in');
+
 
         async function quickAction(path) {
           postForm(path, {}, 'dashOut');
@@ -4250,5 +4467,5 @@ public final class WebAdmin {
 
 
 """;
-    private static final String PAGE_HTML = PAGE_P1.concat(PAGE_P2);
+    private static final String PAGE_HTML = PAGE_P1.concat(PAGE_P1B).concat(PAGE_P2);
 }

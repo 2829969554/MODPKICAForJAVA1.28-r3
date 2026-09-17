@@ -74,8 +74,9 @@ public final class MakeRoot {
 
     public static void main(String[] args) throws Exception {
         if (args.length < 4) {
-            System.out.println("用法: MakeRoot \"DN(逗号分隔key=value)\" 密钥位数 哈希 算法");
-            System.out.println("示例: MakeRoot \"CN=Test Root CA,O=My Org,C=CN\" 2048 sha256 RSA");
+            System.out.println("用法: MakeRoot \"DN(逗号分隔key=value)\" 密钥位数 哈希 算法 [oid版本]");
+            System.out.println("示例: MakeRoot \"CN=Test Root CA,O=My Org,C=CN\" 2048 sha256 RSA old");
+            System.out.println("      oid版本可选：old=1.3.6.1.4.1.57264.1.8（缺省，SC27-2019） / new=2.23.140.3.1（EVG 2.0.1）");
             return;
         }
         run(AppPaths.baseDir(), args);
@@ -120,6 +121,15 @@ public final class MakeRoot {
         ContentSigner signer = CertUtil.createContentSigner(kp.getPrivate(), keyType, hash);
         JcaX509v3CertificateBuilder cb = new JcaX509v3CertificateBuilder(
                 subject, serial, notBefore, notAfter, subject, kp.getPublic());
+
+        // ---- 3b. CABF Organization Identifier 扩展（EVG 9.2.8：subject 含 2.5.4.97 时必须带此扩展） ----
+        String orgId = getDnField(dn, "2.5.4.97");
+        if (orgId != null && !orgId.isEmpty()) {
+            // 第 5 参数（可选）为扩展 OID 版本：new=2.23.140.3.1（EVG 2.0.1），缺省/old=1.3.6.1.4.1.57264.1.8（SC27-2019）
+            String orgOid = args.length > 4 && "new".equalsIgnoreCase(args[4].trim())
+                    ? CABF_ORG_ID_OID_NEW : CABF_ORG_ID_OID_OLD;
+            addCABFOrganizationIdentifier(cb, orgId, orgOid);
+        }
 
         // KeyUsage: digitalSignature(Go 1) | contentCommitment(Go 2) | keyCertSign(Go 32) | cRLSign(Go 64)
         // BC 位定义与 Go 不同，必须用 BC 常量：128|64|4|2
@@ -322,6 +332,88 @@ public final class MakeRoot {
                 new DistributionPointName(DistributionPointName.FULL_NAME, new GeneralNames(gn2)), null, null);
         cb.addExtension(Extension.cRLDistributionPoints, false,
                 new CRLDistPoint(new DistributionPoint[]{dp1, dp2}));
+    }
+
+    /**
+     * CABF Organization Identifier 扩展 OID。
+     *
+     * <p>2019 SC27 ballot 曾使用 IANA 57264 arc：1.3.6.1.4.1.57264.1.8；
+     * 最新 EVG 2.0.1 / BR 已将扩展迁移到 CA/B Forum 自有 arc：2.23.140.3.1。
+     * 两者 ASN.1 结构相同；依赖方按旧 OID 校验请保持现状，如需新版改此常量即可。
+     */
+    /** 旧版扩展 OID：2019 SC27 ballot（CABF IANA 57264 arc）。 */
+    private static final String CABF_ORG_ID_OID_OLD = "1.3.6.1.4.1.57264.1.8";
+    /** 新版扩展 OID：EVG 2.0.1 / BR（CA/B Forum 自有 arc 2.23.140.3.1）。 */
+    private static final String CABF_ORG_ID_OID_NEW = "2.23.140.3.1";
+
+    /** 从逗号分隔 DN 中提取指定 key（标准名或 OID）的值，未找到返回 null。 */
+    private static String getDnField(String dn, String key) {
+        for (String part : dn.split(",")) {
+            String p = part.trim();
+            int idx = p.indexOf('=');
+            if (idx <= 0) {
+                continue;
+            }
+            String k = p.substring(0, idx).trim();
+            if (k.equalsIgnoreCase(key)) {
+                return p.substring(idx + 1).trim().replace("%", " ");
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 生成 CABF Organization Identifier 扩展（EVG 7.1.2.2）。
+     *
+     * <p>subject:organizationIdentifier (2.5.4.97) 的值格式（EVG 7.1.4.2.8）：
+     * <pre>
+     *   {注册方案标识符 3字符}{国家码 2字符}[+{州省码 1-2字符}]-{注册参考号}
+     *   例：NTRGB-12345678、NTRUS+CA-12345678、VATDE-123456789、PSDBE-NBB-1234.567.890
+     * </pre>
+     * 最左侧连字符为分隔符，其余连字符属于注册参考号。
+     * 扩展 ASN.1：
+     * <pre>
+     *   CABFOrganizationIdentifier ::= SEQUENCE {
+     *       registrationSchemeIdentifier  PrintableString (SIZE(3)),
+     *       registrationCountry           PrintableString (SIZE(2)),
+     *       registrationStateOrProvince   [0] IMPLICIT PrintableString (SIZE(0..128)) OPTIONAL,
+     *       registrationReference         UTF8String
+     *   }
+     * </pre>
+     * 注册方案按 EVG 附录 H 目前仅 NTR / VAT / PSD 获认可；此处宽松接受任意 3 字符字母方案。
+     */
+    private static void addCABFOrganizationIdentifier(JcaX509v3CertificateBuilder cb, String orgId,
+                                                       String extOid) {
+        try {
+            java.util.regex.Matcher m = java.util.regex.Pattern
+                    .compile("^([A-Za-z]{3})([A-Za-z]{2})(?:\\+([A-Za-z0-9]{1,2}))?-([\\s\\S]+)$")
+                    .matcher(orgId.trim());
+            if (!m.matches()) {
+                System.out.println("警告: organizationIdentifier 格式不符合 EVG 7.1.4.2.8"
+                        + "（应如 NTRGB-12345678 / VATDE-123456789 / NTRUS+CA-12345678），"
+                        + "跳过 CABF Organization Identifier 扩展: " + orgId);
+                return;
+            }
+            String scheme = m.group(1).toUpperCase(Locale.ROOT);
+            String country = m.group(2).toUpperCase(Locale.ROOT);
+            String state = m.group(3); // 可为 null
+            String reference = m.group(4);
+            ASN1EncodableVector v = new ASN1EncodableVector();
+            v.add(new org.bouncycastle.asn1.DERPrintableString(scheme));
+            v.add(new org.bouncycastle.asn1.DERPrintableString(country));
+            if (state != null && !state.isEmpty()) {
+                v.add(new DERTaggedObject(false, 0,
+                        new org.bouncycastle.asn1.DERPrintableString(state.toUpperCase(Locale.ROOT))));
+            }
+            v.add(new DERUTF8String(reference));
+            cb.addExtension(new ASN1ObjectIdentifier(extOid), false, new DERSequence(v));
+            System.out.println("已生成 CABF Organization Identifier 扩展: scheme=" + scheme
+                    + " country=" + country
+                    + (state != null ? " stateOrProvince=" + state.toUpperCase(Locale.ROOT) : "")
+                    + " reference=" + reference);
+        } catch (Exception ex) {
+            System.out.println("警告: 生成 CABF Organization Identifier 扩展失败: " + ex.getMessage());
+        }
     }
 
     /**

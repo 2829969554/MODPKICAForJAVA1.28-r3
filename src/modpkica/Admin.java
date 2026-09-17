@@ -254,10 +254,16 @@ public final class Admin {
         return sb.toString();
     }
 
-    /** makeroot：签发根证书（签发后自动刷新 CRL）。 */
+    /** makeroot：签发根证书（签发后自动刷新 CRL），organizationIdentifier 扩展用旧版 OID。 */
     public static String doMakeRoot(String baseDir, String dn, String bit, String hash, String algo)
             throws Exception {
-        String[] ma = {dn, bit, hash, algo};
+        return doMakeRoot(baseDir, dn, bit, hash, algo, "old");
+    }
+
+    /** makeroot：可指定 organizationIdentifier 扩展 OID 版本（new=2.23.140.3.1 / old=1.3.6.1.4.1.57264.1.8）。 */
+    public static String doMakeRoot(String baseDir, String dn, String bit, String hash, String algo, String evoid)
+            throws Exception {
+        String[] ma = {dn, bit, hash, algo, evoid == null || evoid.isEmpty() ? "old" : evoid};
         String out = captureStdout(() -> MakeRoot.run(baseDir, ma));
         MLog.append(baseDir, "ADMIN makeroot",
                 "makeroot \"" + dn + "\" " + bit + " " + hash + " " + algo,
