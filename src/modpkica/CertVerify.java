@@ -1,7 +1,17 @@
 package modpkica;
 
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.DERNull;
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x509.CRLReason;
 import org.bouncycastle.asn1.x509.Extension;
 
@@ -17,6 +27,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.KeyFactory;
 import java.security.MessageDigest;
 import java.security.PublicKey;
 import java.security.Signature;
@@ -25,11 +36,17 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509CRL;
 import java.security.cert.X509CRLEntry;
 import java.security.cert.X509Certificate;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * CERTVERIFY —— 证书验证工具（对应 Go 版 cmd/certverify）。
@@ -438,7 +455,7 @@ public final class CertVerify {
                 }
             } else if (oid.equals("1.3.6.1.4.1.11129.2.4.2")) {
                 System.out.println("SCT列表:");
-                printSctList(value);
+                printSctList(cert, value);
             }
             return;
         }
@@ -461,7 +478,27 @@ public final class CertVerify {
      * SerializedSCT = version(1) + log_id(32) + timestamp(8) +
      * extensions(uint16+data) + hash_alg(1) + sig_alg(1) + signature(uint16+data)。
      */
-    private static void printSctList(byte[] value) {
+    private static void printSctList(X509Certificate cert, byte[] value) {
+        // 验证环境：CT 日志公钥 + 颁发者（用于 precert_entry 验签）
+        Map<String, String[]> logKeys = loadCtLogKeys();
+        X509Certificate issuer = null;
+        try {
+            boolean selfIssued = cert.getSubjectX500Principal().getName()
+                    .equals(cert.getIssuerX500Principal().getName());
+            issuer = selfIssued ? cert : fetchIssuerSilent(cert);
+        } catch (Exception ignore) {
+        }
+        byte[] issuerKeyHash = null;
+        byte[] tbsNoSct = null;
+        byte[] certDer = null;
+        if (issuer != null) {
+            try {
+                issuerKeyHash = sha256(issuer.getPublicKey().getEncoded());
+                tbsNoSct = tbsWithoutSctExt(cert);
+                certDer = cert.getEncoded();
+            } catch (Exception ignore) {
+            }
+        }
         // 扩展值是双重 OCTET STRING（BC addExtension 会再包一层；权威工具
         // X509JsonConverter 用 ext.getParsedValue() 解内层）。循环解开 0x04 外壳（最多 2 层）
         byte[] tls = value;
@@ -513,6 +550,15 @@ public final class CertVerify {
             byte[] signature = java.util.Arrays.copyOfRange(tls, p, p + sigLen);
             System.out.println("      第 " + no + " 条 SCT:");
             System.out.println("        日志版本:  V" + (version + 1));
+            String logDesc = "未知日志";
+            if (logKeys != null) {
+                String b64 = Base64.getEncoder().encodeToString(logId);
+                String[] lk = logKeys.get(b64);
+                if (lk != null && !lk[0].isEmpty()) {
+                    logDesc = lk[0];
+                }
+            }
+            System.out.println("        日志名称:  " + logDesc);
             System.out.println("      日志标识符:  " + hex(logId));
             System.out.println("          时间戳:  " + new Date(timestamp));
             if (extLen > 0) {
@@ -520,6 +566,9 @@ public final class CertVerify {
             }
             System.out.println("        签名类型:  " + sigName(hash, sigType));
             System.out.println("            签名:  " + hex(signature));
+            System.out.println("            状态:  " + sctStatus(logId, version, timestamp,
+                    extensions, hash, sigType, signature, logKeys, issuer,
+                    issuerKeyHash, tbsNoSct, certDer));
             System.out.println("");
             pos = s + sctLen;
             parsedAny = true;
@@ -532,8 +581,35 @@ public final class CertVerify {
     }
 
     private static String sigName(int hash, int type) {
-        String h = hash == 4 ? "SHA256" : "HASH" + hash;
-        String t = type == 3 ? "ECDSA" : "TYPE" + type;
+        // HashAlgorithm 枚举：RFC 5246 §7.4.1.4.1（0=none，1=MD5，2=SHA1，3=SHA224，
+        // 4=SHA256，5=SHA384，6=SHA512，7~255 保留；7=SM3 为国密 TLS GB/T 38636-2020
+        // 及 RFC 8998 在 TLS 1.3 中的扩展用法）
+        String h;
+        switch (hash) {
+            case 0: h = "none"; break;
+            case 1: h = "MD5"; break;
+            case 2: h = "SHA1"; break;
+            case 3: h = "SHA224"; break;
+            case 4: h = "SHA256"; break;
+            case 5: h = "SHA384"; break;
+            case 6: h = "SHA512"; break;
+            case 7: h = "SM3"; break;
+            default: h = "HASH" + hash;
+        }
+        // SignatureAlgorithm 枚举：RFC 5246 §7.4.1.4.1（0=anonymous，1=RSA，2=DSA，
+        // 3=ECDSA，4~255 保留）；SM2 在国密生态中有两种实际取值：
+        //   4 = 零信国密 CT 日志（sm2ct.cn，参考 RFC 6962 实现，生产证书实测）
+        //   7 = 国密 TLS GB/T 38636-2020 / RFC 8998 扩展
+        String t;
+        switch (type) {
+            case 0: t = "anonymous"; break;
+            case 1: t = "RSA"; break;
+            case 2: t = "DSA"; break;
+            case 3: t = "ECDSA"; break;
+            case 4: t = "SM2"; break;
+            case 7: t = "SM2"; break;
+            default: t = "TYPE" + type;
+        }
         return t + "-" + h;
     }
 
@@ -568,6 +644,20 @@ public final class CertVerify {
             return s.verify(cert.getSignature());
         } catch (Exception e) {
             return false;
+        }
+    }
+
+    /** 静默拉取颁发者证书（不打印证书链/信任状态），供 SCT 验签等内部使用。 */
+    private static X509Certificate fetchIssuerSilent(X509Certificate cert) {
+        try {
+            List<String> urls = aiaCaIssuers(cert);
+            if (urls.isEmpty()) {
+                return null;
+            }
+            byte[] data = httpGet(urls.get(0), 10000);
+            return data == null ? null : parseCert(data);
+        } catch (Exception e) {
+            return null;
         }
     }
 
@@ -979,4 +1069,310 @@ public final class CertVerify {
         }
         return sb.toString();
     }
+
+
+    // ============================================================
+    // SCT 列表签名验证（RFC 6962 / Certificate Transparency）
+    // ============================================================
+
+    /** 单条 SCT 结构化数据（RFC 6962 SerializedSCT）。 */
+    private static final class SctInfo {
+        int version;
+        byte[] logId;
+        long timestamp;
+        byte[] extensions;
+        int hashAlg;
+        int sigAlg;
+        byte[] signature;
+    }
+
+    /** SCT 扩展 OID（RFC 6962 3.2）。 */
+    private static final String SCT_EXT_OID = "1.3.6.1.4.1.11129.2.4.2";
+
+    /** 解析 TLS 编码的 SCT 列表。SCTList = uint16 totalLen + [uint16 sctLen + SerializedSCT]*。 */
+    private static List<SctInfo> parseSctListData(byte[] value) {
+        List<SctInfo> out = new ArrayList<>();
+        byte[] tls = value;
+        for (int i = 0; i < 2 && tls != null && tls.length > 0 && (tls[0] & 0xff) == 0x04; i++) {
+            byte[] inner = unwrapOctets(tls);
+            if (inner == tls) {
+                break;
+            }
+            tls = inner;
+        }
+        if (tls == null || tls.length < 2) {
+            return out;
+        }
+        int totalLen = ((tls[0] & 0xff) << 8) | (tls[1] & 0xff);
+        int pos = 2;
+        int end = Math.min(pos + totalLen, tls.length);
+        while (pos + 2 <= end) {
+            int sctLen = ((tls[pos] & 0xff) << 8) | (tls[pos + 1] & 0xff);
+            pos += 2;
+            if (sctLen < 47 || pos + sctLen > end) {
+                break;
+            }
+            int s = pos;
+            SctInfo info = new SctInfo();
+            info.version = tls[s] & 0xff;
+            info.logId = java.util.Arrays.copyOfRange(tls, s + 1, s + 33);
+            long timestamp = 0;
+            for (int i = 0; i < 8; i++) {
+                timestamp = (timestamp << 8) | (tls[s + 33 + i] & 0xff);
+            }
+            info.timestamp = timestamp;
+            int p = s + 41;
+            int extLen = ((tls[p] & 0xff) << 8) | (tls[p + 1] & 0xff);
+            p += 2;
+            info.extensions = extLen > 0
+                    ? java.util.Arrays.copyOfRange(tls, p, p + extLen) : new byte[0];
+            p += extLen;
+            if (p + 4 > s + sctLen) {
+                break;
+            }
+            info.hashAlg = tls[p++] & 0xff;
+            info.sigAlg = tls[p++] & 0xff;
+            int sigLen = ((tls[p] & 0xff) << 8) | (tls[p + 1] & 0xff);
+            p += 2;
+            if (p + sigLen > s + sctLen) {
+                break;
+            }
+            info.signature = java.util.Arrays.copyOfRange(tls, p, p + sigLen);
+            out.add(info);
+            pos = s + sctLen;
+        }
+        return out;
+    }
+
+    /**
+     * 计算单条 SCT 的验证状态（并入 SCT列表 详细输出）。
+     * 状态三态：签名有效 / 签名无效 / 未知日志，无法验证。
+     */
+    private static String sctStatus(byte[] logId, int version, long timestamp,
+                                    byte[] extensions, int hashAlg, int sigAlg,
+                                    byte[] signature, Map<String, String[]> logKeys,
+                                    X509Certificate issuer, byte[] issuerKeyHash,
+                                    byte[] tbsNoSct, byte[] certDer) {
+        String b64 = Base64.getEncoder().encodeToString(logId);
+        String[] lk = logKeys == null ? null : logKeys.get(b64);
+        if (lk == null) {
+            return "未知日志，无法验证。";
+        }
+        if (issuer == null || issuerKeyHash == null || tbsNoSct == null || certDer == null) {
+            return "未知日志，无法验证。";
+        }
+        try {
+            byte[] spki = Base64.getDecoder().decode(lk[1]);
+            SctInfo sct = new SctInfo();
+            sct.version = version;
+            sct.logId = logId;
+            sct.timestamp = timestamp;
+            sct.extensions = extensions;
+            sct.hashAlg = hashAlg;
+            sct.sigAlg = sigAlg;
+            sct.signature = signature;
+            boolean ok = verifySctSignature(
+                    buildSctInput(sct, issuerKeyHash, tbsNoSct, certDer, true), sct, spki);
+            if (!ok) {
+                ok = verifySctSignature(
+                        buildSctInput(sct, issuerKeyHash, tbsNoSct, certDer, false), sct, spki);
+            }
+            return ok ? "签名有效" : "签名无效";
+        } catch (Exception e) {
+            return "签名无效";
+        }
+    }
+
+    /** 构造 RFC 6962 3.2 的签名输入（precert=true 用 PreCert，否则用完整证书）。 */
+    private static byte[] buildSctInput(SctInfo sct, byte[] issuerKeyHash,
+                                        byte[] tbsNoSct, byte[] certDer, boolean precert)
+            throws IOException {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        bos.write(sct.version);                    // version（v1 = 0）
+        bos.write(0);                               // signature_type = certificate_timestamp
+        writeU64(bos, sct.timestamp);
+        if (precert) {
+            writeU16(bos, 1);                       // entry_type = precert_entry
+            bos.write(issuerKeyHash);               // issuer_key_hash（32 字节）
+            writeU24(bos, tbsNoSct.length);
+            bos.write(tbsNoSct);
+        } else {
+            writeU16(bos, 0);                       // entry_type = x509_entry
+            writeU24(bos, certDer.length);
+            bos.write(certDer);
+        }
+        writeU16(bos, sct.extensions.length);
+        bos.write(sct.extensions);
+        return bos.toByteArray();
+    }
+
+    /** 从证书 TBS 中移除 SCT 扩展（RFC 6962 3.1 PreCert.tbs_certificate）。 */
+    private static byte[] tbsWithoutSctExt(X509Certificate cert) throws Exception {
+        byte[] tbs = cert.getTBSCertificate();
+        ASN1Sequence seq = ASN1Sequence.getInstance(tbs);
+        ASN1EncodableVector v = new ASN1EncodableVector();
+        boolean removed = false;
+        for (int i = 0; i < seq.size(); i++) {
+            ASN1Encodable el = seq.getObjectAt(i);
+            if (el instanceof ASN1TaggedObject) {
+                ASN1TaggedObject tagged = (ASN1TaggedObject) el;
+                if (tagged.getTagNo() == 3) {
+                    ASN1Sequence extSeq = ASN1Sequence.getInstance(tagged, true);
+                    ASN1EncodableVector newExts = new ASN1EncodableVector();
+                    for (int j = 0; j < extSeq.size(); j++) {
+                        Extension ext = Extension.getInstance(extSeq.getObjectAt(j));
+                        if (!SCT_EXT_OID.equals(ext.getExtnId().getId())) {
+                            newExts.add(ext);
+                        } else {
+                            removed = true;
+                        }
+                    }
+                    // RFC 6962 3.1：tbs_certificate = 最终证书 TBS 删除 SCT 扩展（不含 poison）
+                    v.add(new DERTaggedObject(true, 3, new DERSequence(newExts)));
+                    continue;
+                }
+            }
+            v.add(el);
+        }
+        return removed ? new DERSequence(v).getEncoded() : tbs;
+    }
+
+    /** 用日志公钥（SPKI DER）验证 SCT 签名。hash/sig 为 TLS 算法枚举（RFC 5246 / RFC 8422）。 */
+    private static boolean verifySctSignature(byte[] input, SctInfo sct, byte[] spkiDer)
+            throws Exception {
+        int hash = sct.hashAlg;
+        int sig = sct.sigAlg;
+        if (sig == 3) { // ECDSA：实际日志多为 DER 签名（RFC 6962 亦允许 TLS 裸 r||s，兼容处理）
+            Signature s = Signature.getInstance("SHA" + tlsHashName(hash) + "withECDSA", "BC");
+            KeyFactory kf = KeyFactory.getInstance("EC");
+            s.initVerify(kf.generatePublic(new X509EncodedKeySpec(spkiDer)));
+            s.update(input);
+            if (s.verify(sct.signature)) {
+                return true; // DER 格式
+            }
+            try {
+                return s.verify(ecdsaRawToDer(sct.signature)); // TLS 裸 r||s 兼容
+            } catch (Exception ignore) {
+                return false;
+            }
+        }
+        if (sig == 1) { // RSA（RSASSA-PKCS1-v1_5）
+            Signature s = Signature.getInstance("SHA" + tlsHashName(hash) + "withRSA", "BC");
+            KeyFactory kf = KeyFactory.getInstance("RSA");
+            s.initVerify(kf.generatePublic(new X509EncodedKeySpec(spkiDer)));
+            s.update(input);
+            return s.verify(sct.signature);
+        }
+        if ((sig == 4 || sig == 7) && hash == 7) {
+            // SM2 / SM3：sig=7 为国密 TLS GB/T 38636-2020 / RFC 8998 枚举；
+            // sig=4 为零信国密 CT 日志（sm2ct.cn）实现枚举（生产证书实测，如 ZoTrus SM2 SSL Pro）
+            KeyFactory kf = KeyFactory.getInstance("EC", "BC");
+            PublicKey pub = kf.generatePublic(new X509EncodedKeySpec(spkiDer));
+            return Sm2Util.sm2Verify(Sm2Util.toEcPublicParams(pub), input, sct.signature);
+        }
+        return false;
+    }
+
+    /** TLS HashAlgorithm 枚举 → JCA 哈希数字后缀。 */
+    private static String tlsHashName(int hash) {
+        switch (hash) {
+            case 2:
+                return "1";     // SHA-1
+            case 4:
+                return "256";
+            case 5:
+                return "384";
+            case 6:
+                return "512";
+            default:
+                return "256";
+        }
+    }
+
+    /** TLS ECDSA 定长 r||s → DER SEQUENCE { INTEGER r, INTEGER s }。 */
+    private static byte[] ecdsaRawToDer(byte[] raw) throws Exception {
+        int half = raw.length / 2;
+        byte[] r = new byte[half];
+        byte[] s = new byte[half];
+        System.arraycopy(raw, 0, r, 0, half);
+        System.arraycopy(raw, half, s, 0, half);
+        ASN1EncodableVector v = new ASN1EncodableVector();
+        v.add(new ASN1Integer(new BigInteger(1, r)));
+        v.add(new ASN1Integer(new BigInteger(1, s)));
+        return new DERSequence(v).getEncoded();
+    }
+
+    /**
+     * Load CT log public keys: Google log_list v3 + local PKI/CTLOG/modpkica_ct_list.json (merged).
+     * Returns log_id(base64) -> [description, key(base64 SPKI)].
+     */
+
+    private static Map<String, String[]> loadCtLogKeys() {
+        String base = AppPaths.baseDir();
+        String[] candidates = {
+                base + "/log_list.json",
+                base + "/PKI/log_list.json",
+                base + "/PKI/WebPublic/log_list.json",
+                base + "/PKI/CTLOG/modpkica_ct_list.json"
+        };
+        Map<String, String[]> map = new HashMap<>();
+        Pattern pid = Pattern.compile("\"log_id\"\\s*:\\s*\"([^\"]+)\"");
+        Pattern pdesc = Pattern.compile("\"description\"\\s*:\\s*\"([^\"]+)\"");
+        Pattern pkey = Pattern.compile("\"key\"\\s*:\\s*\"([^\"]+)\"");
+        for (String c : candidates) {
+            Path p = Paths.get(c);
+            if (!Files.exists(p)) {
+                continue;
+            }
+            String json;
+            try {
+                json = new String(Files.readAllBytes(p), StandardCharsets.UTF_8);
+            } catch (IOException ignore) {
+                continue;
+            }
+            Matcher m = pid.matcher(json);
+            while (m.find()) {
+                int objStart = json.lastIndexOf("{", m.start());
+                int objEnd = json.indexOf("}", m.end());
+                if (objStart < 0) {
+                    objStart = 0;
+                }
+                if (objEnd < 0) {
+                    objEnd = json.length();
+                }
+                if (objEnd < objStart) {
+                    objEnd = json.length();
+                }
+                String seg = json.substring(objStart, objEnd);
+                Matcher km = pkey.matcher(seg);
+                if (!km.find()) {
+                    continue;
+                }
+                String desc = "";
+                Matcher dm = pdesc.matcher(seg);
+                if (dm.find()) {
+                    desc = dm.group(1);
+                }
+                map.put(m.group(1), new String[]{desc, km.group(1)});
+            }
+        }
+        return map.isEmpty() ? null : map;
+    }
+    private static void writeU16(ByteArrayOutputStream bos, int v) {
+        bos.write((v >>> 8) & 0xff);
+        bos.write(v & 0xff);
+    }
+
+    private static void writeU24(ByteArrayOutputStream bos, int v) {
+        bos.write((v >>> 16) & 0xff);
+        bos.write((v >>> 8) & 0xff);
+        bos.write(v & 0xff);
+    }
+
+    private static void writeU64(ByteArrayOutputStream bos, long v) {
+        for (int i = 7; i >= 0; i--) {
+            bos.write((int) ((v >>> (8 * i)) & 0xff));
+        }
+    }
+
 }

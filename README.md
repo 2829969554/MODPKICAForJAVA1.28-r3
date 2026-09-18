@@ -1,6 +1,6 @@
-# MODPKICA Java 复刻版 v1.20（BC 1.85 离线）
+# MODPKICA Java 复刻版 v1.23（BC 1.85 离线）
 
-> 使用 **Java + BouncyCastle 1.85** 离线复刻 Go 版 MODPKICA 全套 PKI 功能：X.509 证书签发、CRL 吊销列表、OCSP 在线状态、RFC3161 / Authenticode 时间戳、WebAdmin 浏览器管理面板。
+> 使用 **Java + BouncyCastle 1.85** 离线复刻 Go 版 MODPKICA 全套 PKI 功能：X.509 证书签发、CRL 吊销列表、OCSP 在线状态、RFC3161 / Authenticode 时间戳、RFC 6962 CT 日志服务（SCT 服务管理）、WebAdmin 浏览器管理面板。
 >
 > - **技术栈**：纯 `javac` 编译，无 Maven / Gradle，无网络依赖，离线可开发
 > - **依赖**：`BC185/` 目录下 BouncyCastle 1.85 全家桶（bcprov / bcpkix / bcutil / bcmail）+ `lib/`（pdfbox-app-3.0.4.jar）
@@ -83,6 +83,24 @@ PDF 文档签名分组选择「国密 GM/T 0031-2025」签章类型（下拉展�
 
 ![签名专区 GM0031](i.png)
 
+### 签名专区（签章图片素材示例）
+
+国密 PDF 电子签章（35275 / 38540 / 0031）需选择签章图片（png/jpg/bmp/gif），本图为内置示例签章 `stamp.png`（红色圆形电子签章：MODPKICA / 电子签章）。
+
+![签章素材](stamp.png)
+
+### SCT 服务管理（CT 日志密钥管理）
+
+「CT日志密钥管理」与「CT请求日志」选择夹布局；密钥管理：描述输入 + 生成 ECDSA / RSA / SM2 密钥对三按钮 + 刷新列表；密钥列表逐行显示 序号 / 描述 / 类型 / 日志公钥 ID / 状态（可用绿 / 不可用红）/ 创建时间 / 操作（删除 / 启用 / 暂停），密钥写入 `PKI/CTLOG/modpkica_ct_list.json`（v3 风格，`type` 字段区分 ECDSA/RSA/SM2，缺省 ECDSA）。
+
+![SCT服务管理](j.png)
+
+### 证书库（SCT 列表验签弹窗）
+
+证书库「验证」按钮弹窗的 SCT列表 区块：逐条显示 日志版本 / 日志名称 / 日志标识符 / 时间戳 / 签名类型 / 签名 / 状态（签名有效 / 签名无效 / 未知日志，无法验证）——SM2 证书的 SCT 由 SM2 日志密钥签名（SM2-SM3），状态显示"签名有效"。
+
+![SCT验签弹窗](k.png)
+
 ### 操作日志（logs.log 可视化）
 
 时间范围筛选（最近 1/6/12/24 小时、全部）、行数设置、自动刷新（3 秒）、手动刷新；每条日志含时间、时间戳、操作、命令、结果。
@@ -101,6 +119,7 @@ PDF 文档签名分组选择「国密 GM/T 0031-2025」签章类型（下拉展�
 - **RFC3161 时间戳**：`/rfc3161`（文档签名专用，SHA1 / SHA256 自适应）
 - **微软 Authenticode 时间戳**：`/timestamp`（SHA256）、`/timestamp/sha1`（SHA1）；请求体为 base64（容忍 CRLF / 末尾 NUL 等杂字符），响应为 PKCS#7 分离签名（eContent + signedAttrs 含 id-data 属性）
 - **自适应根 TSA**：SHA1 → 随机 `rsa_sha1` / `ecc_sha1`；SHA256 → 随机 `rsa_sha256` / `ecc_sha256`；SM3/SM2 → `sm2_sm3`
+- **CT 日志服务（RFC 6962）**：`/ct/add`（仅 POST），请求体为「PEM 预证书 + PEM 颁发者证书」，按 RFC 6962 §3.1 构造 precert_entry（issuer_key_hash + 去 poison TBS）→ 加载 `PKI/CTLOG/modpkica_ct_list.json` 中 usable 密钥签名 → 返回二进制 SCTList TLS 编码；**类型匹配选组**：SM2 预证书只选 usable 的 SM2 密钥，RSA/ECDSA 预证书只选 RSA+ECDSA 密钥，随机 ≤3 组（仅一组就签一组）；SCT 枚举 SM2=(7,4)（国密 CT 实现枚举，对齐零信 sm2ct.cn），ECDSA=(4,3)，RSA=(4,1)；每密钥一行追加 `PKI/CTLOG/ctlogs.txt`（`SCT待签名摘要||时间戳||终端SKI||终端AKI||日志公钥ID`）
 - **静态网页**：`/` 提供 `PKI/WebPublic` 下文件
 - **启动时自动刷新全部 CRL**
 - **内嵌 WebAdmin 管理面板**（管理端口见下）
@@ -115,7 +134,7 @@ PDF 文档签名分组选择「国密 GM/T 0031-2025」签章类型（下拉展�
 
 ### 4. MakeCert —— 签发下级证书
 
-支持签发中间 CA（类型 C）、终端证书（类型 E）；颁发者证书类型自动从 ROOT / CA 目录加载密钥对；支持 RSA / ECC / SM2、SHA1 / SHA256 / SHA384 / SHA512 / SM3；密钥用法、增强型密钥用法（EKU 编号或 OID）、证书策略、SAN、有效期自定义。
+支持签发中间 CA（类型 C）、终端证书（类型 E）；颁发者证书类型自动从 ROOT / CA 目录加载密钥对；支持 RSA / ECC / SM2、SHA1 / SHA256 / SHA384 / SHA512 / SM3；密钥用法、增强型密钥用法（EKU 编号或 OID）、证书策略、SAN、有效期自定义。**SCT 预证书流程**：签发服务器 / 客户端证书（EKU 含服务器/客户端认证）时，先签发含 poison 扩展（RFC 6962）的 SCT 预证书，POST 本机 `/ct/add` 获取 SCTList，嵌入 SCT 扩展（OID `1.3.6.1.4.1.11129.2.4.2`）二次签名生成最终证书（已移除自创 2.4.5 扩展）。
 
 ### 5. RootGetCrl —— 签发吊销列表
 
@@ -123,7 +142,7 @@ PDF 文档签名分组选择「国密 GM/T 0031-2025」签章类型（下拉展�
 
 ### 6. CertVerify —— 证书验证
 
-输入证书文件或序列号，打印证书全字段（版本、序列号、签名算法、DN、有效期、公钥、SKI/AKI、EKU、SAN、AIA、CRL 分发点、KeyUsage、基本约束、证书策略、扩展、SCT）、签名验证、证书链、CRL + OCSP 吊销状态、各类哈希。
+输入证书文件或序列号，打印证书全字段（版本、序列号、签名算法、DN、有效期、公钥、SKI/AKI、EKU、SAN、AIA、CRL 分发点、KeyUsage、基本约束、证书策略、扩展、SCT）、签名验证、证书链、CRL + OCSP 吊销状态、各类哈希。**SCT 列表逐条验签**（RFC 6962）：按 log_id 匹配日志公钥（本地 CTLOG 密钥库 + 权威 log_list.json），构造 precert_entry / x509_entry 待签名数据重算摘要，ECDSA（DER + 裸 r‖s 兼容）/ RSA / SM2（枚举 7,4 与 7,7 均支持）验签，输出 日志名称 / 日志标识符 / 时间戳 / 签名类型 / 状态（签名有效 / 签名无效 / 未知日志，无法验证）。
 
 ### 7. Auto —— 自动化命令
 
@@ -131,7 +150,7 @@ PDF 文档签名分组选择「国密 GM/T 0031-2025」签章类型（下拉展�
 
 ### WebAdmin —— 浏览器管理面板
 
-深色主题管理后台（13 个页面），详见下文。
+深色主题管理后台（15 个页面，含「SCT服务管理」），详见下文。
 
 ---
 
@@ -162,7 +181,8 @@ modpkica4JAVA/
 │   ├── CERTS.txt                 # 证书登记表
 │   ├── CONFIG.txt                # 系统配置
 │   └── logs.log                  # 操作日志（只追加）
-├── a.png ~ i.png                 # WebAdmin 界面截图（本文档配图）
+├── a.png ~ k.png                 # WebAdmin 界面截图（本文档配图）
+├── stamp.png                     # PDF 国密签章示例图片
 ├── README.md                     # 本文件
 └── 开发助手_源码分析.pdf          # 源码结构 / 运行流程 / 常量函数速查
 ```
@@ -178,7 +198,7 @@ modpkica4JAVA/
 | `RootGetCrl` | 主程序 5：生成全部 CRL |
 | `CertVerify` | 主程序 6：证书验证（详情 / 签名 / 链 / 吊销 / 哈希） |
 | `Auto` | 主程序 7：自动化（init / revoke / newcert） |
-| `WebAdmin` | 浏览器管理面板（8080 管理端口，14 页面，26 个 API） |
+| `WebAdmin` | 浏览器管理面板（8080 管理端口，15 页面，32 个 API） |
 | `Bc` | BC Provider 注册 |
 | `PemIO` | PEM 证书 / 私钥读写、密钥类型探测 |
 | `CertUtil` | 证书构建工具（SKI、扩展组装、私钥读取等） |
@@ -187,6 +207,7 @@ modpkica4JAVA/
 | `TimestampUtil` | RFC3161 与 Authenticode 时间戳（含 SM2→SM3） |
 | `Sm2Util` | 国密 SM2 签名 / 验签 / SM3 / ZA 计算 |
 | `SignTool` | EXE / PDF 签名与验证（Authenticode 手工 ASN.1、RFC3161/Authenticode 时间戳、Adobe 与国密 PDF 电子签章、SES_Signature 验证） |
+| `CtLog` | CT 日志密钥库 CRUD（ECDSA/RSA/SM2 多算法）、RFC 6962 预证书 SCT 签名、SCTList 编码、类型匹配选组（≤3 组）、`isSm2Precert` 判断 |
 | `CertsDB` | CERTS.txt 登记表加载 / 查询 / 刷新 |
 | `Config` | CONFIG.txt 配置加载 |
 | `MLog` | 追加式操作日志（时间 / 时间戳 / 操作 / 命令 / 结果） |
@@ -343,28 +364,29 @@ java ... modpkica.Auto newcert 序列号 E V 0 null 13fbe86586d1bca RSA
 
 启动 MAIN 或 WebAdmin 后，浏览器访问管理端口（默认 `http://localhost:8080`）。
 
-### 页面（13 个）
+### 页面（15 个）
 
 | 页面 | 功能 |
 |---|---|
 | 仪表盘 | 服务状态、证书链树（R→C→E，悬停详情、R 展开 / C 收起管理下级）、一键刷新 CRL / 签发 OCSP / 签发时间戳、最近日志 |
-| 证书库 | CERTS.txt 列表（类型中文：R=根证书 / C=CA证书 / E=终端证书；状态三色：V 正常绿 / R 已吊销深红 / N 未知橙；筛选、刷新）、序列号与颁发者序列号悬停悬浮窗、详情按钮（JSON 结构化证书信息）、验证按钮（弹窗三态：正常/已吊销/未知）、操作按钮（吊销证书 / 续签证书 / 密钥更换分组） |
+| 证书库 | CERTS.txt 列表（类型中文：R=根证书 / C=CA证书 / E=终端证书；状态三色：V 正常绿 / R 已吊销深红 / N 未知橙；筛选、刷新）、序列号与颁发者序列号悬停悬浮窗、详情按钮（JSON 结构化证书信息）、验证按钮（弹窗三态：正常/已吊销/未知 + SCT 列表逐条验签）、操作按钮（吊销证书 / 续签证书 / 密钥更换分组） |
 | 签发根证书 | 根证书参数表单 |
 | 签发证书 | 完整参数表单（DN / 类型 / 密钥算法 / 密钥位数联动 / 哈希 / KeyUsage / EKU / 有效期 / SAN） |
 | 吊销证书 | 按序列号 + 原因吊销 |
 | CRL 刷新 | 重新生成全部 CRL |
 | OCSP 签发 | 为全部 R/C 证书签发 OCSP 签名证书 |
 | 时间戳签发 | 签发时间戳证书 |
-| 证书验证 | 输入证书文件或序列号验证（证书策略识别含 SSL/代码签名/文档签名/TSA 等 OID） |
+| 证书验证 | 输入证书文件或序列号验证（证书策略识别含 SSL/代码签名/文档签名/TSA 等 OID；SCT 列表逐条验签，日志公钥源：本地 CTLOG 密钥库 + 权威 log_list.json） |
 | 初始化环境 | 清空重建（不会执行重置类脚本，由 WEB 面板提供） |
-| 系统配置 | 可视化读写 CONFIG.txt（WEBPORT / OCSP / CRL / CRT / CPS / CPS_Nonice 多行文本） |
+| 系统配置 | 可视化读写 CONFIG.txt（WEBPORT / SUPORT / OCSP / CRL / CRT / CPS / CPS_Nonice 多行文本） |
 | 操作日志 | logs.log 时间范围筛选 + 自动刷新 |
 | 调试专区 | 模拟 OCSP 请求（RFC 6960，CertID+Nonce，哈希算法可选 SHA1/256/384/512/SM3，验证响应签名与 Nonce 回显）+ 模拟时间戳请求（RFC 3161，随机数据按所选摘要算法构造 TimeStampReq，解析并验证 token 签名） |
+| SCT服务管理 | CT日志密钥管理（生成 ECDSA/RSA/SM2 密钥对、密钥列表 删除/启用/暂停，写 PKI/CTLOG/modpkica_ct_list.json）+ CT请求日志（只读 ctlogs.txt） |
 | 签名专区 | EXE 代码签名（时间戳类型 RFC3161/Authenticode + 时间戳地址可编辑下拉）+ PDF 文档签名（签章类型 Adobe/国密 35275/国密 38540/国密 0031 + 时间戳地址可编辑下拉），均含签名与验证 |
 
-### API（26 个）
+### API（32 个）
 
-`/api/status`、`/api/certs`、`/api/logs`、`/api/config`、`/api/chain`、`/api/certjson`、`/api/version`、`/api/issuers`、`/api/init`、`/api/makeroot`、`/api/signcert`、`/api/revoke`、`/api/restore`、`/api/rekey`、`/api/renew`、`/api/crl`、`/api/initocsp`、`/api/inittimestamp`、`/api/verify`、`/api/signcerts?kind=exe|pdf`（GET）、`/api/sign/exe`、`/api/sign/pdf`、`/api/verify/exe`、`/api/verify/pdf`、`/api/debug/ocsp`、`/api/debug/tsa`
+`/api/status`、`/api/certs`、`/api/logs`、`/api/config`、`/api/chain`、`/api/certjson`、`/api/version`、`/api/issuers`、`/api/init`、`/api/makeroot`、`/api/signcert`、`/api/revoke`、`/api/restore`、`/api/rekey`、`/api/renew`、`/api/crl`、`/api/initocsp`、`/api/inittimestamp`、`/api/verify`、`/api/signcerts?kind=exe|pdf`（GET）、`/api/sign/exe`、`/api/sign/pdf`、`/api/verify/exe`、`/api/verify/pdf`、`/api/debug/ocsp`、`/api/debug/tsa`、`/api/ctlog/list`、`/api/ctlog/logs`、`/api/ctlog/gen`、`/api/ctlog/delete`、`/api/ctlog/enable`、`/api/ctlog/pause`
 
 ---
 
@@ -383,6 +405,7 @@ java ... modpkica.Auto newcert 序列号 E V 0 null 13fbe86586d1bca RSA
 | `PKI/CERTS.txt` | 证书登记表 |
 | `PKI/CONFIG.txt` | 系统配置 |
 | `PKI/logs.log` | 操作日志 |
+| `PKI/CTLOG/` | CT 日志密钥库 `modpkica_ct_list.json`（v3 风格，含 type 字段）+ 请求日志 `ctlogs.txt`（只追加） |
 
 ---
 
@@ -482,6 +505,38 @@ A：离线 / 无外网环境会请求失败，但签名**不中断**——时间
 ---
 
 ## 更新记录
+- **v1.23（2026-09-19）——SCT 多算法选组修复 + 国密 SCT 枚举对齐生产生态**
+  - **修复 `isSm2Precert`（SM2 证书被误判为非 SM2）**：EC 公钥 SPKI 的算法 OID 固定为 `1.2.840.10045.2.1`（id-ecPublicKey），SM2 特性在 **named curve 参数 OID**（`1.2.156.10197.1.301` = sm2p256v1）——原实现只查外层算法 OID，SM2 证书永远匹配不到 → SCT 从 RSA/ECDSA 密钥池选组。修复：解析 SPKI ECParameters（SEQUENCE 首元素 / 裸 OID）取曲线 OID 判断；实测 `1135b7249`（SM2 曲线）=true、普通 ECC=false、RSA=false；新签发 SM2 证书 `1135b731c` 的 SCT 全部来自 SM2 池（SM2 TEST6/TEST2/TEST4，SM2-SM3，≤3 组）
+  - **国密 SCT 枚举对齐生产生态**：验证零信（ZoTrus）SM2 SSL Pro 生产证书 `demo3.crt` 发现其 SCT 由零信国密 CT 日志系统（sm2ct.cn，参考 RFC 6962 实现）签发，实测枚举为 **hash=7(SM3) + sig=4**——原代码 sigName 无 sig=4 映射（显示 `TYPE4-SM3`），验签也只认 (7,7) 组合
+    - `sigName` 补映射：**sig=4 → SM2**（国密 CT 实现枚举，生产证书实测）+ 保留 sig=7（GB/T 38636-2020 / RFC 8998 枚举）
+    - `verifySctSignature`：SM2 验签支持 **(7,4)** 与 **(7,7)** 两种组合
+    - `buildSerializedSct`：自家 SM2 签发枚举由 (7,7) 改为 **(7,4)**（对齐零信 sm2ct.cn 生产生态，外部验证器可识别）
+  - **demo3.crt 验证结论**：3 条 SCT 的 log_id（15f210e3…、735700ef…、78a41057…）公钥不在本地密钥库、也不在 Google 权威 log_list.json（26 条）——属零信私有国密 CT 日志，显示"未知日志，无法验证"为正常；如需验签需补充零信日志公钥
+  - **WebAdmin 截图更新**：新增 `j.png`（SCT服务管理 CT日志密钥管理）、`k.png`（证书库验证弹窗 SCT 列表验签）、`stamp.png`（国密签章素材示例）
+
+- **v1.22（2026-09-18）——新增「SCT服务管理」：RFC 6962 CT 日志服务器 + 签发证书嵌入 SCT**
+  - **新增 CtLog 核心类**（`src/modpkica/CtLog.java`）：CT 日志密钥库 CRUD（ECDSA-P256 密钥写入 `PKI/CTLOG/modpkica_ct_list.json`，v3 风格结构 `operators[].logs[]`，含 `private_key` 字段）、RFC 6962 §3.1 预证书签名（`issuer_key_hash = SHA-256(颁发者 SPKI DER)` + 去 poison TBS）、SCTList TLS 编码组装、`ctlogs.txt` 追加 / 读取、PEM 证书解析
+  - **MAIN 新增 `/ct/add` 路由**：仅 POST；请求体为 PEM 格式「终端预证书 + 中间证书」（按序解析 ≥2 张）；对每个 usable 密钥生成一条 SCT 并追加一行日志，返回二进制 SCTList
+  - **WebAdmin 新增「SCT服务管理」页面**（14 个页面）：
+    - 密钥管理分组：生成 ECDSA-P256 密钥对（写 modpkica_ct_list.json）、密钥列表（描述 / log_id / 状态 / 创建时间），每行「删除 / 启用 / 暂停」操作按钮（删除 = 从文件移除；启用 = usable；暂停 = disable）
+    - 请求日志分组：只读展示 `PKI/CTLOG/ctlogs.txt` 全部行（自带序号），格式 `SCT待签名数据取数据摘要||签名时的时间戳||终端证书使用者密钥标识符||终端证书授权密钥标识符||日志公钥的ID`
+  - **MakeCert 改造**：移除自创扩展 OID `1.3.6.1.4.1.11129.2.4.5`；签发非 CA 证书且 EKU 含服务器/客户端认证时，改为「签发含 poison 的 SCT 预证书 → POST 自身 /ct/add → 取回 SCTList 嵌入 SCT 扩展 → 二次签名生成最终证书」，证书包含标准 SCT 列表（OID `1.3.6.1.4.1.11129.2.4.2`，双重 OCTET STRING + TLS 编码）
+  - **冒烟测试（全部通过）**：MAIN 后台启动 → `/api/ctlog/gen` 生成密钥成功（log_id base64 = SHA-256(SPKI)）→ `MakeCert` 签发 `1135b42cc.crt`（颁发者 `1cdd332014ecd`）走真实 HTTP `/ct/add` → ctlogs.txt 正确追加一行 → 证书含 1 条 SCT（ECDSA-SHA256，DER 签名）→ 用本地 modpkica_ct_list.json 作为日志公钥源，CertVerify SCT 验签 **通过（precert_entry）**；demo1 / demo2 官方日志验签回归 2/2 通过不受影响
+  - **修复**：`loadKeys` 段解析原从 log_id 后截取导致 `description`（在 log_id 之前）丢失，改按本条 log 对象整体截取后逐字段提取；修复 WebAdmin 文本块常量池溢出（PAGE_* 拆 4 段，每段 ≤65535 字节）与 P2/P3 文本块边界（P2 结束引号被 P3 定义吞掉）问题
+
+- **v1.21（2026-09-18）——证书验证新增 SCT 列表签名验证（RFC 6962 / Certificate Transparency）**
+  - **功能**：Web 面板「证书验证」在原有 OCSP / CRL / 证书签名 / 证书链验证基础上，新增对证书 SCT 扩展（OID `1.3.6.1.4.1.11129.2.4.2`）中**每一组 SCT 的日志签名验证**——不再只是解析展示
+  - **日志公钥数据**：读取项目根目录 `log_list.json`（Google 官方 CT 日志公钥数据集 v3，权威远程地址 `https://www.gstatic.com/ct/log_list/v3/log_list.json`，已离线下载到项目根；也支持 `PKI/log_list.json`、`PKI/WebPublic/log_list.json` 备选位置）。按 `log_id` 匹配日志描述与 `key`（base64 SPKI DER），日志缺失时明确提示"log_list.json 中无此日志"
+  - **验证流程**：解析 SCT 扩展（双重 OCTET STRING 解壳 → SCTList）→ 逐条 SCT 提取版本 / log_id(32B) / 时间戳 / extensions / hashAlg / sigAlg / signature → 按 RFC 6962 §3.2 构造签名输入：`version + signature_type(0) + timestamp(8B) + entry_type(2B) + signed_entry + extensions(2B+数据)`
+    - **precert_entry**（Web PKI 绝大多数场景）：`issuer_key_hash(32B) = SHA-256(颁发者 SPKI DER)` + **TBS DER**——RFC 6962 §3.1 规定 `tbs_certificate` 为**最终证书 TBS 删除 SCT 扩展**（不含 poison 扩展），TBS 重建采用 BC 解析逐扩展剔除 SCT、其余原样保真重编码
+    - 失败时回退 **x509_entry**：`完整证书 DER`
+  - **算法支持**：ECDSA-SHA256（DER 签名 + TLS 裸 r‖s 兼容）、RSA（SHA1/256/384/512），SM2/SM3（RFC 8998 枚举）预留
+  - **输出**：逐条显示 `通过/失败 | 日志=描述 | 算法=ECDSA-SHA256 | 时间戳=...（precert_entry）`，末尾汇总"通过 N 条，失败 M 条"；结果打印 stdout，经现有链路自动联动 Web 面板验证弹窗展示
+  - **冒烟测试**（项目根样本）：
+    - `demo1.crt`（Google Trust Services WE2 签发 `*.gstatic.com`，2 条 SCT）：Google 'Xenon2027h1' 通过、Sectigo 'Tiger2027h1' 通过（precert_entry）✓
+    - `demo2.crt`（DigiCert 签发 `www.boc.cn`，3 条 SCT）：Google 'Argon2027h1'、DigiCert 'Wyvern2027h1'、DigiCert 'sphinx2027h1' 全部通过（precert_entry）✓
+  - **排查要点（供维护参考）**：SCT 验签曾全部失败，最终确认两个根因——① 错误地在 TBS 重建时补回 poison 扩展（RFC 6962 §3.1 明确 `tbs_certificate` **不含 poison**）；② ECDSA 签名曾按裸 r‖s 转换，而实际日志签名为 **DER 编码**（先直接验 DER，失败再回退裸格式）。修复后 5 条 SCT 全部通过
+
 
 - **v1.20（2026-09-17）——WebAdmin 改为多线程执行器 + 写操作串行锁**
   - **多线程响应**：`HttpServer` 执行器由单线程改为 8 线程固定线程池（`wa-worker` 守护线程）——读接口（status / certs / config / logs / chain / verify 等）并发响应，单个慢请求（如大日志）不再阻塞其他请求

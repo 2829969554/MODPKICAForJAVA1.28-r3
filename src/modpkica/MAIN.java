@@ -84,6 +84,7 @@ public final class MAIN {
         server.createContext("/timestamp/sha1", MAIN::handleTimestampSha1);
         server.createContext("/timestamp", MAIN::handleTimestampSha256);
         server.createContext("/rfc3161", MAIN::handleRfc3161);
+        server.createContext("/ct/add", MAIN::handleCtAdd);
         server.createContext("/", MAIN::handleFile);
         server.setExecutor(null);
         server.start();
@@ -547,6 +548,82 @@ public final class MAIN {
         }
     }
 
+
+    // ============================================================
+    // CT 日志服务（RFC 6962 / Certificate Transparency，/ct/add）
+    // ============================================================
+
+    /**
+     * /ct/add：仅接受 POST。请求体 = PEM 预证书（含 poison 扩展）+ PEM 颁发者（中间）证书。
+     * 按 RFC 6962 §3.1/§3.2 构造 precert_entry 签名输入，用 PKI/CTLOG/modpkica_ct_list.json
+     * 中全部 usable 日志密钥 ECDSA-P256 签名，返回 SCTList（TLS 编码，二进制），
+     * 可直接作为证书 1.3.6.1.4.1.11129.2.4.2 扩展的 OCTET STRING 内容。
+     * 每条密钥签发追加一行 PKI/CTLOG/ctlogs.txt 请求日志。
+     */
+    private static void handleCtAdd(HttpExchange ex) throws IOException {
+        if (!"POST".equalsIgnoreCase(ex.getRequestMethod())) {
+            sendText(ex, 200, "CT Log /ct/add: 仅支持 POST 方式（PEM 预证书 + PEM 颁发者证书）");
+            return;
+        }
+        byte[] req = readAll(ex.getRequestBody());
+        String remote = ex.getRemoteAddress() != null
+                ? ex.getRemoteAddress().getAddress().getHostAddress() : "?";
+        MLog.append(baseDir, "收到CTLog请求",
+                "来源=" + remote + " 路径=/ct/add 长度=" + req.length + "字节");
+        try {
+            java.util.List<X509Certificate> chain = CtLog.parsePemCerts(req);
+            if (chain.size() < 2) {
+                throw new IOException("请求体需要两个 PEM 证书块：预证书 + 颁发者（中间）证书，实际解析到 "
+                        + chain.size() + " 个");
+            }
+            X509Certificate precert = chain.get(0);
+            X509Certificate issuer = chain.get(1);
+
+            // RFC 6962 §3.1：tbs_certificate = 预证书 TBS 删除 poison 扩展
+            byte[] tbs = CtLog.tbsWithoutPoison(precert);
+            // issuer_key_hash = SHA-256(颁发者公钥 SPKI DER)
+            byte[] issuerKeyHash = CtLog.sha256(issuer.getPublicKey().getEncoded());
+
+            // 按预证书类型随机选出最多 3 组 usable 日志密钥（SM2 预证书→SM2 密钥；RSA/ECDSA→RSA/ECDSA）
+            boolean sm2Precert = CtLog.isSm2Precert(precert);
+            java.util.List<CtLog.LogKey> pool = CtLog.pickLogKeys(baseDir, sm2Precert);
+            byte[] sctList = CtLog.signSctList(baseDir, tbs, issuerKeyHash, pool);
+
+            // 请求日志：SCT待签名数据SHA256 || 毫秒时间戳 || 使用者SKI || 颁发者AKI || 日志公钥ID(base64)
+            String userSki = CtLog.extHex(precert, "2.5.29.14");
+            String issuerAki = CtLog.extHex(precert, "2.5.29.35");
+            StringBuilder l = new StringBuilder();
+            boolean first = true;
+            for (CtLog.LogKey k : pool) {
+                long ts = System.currentTimeMillis();
+                byte[] input = CtLog.buildSctInput(ts, tbs, issuerKeyHash);
+                if (!first) {
+                    l.append('\n');
+                }
+                l.append(CtLog.toHex(CtLog.sha256(input))).append("||").append(ts).append("||")
+                        .append(userSki).append("||").append(issuerAki).append("||").append(k.logId);
+                first = false;
+            }
+            if (l.length() > 0) {
+                CtLog.appendRequestLog(baseDir, l.toString());
+            }
+
+            log("CTLog /ct/add 预证书=" + precert.getSubjectX500Principal()
+                    + " 类型=" + (sm2Precert ? "SM2" : "RSA/ECDSA")
+                    + " 密钥组数=" + pool.size() + " 签发SCT列表 " + sctList.length + "字节");
+            MLog.append(baseDir, "CTLog签发SCT列表",
+                    "预证书=" + precert.getSubjectX500Principal() + " 颁发者="
+                            + issuer.getSubjectX500Principal()
+                            + " 类型=" + (sm2Precert ? "SM2" : "RSA/ECDSA") + " 密钥组数=" + pool.size(),
+                    "SCT列表=" + sctList.length + "字节，已写入 ctlogs.txt");
+            sendBytes(ex, sctList, "application/octet-stream");
+        } catch (Exception e) {
+            MLog.appendErr(baseDir, "CTLog请求异常", "路径=/ct/add 长度=" + req.length,
+                    String.valueOf(e));
+            log("CTLog 请求处理异常: " + e);
+            sendText(ex, 400, "CT Log 错误: " + e.getMessage());
+        }
+    }
     // ============================================================
     // 辅助函数
     // ============================================================

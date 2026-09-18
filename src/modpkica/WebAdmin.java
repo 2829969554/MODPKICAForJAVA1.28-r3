@@ -466,6 +466,32 @@ public final class WebAdmin {
                 case "/api/verify/pdf":
                     verifyAction(ex, true);
                     return;
+                case "/api/ctlog/list":
+                    if ("GET".equalsIgnoreCase(method)) {
+                        sendJson(ex, 200, ctlogListJson());
+                    } else {
+                        sendJson(ex, 405, Map.of("ok", false, "message", "仅支持 GET"));
+                    }
+                    return;
+                case "/api/ctlog/logs":
+                    if ("GET".equalsIgnoreCase(method)) {
+                        sendJson(ex, 200, ctlogLogsJson());
+                    } else {
+                        sendJson(ex, 405, Map.of("ok", false, "message", "仅支持 GET"));
+                    }
+                    return;
+                case "/api/ctlog/gen":
+                    runAction(ex, m -> ctlogGen(str(m, "desc"), str(m, "type")));
+                    return;
+                case "/api/ctlog/delete":
+                    runAction(ex, m -> ctlogDelete(str(m, "log_id")));
+                    return;
+                case "/api/ctlog/enable":
+                    runAction(ex, m -> ctlogSetState(str(m, "log_id"), "usable"));
+                    return;
+                case "/api/ctlog/pause":
+                    runAction(ex, m -> ctlogSetState(str(m, "log_id"), "disable"));
+                    return;
                 default:
                     sendJson(ex, 404, Map.of("ok", false, "message", "未知 API: " + path));
             }
@@ -2197,6 +2223,53 @@ public final class WebAdmin {
     }
 
     /** 发送 JSON 响应。 */
+    // ============================================================
+    // SCT 服务管理（CT 日志密钥 + 请求日志）
+    // ============================================================
+
+    /** /api/ctlog/list：密钥库列表（不含私钥）。 */
+    private static Map<String, Object> ctlogListJson() {
+        List<Map<String, Object>> keys = new ArrayList<>();
+        int i = 1;
+        for (CtLog.LogKey k : CtLog.loadKeys(baseDir)) {
+            keys.add(Map.of("index", i++, "description", k.description, "logId", k.logId,
+                    "state", k.state, "type", k.type, "created", k.created));
+        }
+        return Map.of("ok", true, "keys", keys);
+    }
+
+    /** /api/ctlog/logs：ctlogs.txt 全部行（只读）。 */
+    private static Map<String, Object> ctlogLogsJson() {
+        return Map.of("ok", true, "logs", CtLog.readLogs(baseDir));
+    }
+
+    /** /api/ctlog/gen：生成日志密钥对（type=ECDSA/RSA/SM2，缺省 ECDSA）并写入密钥库。 */
+    private static String ctlogGen(String desc, String type) throws Exception {
+        String t = type == null || type.isEmpty() ? "ECDSA" : type;
+        CtLog.LogKey k = CtLog.generateKey(baseDir, desc, t);
+        return "已生成 " + k.type + " CT 日志密钥对\nlog_id=" + k.logId
+                + "\n已写入 PKI/CTLOG/modpkica_ct_list.json";
+    }
+
+    /** /api/ctlog/delete：按 log_id 删除密钥对。 */
+    private static String ctlogDelete(String logId) {
+        if (logId == null || logId.isEmpty()) {
+            throw new IllegalArgumentException("缺少 log_id 参数");
+        }
+        return CtLog.deleteKey(baseDir, logId) ? "已删除该密钥对" : "未找到该 log_id";
+    }
+
+    /** /api/ctlog/enable、/api/ctlog/pause：修改密钥状态。 */
+    private static String ctlogSetState(String logId, String state) {
+        if (logId == null || logId.isEmpty()) {
+            throw new IllegalArgumentException("缺少 log_id 参数");
+        }
+        boolean ok = CtLog.setState(baseDir, logId, state);
+        if (!ok) {
+            return "未找到该 log_id";
+        }
+        return "usable".equals(state) ? "已启用（usable）" : "已暂停（disable）";
+    }
     private static void sendJson(HttpExchange ex, int code, Map<String, Object> map)
             throws IOException {
         StringBuilder sb = new StringBuilder("{");
@@ -2255,6 +2328,8 @@ public final class WebAdmin {
             throws IOException {
         byte[] msg = text.getBytes(StandardCharsets.UTF_8);
         ex.getResponseHeaders().set("Content-Type", contentType);
+        ex.getResponseHeaders().set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+        ex.getResponseHeaders().set("Pragma", "no-cache");
         ex.sendResponseHeaders(code, msg.length);
         try (OutputStream os = ex.getResponseBody()) {
             os.write(msg);
@@ -2382,7 +2457,7 @@ public final class WebAdmin {
           #main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
           #topbar { height: 56px; display: flex; align-items: center; gap: 14px; padding: 0 20px; background: var(--panel); border-bottom: 1px solid var(--border); }
           #topbar h1 { font-size: 16px; font-weight: 600; flex: 1; }
-          #content { flex: 1; overflow-y: auto; padding: 20px; }
+          #content { flex: 1; overflow-y: auto; min-height: 0; padding: 20px; }
           .page { display: none; }
           .page.active { display: block; }
           /* ===== 组件 ===== */
@@ -2525,6 +2600,7 @@ public final class WebAdmin {
             <a data-page="timestamp">时间戳签发</a>
             <a data-page="verify">证书验证</a>
             <a data-page="debug">调试专区</a>
+            <a data-page="ctlog">SCT服务管理</a>
             <a data-page="sign">签名专区</a>
             <a data-page="init">初始化环境</a>
             <a data-page="config">系统配置</a>
@@ -3254,13 +3330,69 @@ public final class WebAdmin {
         </div>
 
 
-    """;
+    
+            <!-- SCT 服务管理 -->
+            <div class="page" id="page-ctlog">
+              <style>
+                #ctKeysTable, #ctLogsTable { table-layout: fixed; width: 100%; }
+                #ctKeysTable th:nth-child(1) { width: 5%; }
+                #ctKeysTable th:nth-child(2) { width: 18%; }
+                #ctKeysTable th:nth-child(3) { width: 8%; }
+                #ctKeysTable th:nth-child(4) { width: 32%; }
+                #ctKeysTable th:nth-child(5) { width: 9%; }
+                #ctKeysTable th:nth-child(6) { width: 15%; }
+                #ctKeysTable th:nth-child(7) { width: 13%; }
+                #ctLogsTable th:nth-child(1) { width: 6%; }
+                #ctLogsTable th:nth-child(2) { width: 94%; }
+                /* 鍗曞厓鏍奸暱鍐呭鐢?td > div 妯悜婊氬姩澶勭悊锛屼笉鎹㈣ */
+                #ctKeysTable td > div, #ctLogsTable td > div { overflow-x: auto; min-height: 1.4em; white-space: nowrap; }
+                #ctKeysTable td:last-child > div { overflow: visible; white-space: nowrap; }
+                .ct-tabs { display: flex; gap: 6px; margin-bottom: 12px; border-bottom: 2px solid var(--border); }
+                .ct-tab { padding: 8px 18px; border: 1px solid var(--border); border-bottom: none; border-radius: 8px 8px 0 0; background: var(--panel); color: var(--text); cursor: pointer; font-size: 14px; font-weight: 600; }
+                .ct-tab.active { background: #2563eb; color: #fff; }
+              </style>
+              <div class="card">
+                <div class="ct-tabs">
+                  <button class="ct-tab active" id="ctTabBtnKeys" onclick="ctSwitchTab('keys')">CT 日志密钥管理</button>
+                  <button class="ct-tab" id="ctTabBtnLogs" onclick="ctSwitchTab('logs')">CT 请求日志</button>
+                </div>
+                <div id="ctPaneKeys">
+                  <div class="hint">MAIN 服务 /ct/add 按 RFC 6962 标准对预证书签发 SCT。密钥库：PKI/CTLOG/modpkica_ct_list.json（支持 ECDSA-P256 / RSA-2048 / SM2-P256，结构参考 Google log_list v3；状态 usable=启用 / disable=暂停）。</div>
+                  <div class="toolbar">
+                    <input id="ctDesc" placeholder="密钥描述（可选），例如 MODPKICA CT Log 1" style="flex:1;max-width:340px">
+                    <button onclick="genCtKey('ECDSA')">生成 ECDSA 密钥对</button>
+                    <button onclick="genCtKey('RSA')">生成 RSA 密钥对</button>
+                    <button onclick="genCtKey('SM2')">生成 SM2 密钥对</button>
+                    <span id="ctMsg" style="margin-left:12px;font-size:12px"></span>
+                    <button class="ghost" onclick="loadCtKeys()">刷新列表</button>
+                  </div>
+                  <div style="overflow:auto;max-height:52vh">
+                    <table id="ctKeysTable">
+                      <thead><tr><th>#</th><th>描述</th><th>类型</th><th>日志公钥 ID（log_id）</th><th>状态</th><th>创建时间</th><th>操作</th></tr></thead>
+                      <tbody></tbody>
+                    </table>
+                  </div>
+                </div>
+                <div id="ctPaneLogs" style="display:none">
+                  <div class="hint">每行格式：SCT待签名数据SHA256 || 签名毫秒时间戳 || 使用者SKI || 颁发者AKI || 日志公钥ID(base64)，只追加不删除。</div>
+                  <div class="toolbar"><button class="ghost" onclick="loadCtLogs()">刷新日志</button></div>
+                  <div style="overflow:auto;max-height:52vh">
+                    <table id="ctLogsTable">
+                      <thead><tr><th>序号</th><th>内容</th></tr></thead>
+                      <tbody></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+""";
     private static final String PAGE_P2 = """
         <script>
         // ===== 工具 =====
-        const $ = id => document.getElementById(id);
+                window.addEventListener('error', function(e){ var d=document.getElementById('jsErr'); if(!d){ d=document.createElement('div'); d.id='jsErr'; d.style.cssText='position:fixed;bottom:10px;right:10px;background:#7f1d1d;color:#fecaca;padding:8px 12px;border-radius:8px;font-size:12px;z-index:99999;max-width:60vw;white-space:pre-wrap'; document.body.appendChild(d); } d.textContent='JS Error: '+(e.message||e); setTimeout(function(){d.remove()},8000); });
+const $ = id => document.getElementById(id);
         const v = id => $(id).value.trim();
-        const TITLES = { dashboard:'仪表盘', certs:'证书库', makeroot:'签发根证书', signcert:'签发证书', revoke:'吊销证书', crl:'CRL 刷新', ocsp:'OCSP 签发', timestamp:'时间戳签发', verify:'证书验证', debug:'调试专区', sign:'签名专区', init:'初始化环境', config:'系统配置', logs:'操作日志' };
+        const TITLES = { dashboard:'仪表盘', certs:'证书库', makeroot:'签发根证书', signcert:'签发证书', revoke:'吊销证书', crl:'CRL 刷新', ocsp:'OCSP 签发', timestamp:'时间戳签发', verify:'证书验证', debug:'调试专区', ctlog:'SCT服务管理', sign:'签名专区', init:'初始化环境', config:'系统配置', logs:'操作日志' };
 
         async function api(path, body) {
           const opt = { method: body ? 'POST' : 'GET', headers: {} };
@@ -3364,35 +3496,6 @@ public final class WebAdmin {
 
         async function quickAction(path) {
           postForm(path, {}, 'dashOut');
-        }
-
-        // ===== 调试专区：模拟 OCSP / 时间戳请求 =====
-        async function sendDebugOcsp() {
-          const out = $('dbgOcspOut');
-          out.hidden = false; out.className = 'out'; out.textContent = '正在构造标准 OCSP 请求并发送...';
-          try {
-            const r = await api('/api/debug/ocsp', {
-              serial: $('dbgOcspSerial').value.trim(),
-              hash: $('dbgOcspHash').value
-            });
-            out.className = 'out ' + (r.ok ? 'ok' : 'err');
-            out.textContent = r.message || '(无输出)';
-          } catch (e) {
-            out.className = 'out err';
-            out.textContent = '请求失败: ' + e;
-          }
-        }
-        async function sendDebugTsa() {
-          const out = $('dbgTsaOut');
-          out.hidden = false; out.className = 'out'; out.textContent = '正在构造标准 RFC3161 请求并发送...';
-          try {
-            const r = await api('/api/debug/tsa', { hash: $('dbgTsaHash').value });
-            out.className = 'out ' + (r.ok ? 'ok' : 'err');
-            out.textContent = r.message || '(无输出)';
-          } catch (e) {
-            out.className = 'out err';
-            out.textContent = '请求失败: ' + e;
-          }
         }
 
         // ===== 签名专区：微软代码签名 / PDF 文档签名 =====
@@ -3763,7 +3866,8 @@ public final class WebAdmin {
             if (p === 'certs') { loadCerts(); loadIssuers(); }
             if (p === 'config') loadConfig();
             if (p === 'logs') loadLogs();
-            if (p === 'sign') loadSignCerts();          };
+            if (p === 'sign') loadSignCerts();
+            if (p === 'ctlog') loadCtLog();          };
         });
 
         // ===== 仪表盘 =====
@@ -4038,7 +4142,7 @@ public final class WebAdmin {
         // 从验证输出文本解析证书状态：正常 / 已吊销（含原因）/ 未知（实时数据获取失败）
         function parseVerifyState(text) {
           const t = text || '';
-          if (/无法|失败|未知|None|解析失败/.test(t)) {
+          if (/无法|未知|None|解析失败|失败(?!\s*[0-9]+\s*个)/.test(t)) {
             return { k: 'unknown', badge: '未知', txt: '证书有效，因实时数据获取失败无法进行权威校验' };
           }
           if (t.includes('已吊销') || t.includes('已被')) {
@@ -4461,11 +4565,113 @@ public final class WebAdmin {
         });
         </script>
         </body>
-        </html>
         
 
 
 
-""";
-    private static final String PAGE_HTML = PAGE_P1.concat(PAGE_P1B).concat(PAGE_P2);
+
+    """;
+    private static final String PAGE_P3 = """
+        <script>
+        // ===== 调试专区：模拟 OCSP / 时间戳请求 =====
+        async function sendDebugOcsp() {
+          const out = $('dbgOcspOut');
+          out.hidden = false; out.className = 'out'; out.textContent = '正在构造标准 OCSP 请求并发送...';
+          try {
+            const r = await api('/api/debug/ocsp', {
+              serial: $('dbgOcspSerial').value.trim(),
+              hash: $('dbgOcspHash').value
+            });
+            out.className = 'out ' + (r.ok ? 'ok' : 'err');
+            out.textContent = r.message || '(无输出)';
+          } catch (e) {
+            out.className = 'out err';
+            out.textContent = '请求失败: ' + e;
+          }
+        }
+        async function sendDebugTsa() {
+          const out = $('dbgTsaOut');
+          out.hidden = false; out.className = 'out'; out.textContent = '正在构造标准 RFC3161 请求并发送...';
+          try {
+            const r = await api('/api/debug/tsa', { hash: $('dbgTsaHash').value });
+            out.className = 'out ' + (r.ok ? 'ok' : 'err');
+            out.textContent = r.message || '(无输出)';
+          } catch (e) {
+            out.className = 'out err';
+            out.textContent = '请求失败: ' + e;
+          }
+        }
+
+        // ===== SCT 服务管理 =====
+        async function loadCtLog() { loadCtKeys(); loadCtLogs(); }
+        function ctSwitchTab(t) {
+          document.getElementById('ctTabBtnKeys').className = 'ct-tab' + (t==='keys' ? ' active' : '');
+          document.getElementById('ctTabBtnLogs').className = 'ct-tab' + (t==='logs' ? ' active' : '');
+          document.getElementById('ctPaneKeys').style.display = t==='keys' ? '' : 'none';
+          document.getElementById('ctPaneLogs').style.display = t==='logs' ? '' : 'none';
+          if (t==='keys') loadCtKeys(); else loadCtLogs();
+        }
+        async function loadCtKeys() {
+          try {
+            const r = await api('/api/ctlog/list');
+            if (!r.ok) return;
+            const tb = $('ctKeysTable').querySelector('tbody');
+            tb.innerHTML = '';
+            (r.keys || []).forEach(k => {
+              const tr = document.createElement('tr');
+              const stTxt = k.state === 'usable' ? '可用（usable）' : '不可用（disable）';
+              const stCls = k.state === 'usable' ? 'color:var(--ok);font-weight:700' : 'color:#dc2626;font-weight:700';
+              tr.innerHTML = '<td><div>' + k.index + '</div></td>' +
+                '<td><div>' + esc(k.description) + '</div></td>' +
+                '<td><div>' + esc(k.type || 'ECDSA') + '</div></td>' +
+                '<td><div style="font-family:var(--mono);font-size:12px">' + esc(k.logId) + '</div></td>' +
+                '<td><div style="' + stCls + '">' + esc(stTxt) + '</div></td>' +
+                '<td><div>' + esc(k.created) + '</div></td>' +
+                '<td><div><button class="ghost" onclick="delCtKey(\\'' + esc(k.logId) + '\\')">删除</button> ' +
+                '<button class="ghost" onclick="setCtState(\\'' + esc(k.logId) + '\\',\\'usable\\')">启用</button> ' +
+                '<button class="ghost" onclick="setCtState(\\'' + esc(k.logId) + '\\',\\'disable\\')">暂停</button></div></td>';
+              tb.appendChild(tr);
+            });
+          } catch (e) { const tb = $('ctKeysTable'); if (tb) tb.innerHTML = '<tr><td colspan="7" style="color:#dc2626;padding:8px">加载失败: ' + (e && e.message ? e.message : e) + '</td></tr>'; }
+        }
+        async function loadCtLogs() {
+          try {
+            const r = await api('/api/ctlog/logs');
+            if (!r.ok) return;
+            const tb = $('ctLogsTable').querySelector('tbody');
+            tb.innerHTML = '';
+            (r.logs || []).forEach((line, i) => {
+              const tr = document.createElement('tr');
+              tr.innerHTML = '<td><div style="color:var(--dim)">' + (i + 1) + '</div></td>' +
+                '<td><div style="font-family:var(--mono);font-size:12px">' + esc(line) + '</div></td>';
+              tb.appendChild(tr);
+            });
+          } catch (e) { const tb = $('ctLogsTable'); if (tb) tb.innerHTML = '<tr><td colspan="2" style="color:#dc2626;padding:8px">加载失败: ' + (e && e.message ? e.message : e) + '</td></tr>'; }
+        }
+        async function genCtKey(type) {
+          const desc = $('ctDesc').value.trim();
+          $('ctDesc').value = '';
+          const r = await api('/api/ctlog/gen', { desc: desc, type: type || 'ECDSA' });
+          if (r.ok) { loadCtKeys(); ctTip('密钥对生成成功'); } else { ctTip('生成失败: ' + (r.message || ''), false); }
+        }
+        async function delCtKey(id) {
+          const r = await api('/api/ctlog/delete', { log_id: id });
+          if (r.ok) { loadCtKeys(); ctTip('密钥对已删除'); } else { ctTip('删除失败: ' + (r.message || ''), false); }
+        }
+        async function setCtState(id, state) {
+          const r = await api(state === 'usable' ? '/api/ctlog/enable' : '/api/ctlog/pause', { log_id: id });
+          if (r.ok) { loadCtKeys(); ctTip(state === 'usable' ? '密钥已启用' : '密钥已暂停'); } else { ctTip('操作失败: ' + (r.message || ''), false); }
+        }
+        function ctTip(msg, ok) {
+          const el = $('ctMsg');
+          if (!el) return;
+          el.textContent = msg;
+          el.style.color = ok === false ? '#dc2626' : 'var(--ok)';
+          clearTimeout(ctTip._t);
+          ctTip._t = setTimeout(() => { el.textContent = ''; }, 3500);
+        }
+        </script>
+        </html>
+    """;
+    private static final String PAGE_HTML = PAGE_P1.concat(PAGE_P1B).concat(PAGE_P2).concat(PAGE_P3);
 }

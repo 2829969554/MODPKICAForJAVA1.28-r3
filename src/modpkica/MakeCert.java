@@ -3,6 +3,7 @@ package modpkica;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.DEROctetString;
@@ -287,9 +288,13 @@ public final class MakeCert {
                     } catch (NumberFormatException ignored) {
                         // 不是编号，走 OID 解析
                     }
-                    // 2) OID 格式：数字点分（如 1.3.6.1.5.5.7.3.1），直接作为增强型密钥用法
+                    // 2) OID 格式：数字点分（如 1.3.6.1.5.5.7.3.1），直接作为增强型密钥用法；
+                    //    含服务器身份验证(1.3.6.1.5.5.7.3.1)/客户端身份验证(1.3.6.1.5.5.7.3.2)必须携带 SCT 列表
                     if (isValidOid(t)) {
                         unknownEku.add(new ASN1ObjectIdentifier(t));
+                        if ("1.3.6.1.5.5.7.3.1".equals(t) || "1.3.6.1.5.5.7.3.2".equals(t)) {
+                            needCt = true;
+                        }
                     }
                 }
             }
@@ -300,30 +305,16 @@ public final class MakeCert {
         ContentSigner signer = CertUtil.createContentSigner(issuerKey, rootAlgo,
                 "SM2".equals(rootAlgo) ? "sm3" : hash);
 
-        JcaX509v3CertificateBuilder cb = new JcaX509v3CertificateBuilder(
-                X500Name.getInstance(issuerCert.getSubjectX500Principal().getEncoded()),
-                serial, notBefore, notAfter, subject, certKp.getPublic());
-
-        cb.addExtension(Extension.basicConstraints, true, new BasicConstraints(isCa));
-        cb.addExtension(Extension.keyUsage, true, new KeyUsage(keyUsage));
+        // ---- 证书构建（RFC 6962 流程）----
+        // 需 CT 透明度时：先构建含 poison 扩展的 SCT 预证书 → 提交自身 CT 日志
+        // /ct/add 取回 SCT 列表 → 重建（去 poison、加 SCT 扩展）签发最终证书。
+        // 其它场景直接一次构建签发。
         byte[] issuerSki = CertUtil.getSubjectKeyIdentifier(issuerCert.getPublicKey());
-        cb.addExtension(Extension.authorityKeyIdentifier, false, new AuthorityKeyIdentifier(issuerSki));
-        cb.addExtension(Extension.subjectKeyIdentifier, false,
-                new SubjectKeyIdentifier(CertUtil.getSubjectKeyIdentifier(certKp.getPublic())));
-
-        // AIA / CRL
+        byte[] userSki = CertUtil.getSubjectKeyIdentifier(certKp.getPublic());
         String serialHex = serial.toString(16);
         String ocspUrl = cfg.getOcspUrl();
         String crtUrl = cfg.getCrtUrl().replace("{CID}", issuerCert.getSerialNumber().toString(16));
         String crlUrl = cfg.getCrlUrl().replace("{CID}", issuerCert.getSerialNumber().toString(16));
-        addAuthorityInfoAccess(cb, ocspUrl, crtUrl);
-        addCrlDistributionPoints(cb, crlUrl);
-
-        // EKU 扩展
-        if (!eku.isEmpty() || !unknownEku.isEmpty()) {
-            cb.addExtension(Extension.extendedKeyUsage, isTsa,
-                    ExtendedKeyUsage.getInstance(buildEkuSequence(eku, unknownEku)));
-        }
 
         // CPS 证书策略扩展（参考 smplus 组合方式：CertificatePolicies 标准类，一次生成不重复）
         // 合成：带 CPS URI + UserNotice 限定符的策略 + 其余纯 OID 策略
@@ -348,23 +339,37 @@ public final class MakeCert {
         // CONFIG 中字面 \n 转真实换行（配置页以单行 \n 存储，证书内需真实换行）
         cpsText = cpsText.replace("\\n", "\n");
         CertificatePolicies certPolicies = buildCpsPolicies(cpsOids, cfg.getCps(), cpsText);
-        cb.addExtension(Extension.certificatePolicies, false, certPolicies);
 
-        // SAN：域名 / IP
-        addSan(cb, a.length >= 8 ? a[7] : null, a.length >= 9 ? a[8] : null);
+        X500Name issuerName = X500Name.getInstance(
+                issuerCert.getSubjectX500Principal().getEncoded());
+        String dnsArg = a.length >= 8 ? a[7] : null;
+        String ipsArg = a.length >= 9 ? a[8] : null;
 
-        // initOCSP 专属扩展：OCSP 不撤销检查（1.3.6.1.5.5.7.48.1.5 = 05 00）
-        if (isOcsp) {
-            cb.addExtension(new ASN1ObjectIdentifier("1.3.6.1.5.5.7.48.1.5"), false,
-                    new DEROctetString(new byte[]{0x05, 0x00}));
-        }
-
-        // CT 透明度扩展（非CA + 域名SSL用途）
+        X509CertificateHolder holder;
         if (needCt && !isCa) {
-            addCtExtensions(cb, issuerSki, CertUtil.getSubjectKeyIdentifier(certKp.getPublic()));
+            // 1) SCT 预证书：全部扩展 + poison（critical，RFC 6962 §3.1）
+            JcaX509v3CertificateBuilder cbPre = buildCertBuilder(
+                    issuerName, serial, notBefore, notAfter, subject, certKp.getPublic(),
+                    isCa, keyUsage, issuerSki, userSki, eku, unknownEku, isTsa, isOcsp,
+                    ocspUrl, crtUrl, crlUrl, certPolicies, dnsArg, ipsArg, true);
+            X509CertificateHolder precert = cbPre.build(signer);
+            // 2) 提交自身 CT 日志服务 /ct/add（PEM 预证书 + PEM 颁发者），取回 SCT 列表
+            byte[] sctList = CtLog.submitPrecert(baseDir, precert, issuerCert, cfg.getWebPort());
+            // 3) 最终证书：重建（无 poison）+ SCT 列表扩展（1.3.6.1.4.1.11129.2.4.2）
+            JcaX509v3CertificateBuilder cbFin = buildCertBuilder(
+                    issuerName, serial, notBefore, notAfter, subject, certKp.getPublic(),
+                    isCa, keyUsage, issuerSki, userSki, eku, unknownEku, isTsa, isOcsp,
+                    ocspUrl, crtUrl, crlUrl, certPolicies, dnsArg, ipsArg, false);
+            cbFin.addExtension(new ASN1ObjectIdentifier(CtLog.OID_SCT), false,
+                    new DEROctetString(sctList));
+            holder = cbFin.build(signer);
+        } else {
+            holder = buildCertBuilder(
+                    issuerName, serial, notBefore, notAfter, subject, certKp.getPublic(),
+                    isCa, keyUsage, issuerSki, userSki, eku, unknownEku, isTsa, isOcsp,
+                    ocspUrl, crtUrl, crlUrl, certPolicies, dnsArg, ipsArg, false)
+                    .build(signer);
         }
-
-        X509CertificateHolder holder = cb.build(signer);
         X509Certificate cert = new JcaX509CertificateConverter().setProvider("BC")
                 .getCertificate(holder);
 
@@ -788,114 +793,48 @@ public final class MakeCert {
         return new CertificatePolicies(infos.toArray(new PolicyInformation[0]));
     }
 
-    /** CT 透明度扩展（SCT 列表 + CT Log 公钥），对齐 Go 版 internal/ct。 */
-    private void addCtExtensions(JcaX509v3CertificateBuilder cb, byte[] issuerSki,
-                                 byte[] userSki) throws Exception {
-        // Go 版：sctpriid = priid + subid[:12]，sctsubid = subid + priid[:12]
-        byte[] sctPriId = concat(issuerSki, slice(userSki, 0, 12));
-        byte[] sctSubId = concat(userSki, slice(issuerSki, 0, 12));
-        byte[] logId3 = hexToBytes("12f14e34bd53724c840619c38f3f7a13f8e7b56287889c6d300584ebe586263a");
-        long ts = System.currentTimeMillis();
-        // 3 组 SCT：待签名数据相同（sctpriid+sctsubid），LogID 各不相同
-        byte[] sct1 = buildSct(sctPriId, sctPriId, sctSubId, ts);
-        byte[] sct2 = buildSct(sctSubId, sctPriId, sctSubId, ts);
-        byte[] sct3 = buildSct(logId3, sctPriId, sctSubId, ts);
-        byte[] sctList = buildSctList(sct1, sct2, sct3);
-        cb.addExtension(new ASN1ObjectIdentifier("1.3.6.1.4.1.11129.2.4.2"), false,
-                new DEROctetString(sctList));
-        // CT Log 公钥扩展（3 个临时公钥，00 00 间隔）
-        cb.addExtension(new ASN1ObjectIdentifier("1.3.6.1.4.1.11129.2.4.5"), false,
-                new DEROctetString(sctPublicKeys));
-    }
-
-    private byte[] sctPublicKeys = new byte[0];
-
     /**
-     * 生成单个 SCT 字节（对齐 Go 版 SCTGenerateSignature + CreateSCT）。
+     * 构建证书构建器并添加全部扩展（CPS 策略 / AIA / CRL / SAN / EKU / 专属扩展）。
      *
-     * @param logId  SCT 日志 ID（32 字节）
-     * @param id1    待签名数据第 1 段（颁发者公钥 SHA256）
-     * @param id2    待签名数据第 2 段（使用者公钥 SHA256）
-     * @param ts     UTC 毫秒时间戳
+     * @param addPoison true = RFC 6962 §3.1 poison 扩展（critical，extnValue = OCTET STRING 05 00）
+     *                  —— 仅用于 SCT 预证书；false = 普通证书
      */
-    private byte[] buildSct(byte[] logId, byte[] id1, byte[] id2, long ts) throws Exception {
-        java.security.KeyPairGenerator kpg = java.security.KeyPairGenerator.getInstance("EC", "BC");
-        kpg.initialize(new java.security.spec.ECGenParameterSpec("secp256r1"));
-
-        // 待签名数据：id1 + id2 + 00 00 + 时间戳(8字节)，整体 SHA256
-        java.io.ByteArrayOutputStream pre = new java.io.ByteArrayOutputStream();
-        pre.write(id1);
-        pre.write(id2);
-        pre.write(new byte[]{0x00, 0x00});
-        byte[] tsBytes = longTo8Bytes(ts);
-        pre.write(tsBytes);
-        java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
-        byte[] hash = md.digest(pre.toByteArray());
-
-        // ECDSA P256 签名（ASN1），签名中不能含 0x00 字节（Go 版循环重签）
-        java.security.KeyPair kp;
-        byte[] signature;
-        byte[] pubKeyDer;
-        while (true) {
-            kp = kpg.generateKeyPair();
-            pubKeyDer = kp.getPublic().getEncoded();
-            java.security.Signature sig = java.security.Signature.getInstance("SHA256withECDSA");
-            sig.initSign(kp.getPrivate());
-            sig.update(hash);
-            signature = sig.sign();
-            if (!contains(signature, (byte) 0x00)) {
-                break;
-            }
+    private JcaX509v3CertificateBuilder buildCertBuilder(X500Name issuer, BigInteger serial,
+            Date notBefore, Date notAfter, X500Name subject,
+            java.security.PublicKey pubKey, boolean isCa, int keyUsage,
+            byte[] issuerSki, byte[] userSki,
+            List<KeyPurposeId> eku, List<ASN1ObjectIdentifier> unknownEku,
+            boolean isTsa, boolean isOcsp, String ocspUrl, String crtUrl, String crlUrl,
+            CertificatePolicies certPolicies, String dns, String ips,
+            boolean addPoison) throws Exception {
+        JcaX509v3CertificateBuilder cb = new JcaX509v3CertificateBuilder(
+                issuer, serial, notBefore, notAfter, subject, pubKey);
+        cb.addExtension(Extension.basicConstraints, true, new BasicConstraints(isCa));
+        cb.addExtension(Extension.keyUsage, true, new KeyUsage(keyUsage));
+        cb.addExtension(Extension.authorityKeyIdentifier, false,
+                new AuthorityKeyIdentifier(issuerSki));
+        cb.addExtension(Extension.subjectKeyIdentifier, false,
+                new SubjectKeyIdentifier(userSki));
+        if (!eku.isEmpty() || !unknownEku.isEmpty()) {
+            cb.addExtension(Extension.extendedKeyUsage, isTsa,
+                    ExtendedKeyUsage.getInstance(buildEkuSequence(eku, unknownEku)));
         }
-
-        // 收集 CT Log 公钥（PKIX DER），多组用 00 00 间隔
-        appendPublicKey(pubKeyDer);
-
-        // RFC6962 SerializedSCT（权威解析工具 X509JsonConverter 按此结构解析）：
-        //   version(1) + log_id(32) + timestamp(8) + extensions_len(2) + extensions
-        //   + hash_alg(1) + sig_alg(1) + signature_len(2) + signature
-        java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
-        out.write(0x00); // version V1
-        out.write(logId);
-        out.write(tsBytes);
-        out.write(0x00); // extensions_len 高字节（无扩展）
-        out.write(0x00); // extensions_len 低字节
-        out.write(0x04); // hash = SHA256
-        out.write(0x03); // signtype = ECDSA
-        out.write((signature.length >> 8) & 0xFF); // signature_len(2 字节)
-        out.write(signature.length & 0xFF);
-        out.write(signature);
-        return out.toByteArray();
-    }
-
-    private void appendPublicKey(byte[] der) {
-        byte[] old = sctPublicKeys;
-        sctPublicKeys = new byte[old.length + (old.length > 0 ? 2 : 0) + der.length];
-        System.arraycopy(old, 0, sctPublicKeys, 0, old.length);
-        if (old.length > 0) {
-            sctPublicKeys[old.length] = 0x00;
-            sctPublicKeys[old.length + 1] = 0x00;
+        addAuthorityInfoAccess(cb, ocspUrl, crtUrl);
+        addCrlDistributionPoints(cb, crlUrl);
+        cb.addExtension(Extension.certificatePolicies, false, certPolicies);
+        addSan(cb, dns, ips);
+        // initOCSP 专属扩展：OCSP 不撤销检查（1.3.6.1.5.5.7.48.1.5 = 05 00）
+        if (isOcsp) {
+            cb.addExtension(new ASN1ObjectIdentifier("1.3.6.1.5.5.7.48.1.5"), false,
+                    new DEROctetString(new byte[]{0x05, 0x00}));
         }
-        System.arraycopy(der, 0, sctPublicKeys, old.length + (old.length > 0 ? 2 : 0), der.length);
-    }
-
-    /** 组装 SCT 列表（RFC6962 TLS 编码）：uint16 totalLen + [uint16 sctLen + raw]*N。 */
-    private byte[] buildSctList(byte[]... scts) throws java.io.IOException {
-        java.io.ByteArrayOutputStream body = new java.io.ByteArrayOutputStream();
-        int total = 0;
-        for (byte[] s : scts) {
-            body.write((s.length >> 8) & 0xFF); // uint16 sctLen
-            body.write(s.length & 0xFF);
-            body.write(s, 0, s.length);
-            total += s.length + 2;
+        // RFC 6962 §3.1 poison：critical，extnValue = OCTET STRING 包含 ASN.1 NULL(05 00)
+        if (addPoison) {
+            cb.addExtension(new ASN1ObjectIdentifier(CtLog.OID_POISON), true,
+                    new DEROctetString(DERNull.INSTANCE));
         }
-        java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
-        out.write((total >> 8) & 0xFF); // uint16 totalLen
-        out.write(total & 0xFF);
-        out.write(body.toByteArray());
-        return out.toByteArray();
+        return cb;
     }
-
     // ===================== 输出 =====================
 
     private void writeOutputs(X509Certificate cert, KeyPair kp, String algo, String serialHex,
