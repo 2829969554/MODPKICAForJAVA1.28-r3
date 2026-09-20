@@ -19,7 +19,10 @@ import org.bouncycastle.util.io.pem.PemReader;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -71,6 +74,150 @@ public final class CtLog {
     /** 请求日志文件路径。 */
     public static String logsTxtPath(String baseDir) {
         return baseDir + "/PKI/CTLOG/ctlogs.txt";
+    }
+
+    /** 可信公网 CT 日志列表文件路径（Google CT log list v3）。 */
+    public static String publicListPath(String baseDir) {
+        return baseDir + "/PKI/CTLOG/log_list.json";
+    }
+
+    /** 公网 CT 日志列表的远程地址。 */
+    public static final String PUBLIC_LIST_URL = "https://www.gstatic.com/ct/log_list/v3/log_list.json";
+
+    /** 公网 CT 日志单条记录（只读参考数据，不含密钥）。 */
+    public static final class PubLog {
+        public String description = "";
+        public String logIdHex = "";   // log_id base64 -> hex（SHA-256(公钥 SPKI)）
+        public String state = "";      // usable / readonly / retired / pending / rejected
+        public String url = "";
+    }
+
+    /**
+     * 读取可信公网 CT 日志列表（log_list.json，Google log_list v3）。
+     * 文件不存在返回空列表；state 为对象形式 {@code {"usable": {...}}} 时提取键名。
+     */
+    public static synchronized List<PubLog> loadPublicList(String baseDir) {
+        List<PubLog> out = new ArrayList<>();
+        Path p = Paths.get(publicListPath(baseDir));
+        if (!Files.exists(p)) {
+            return out;
+        }
+        try {
+            String json = new String(Files.readAllBytes(p), StandardCharsets.UTF_8);
+            Pattern pid = Pattern.compile("\"log_id\"\\s*:\\s*\"([^\"]+)\"");
+            Matcher m = pid.matcher(json);
+            while (m.find()) {
+                int objStart = json.lastIndexOf("{", m.start());
+                if (objStart < 0) {
+                    objStart = 0;
+                }
+                // 括号配平找到本 log 对象结束 }（Google v3 state 为嵌套对象，不能用第一个 } 截断）
+                int depth = 0;
+                int objEnd = json.length();
+                for (int i = objStart; i < json.length(); i++) {
+                    char c = json.charAt(i);
+                    if (c == '{') {
+                        depth++;
+                    } else if (c == '}') {
+                        depth--;
+                        if (depth == 0) {
+                            objEnd = i;
+                            break;
+                        }
+                    }
+                }
+                String seg = json.substring(objStart, objEnd);
+                PubLog k = new PubLog();
+                k.description = grab(seg, "\"description\"");
+                k.url = grab(seg, "\"url\"");
+                try {
+                    byte[] raw = Base64.getDecoder().decode(m.group(1));
+                    StringBuilder sb = new StringBuilder();
+                    for (byte b : raw) {
+                        sb.append(String.format("%02x", b & 0xff));
+                    }
+                    k.logIdHex = sb.toString();
+                } catch (Exception ex) {
+                    k.logIdHex = m.group(1);
+                }
+                int sti = seg.indexOf("\"state\"");
+                if (sti >= 0) {
+                    String rest = seg.substring(sti);
+                    String st = "";
+                    if (rest.contains("\"usable\"")) {
+                        st = "usable";
+                    } else if (rest.contains("\"readonly\"")) {
+                        st = "readonly";
+                    } else if (rest.contains("\"retired\"")) {
+                        st = "retired";
+                    } else if (rest.contains("\"pending\"")) {
+                        st = "pending";
+                    } else if (rest.contains("\"rejected\"")) {
+                        st = "rejected";
+                    }
+                    k.state = st;
+                } else {
+                    k.state = grab(seg, "\"state\"");
+                }
+                if (!k.logIdHex.isEmpty()) {
+                    out.add(k);
+                }
+            }
+        } catch (Exception e) {
+            MLog.appendErr(baseDir, "CT公网日志列表读取异常", publicListPath(baseDir), String.valueOf(e));
+        }
+        return out;
+    }
+
+    /** 读取 log_list.json 的数据日期（log_list_timestamp）。文件不存在返回空串。 */
+    public static synchronized String publicListTimestamp(String baseDir) {
+        Path p = Paths.get(publicListPath(baseDir));
+        if (!Files.exists(p)) {
+            return "";
+        }
+        try {
+            String json = new String(Files.readAllBytes(p), StandardCharsets.UTF_8);
+            Matcher m = Pattern.compile("\"log_list_timestamp\"\\s*:\\s*\"([^\"]+)\"").matcher(json);
+            return m.find() ? m.group(1) : "";
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    /** 从 gstatic 拉取最新 log_list.json 并保存到 PKI/CTLOG/log_list.json。返回结果描述。 */
+    public static synchronized String fetchPublicList(String baseDir) throws Exception {
+        HttpURLConnection c = (HttpURLConnection) new URL(PUBLIC_LIST_URL).openConnection();
+        c.setConnectTimeout(15000);
+        c.setReadTimeout(30000);
+        c.setRequestMethod("GET");
+        c.setRequestProperty("User-Agent", "MODPKICA/1.0 (CT log_list fetcher)");
+        c.setRequestProperty("Accept", "application/json");
+        int code = c.getResponseCode();
+        if (code != 200) {
+            c.disconnect();
+            throw new IOException("远程返回 HTTP " + code);
+        }
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        try (InputStream in = c.getInputStream()) {
+            byte[] buf = new byte[8192];
+            int n;
+            while ((n = in.read(buf)) > 0) {
+                bos.write(buf, 0, n);
+            }
+        }
+        c.disconnect();
+        byte[] data = bos.toByteArray();
+        String txt = new String(data, StandardCharsets.UTF_8);
+        if (!txt.contains("log_list_timestamp") || !txt.contains("\"log_id\"")) {
+            throw new IOException("返回内容不是有效的 CT log_list v3 JSON");
+        }
+        Path p = Paths.get(publicListPath(baseDir));
+        Files.createDirectories(p.getParent());
+        Files.write(p, data);
+        String ts = publicListTimestamp(baseDir);
+        MLog.append(baseDir, "CTLog拉取公网日志列表", PUBLIC_LIST_URL,
+                "已保存 " + data.length + " 字节，数据日期 " + ts);
+        return "已保存 " + data.length + " 字节，数据日期 " + ts;
     }
 
     /** 单条日志密钥对（含私钥，仅本地使用）。 */

@@ -1,4 +1,4 @@
-# MODPKICA Java 复刻版 v1.23（BC 1.85 离线）
+# MODPKICA Java 复刻版 v1.24（BC 1.85 离线）
 
 > 使用 **Java + BouncyCastle 1.85** 离线复刻 Go 版 MODPKICA 全套 PKI 功能：X.509 证书签发、CRL 吊销列表、OCSP 在线状态、RFC3161 / Authenticode 时间戳、RFC 6962 CT 日志服务（SCT 服务管理）、WebAdmin 浏览器管理面板。
 >
@@ -37,17 +37,19 @@
 
 ![仪表盘](a.png)
 
-### 证书库（CERTS.txt 列表）
+### 证书库（选择夹：证书库 CERTS.txt / 可信公网证书库 cacerts）
 
-序列号 / 类型 / 状态 / 原因 / 时间 / 颁发者 ID / 算法 / 操作，支持筛选与刷新；类型中文显示（R=根证书 / C=CA证书 / E=终端证书），状态三色（V 正常绿 / R 已吊销深红 / N 未知橙）；序列号与颁发者序列号悬停显示证书简要信息；每行含详情 / 验证 / 操作三个按钮（验证弹窗按状态显示绿/红/橙标题）。
+**「证书库 CERTS.txt」页**：序列号 / 类型 / 状态 / 原因 / 时间 / 颁发者 ID / 算法 / 操作，支持筛选与刷新；类型中文显示（R=根证书 / C=CA证书 / E=终端证书），状态三色（V 正常绿 / R 已吊销深红 / N 未知橙）；序列号与颁发者序列号悬停显示证书简要信息；每行含详情 / 验证 / 操作三个按钮（验证弹窗按状态显示绿/红/橙标题）。
+
+**「可信公网证书库 cacerts」页**：读取 JAVA 环境 `cacerts`（JKS 信任库）全部证书，列表列 = 序列号 / 算法 / 生效日期 / 失效日期 / DN字段（时间格式 `yyyy/MM/dd HH:mm:ss`，序列号列收窄超长省略）；点击「详情」从 cacerts 导出 PEM 并转 JSON 结构化弹窗展示（X509JsonConverter 解析）。
 
 ![证书库](b.png)
 
-### 签发证书（参数化表单）
+### 签发根证书（MakeRoot + DN 辅助输入）
 
-证书 DN（key=value 或 OID）、证书类型、密钥算法（RSA / ECC / SM2）、密钥位数（RSA 可编辑 1024~8192，ECC 只读 256/384/521，SM2 只读 256）、哈希算法、KeyUsage（下拉 + 悬浮多选组合）、EKU（编号/OID 悬浮选择器 35 项）、有效期（年数或起止日期，秒级选择）。
+证书 DN（key=value 逗号分隔，key 可为标准属性或 OID）+ 密钥算法（RSA / ECC / SM2 下拉）+ 哈希算法 + 密钥位数（RSA 可编辑 1024~8192，ECC 只读 256/384/521，SM2 只读 256）；**DN 辅助输入**：通用名称 / 组织 / 组织单位 / 国家 / 省州 / 城市 / 邮箱各字段独立编辑框（placeholder 中文说明 + 例子），「是否 EV 扩展验证」勾选后显示 EV 注册字段，「+ 添加自定义字段」「从上方 DN 解析回填」双向同步；生成证书时 DN 按 X.500/RFC 规范顺序统一排序（C→ST→L→STREET→PostalCode→O→OU→SERIALNUMBER→CN，EV 字段随后）。
 
-![签发证书](c.png)
+![签发根证书](c.png)
 
 ### 证书操作（吊销 / 续签 / 密钥更换）
 
@@ -77,11 +79,11 @@
 
 ![签名专区选择夹](f.png)
 
-### 签名专区（PDF 国密 GM/T 0031-2025 签章）
+### 签发证书（EV 扩展验证辅助输入）
 
-PDF 文档签名分组选择「国密 GM/T 0031-2025」签章类型（下拉展开示意），选择 SM2 证书与签章图片后签名，结果区展示签章类型 / 签章字节 / 时间戳地址 / 输入文件 / 证书 / 序列号 / 算法摘要 / 输出字节，并提供下载签名后文件链接。
+证书 DN 辅助输入：CN / O / OU / C / S / L / E 邮箱基础字段 + 「是否 EV 扩展验证」勾选后显示 **EV 注册字段区**（注册类型 businessCategory 四选一：Private Organization / Government Entity / Business Entity / Non-Commercial Entity、注册号 serialNumber、组织标识符 organizationIdentifier、注册国家 / 注册省 / 注册市 jurisdiction*、组织标识符扩展 OID 版本新旧选择）；「密钥与算法」分组：证书类型（根证书 / CA证书 / 终端证书）、密钥算法、密钥位数、哈希算法；生成证书时 DN 按统一标准排序。
 
-![签名专区 GM0031](i.png)
+![签发证书](i.png)
 
 ### 签名专区（签章图片素材示例）
 
@@ -89,9 +91,13 @@ PDF 文档签名分组选择「国密 GM/T 0031-2025」签章类型（下拉展�
 
 ![签章素材](stamp.png)
 
-### SCT 服务管理（CT 日志密钥管理）
+### SCT 服务管理（选择夹：CT日志密钥管理 / CT请求日志 / 可信公网CT公钥管理）
 
-「CT日志密钥管理」与「CT请求日志」选择夹布局；密钥管理：描述输入 + 生成 ECDSA / RSA / SM2 密钥对三按钮 + 刷新列表；密钥列表逐行显示 序号 / 描述 / 类型 / 日志公钥 ID / 状态（可用绿 / 不可用红）/ 创建时间 / 操作（删除 / 启用 / 暂停），密钥写入 `PKI/CTLOG/modpkica_ct_list.json`（v3 风格，`type` 字段区分 ECDSA/RSA/SM2，缺省 ECDSA）。
+**CT日志密钥管理**：描述输入 + 生成 ECDSA / RSA / SM2 密钥对三按钮 + 刷新列表；密钥列表逐行显示 序号 / 描述 / 类型 / 日志公钥 ID（自适应列宽，超长省略）/ 状态（可用绿 / 不可用红）/ 创建时间 / 操作（「启用⇄暂停」单按钮点击切换 + 「删除」置末），密钥写入 `PKI/CTLOG/modpkica_ct_list.json`（v3 风格，`type` 字段区分 ECDSA/RSA/SM2，缺省 ECDSA）。
+
+**CT请求日志**：只读展示 `PKI/CTLOG/ctlogs.txt` 全部行（自带序号）。
+
+**可信公网CT公钥管理**：展示项目根 `log_list.json`（Google 权威 CT 日志公钥数据集 v3，`https://www.gstatic.com/ct/log_list/v3/log_list.json`）全部日志，含数据日期与「拉取最新数据」按钮（在线更新后刷新列表），布局参考密钥管理。
 
 ![SCT服务管理](j.png)
 
@@ -505,6 +511,18 @@ A：离线 / 无外网环境会请求失败，但签名**不中断**——时间
 ---
 
 ## 更新记录
+## 更新记录
+- **v1.24（2026-09-20）——cacerts 可信公网证书库 + DN 统一标准排序 + SCT 服务管理补全**
+  - **「可信公网证书库 cacerts」**：
+    - 证书库页新增选择夹「证书库 CERTS.txt / 可信公网证书库 cacerts」；cacerts 列表列 = 序列号 / 算法 / 生效日期 / 失效日期 / DN字段（去掉状态/原因/悬浮窗/验证/操作按钮），时间格式 `yyyy/MM/dd HH:mm:ss`，序列号列收窄 130px 超长省略；点击「详情」从 cacerts 导出 PEM 并转 JSON 结构化弹窗（X509JsonConverter 解析），修复详情按钮事件绑定
+    - 证书验证页支持**本地 cer/crt/pem 文件验证**：文件选择框位于验证按钮后，选择完毕自动开始验证（`/api/verify/file`，临时文件用后即删）
+    - 可信根列表除「实验信任锚 PKI/ROOT」外，新增信任 **JAVA 环境 cacerts** 中的证书（JKS→PKCS12，密码 changeit，SPKI 字节比对；`CertVerify.inJavaCacerts`）
+  - **DN 统一标准排序**：`MakeCert.java` / `MakeRoot.java` 的 `buildSubject()` 重构为全字段权重排序——标准字段按 **X.500/RFC 规范顺序（C→ST→L→STREET→PostalCode→O→OU→SERIALNUMBER→CN）**，EV 注册字段（jurisdiction 注册市/省/国 `1.3.6.1.4.1.311.60.2.1.x`、organizationIdentifier `2.5.4.97`、emailAddress `1.2.840.113549.1.9.1`）随后，自定义 OID 字段排最后保持输入顺序；签发证书 / 签发根证书 / 初始化环境三个入口统一生效；两处重复逻辑收敛为 `dnOrder()` + `addDnField()`；反射冒烟验证乱序输入输出固定规范顺序
+  - **DN 辅助输入三页面（签发证书 / 签发根证书 / 初始化环境）**：主框与辅助框默认值清空，每个字段编辑框 placeholder 写中文说明 + 例子（如「通用名称（CN），如 www.test.com」）
+  - **MAIN 启动横幅补充**：OCSP 行标注「（RSA/ECC/SM2，摘要自适应 SHA1/SHA256/SHA384/SHA512/SM3）」、Authenticode SHA256 行标注「（SM2/SM3 自适应）」、RFC3161 行标注「（SHA1&SHA256&SM3 自适应）」、新增「MOD PKI CA CT日志服务启动: http://localhost:<port>/ct/add（RFC 6962 / Certificate Transparency，接收 PEM 预证书+颁发者证书）」
+  - **SCT 服务管理补全**：新增「可信公网CT公钥管理」选择夹（数据源 `log_list.json`，显示数据日期 + 「拉取最新数据」按钮在线更新）；密钥列表「启用 / 暂停」合并为单按钮（点击切换状态），「删除」按钮置末；密钥列表增加 `type` 字段（ECDSA/RSA/SM2，缺省 ECDSA）
+  - 截图更新：`a.png`（仪表盘）/ `b.png`（证书库选择夹）/ `c.png`（签发根证书 DN 辅助输入）/ `i.png`（签发证书 EV 辅助输入）/ `j.png`（SCT 服务管理三选择夹）
+
 - **v1.23（2026-09-19）——SCT 多算法选组修复 + 国密 SCT 枚举对齐生产生态**
   - **修复 `isSm2Precert`（SM2 证书被误判为非 SM2）**：EC 公钥 SPKI 的算法 OID 固定为 `1.2.840.10045.2.1`（id-ecPublicKey），SM2 特性在 **named curve 参数 OID**（`1.2.156.10197.1.301` = sm2p256v1）——原实现只查外层算法 OID，SM2 证书永远匹配不到 → SCT 从 RSA/ECDSA 密钥池选组。修复：解析 SPKI ECParameters（SEQUENCE 首元素 / 裸 OID）取曲线 OID 判断；实测 `1135b7249`（SM2 曲线）=true、普通 ECC=false、RSA=false；新签发 SM2 证书 `1135b731c` 的 SCT 全部来自 SM2 池（SM2 TEST6/TEST2/TEST4，SM2-SM3，≤3 组）
   - **国密 SCT 枚举对齐生产生态**：验证零信（ZoTrus）SM2 SSL Pro 生产证书 `demo3.crt` 发现其 SCT 由零信国密 CT 日志系统（sm2ct.cn，参考 RFC 6962 实现）签发，实测枚举为 **hash=7(SM3) + sig=4**——原代码 sigName 无 sig=4 映射（显示 `TYPE4-SM3`），验签也只认 (7,7) 组合

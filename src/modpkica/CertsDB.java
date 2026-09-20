@@ -130,6 +130,26 @@ public class CertsDB {
     }
 
     /**
+     * 按颁发者序列号 + 证书序列号查找（issuer+serial 才是全局唯一键）。
+     *
+     * @param issuerId 颁发者序列号
+     * @param serial   证书序列号
+     * @return 命中的条目，未命中返回 null
+     */
+    public CertEntry findByIssuerAndSerial(String issuerId, String serial) {
+        if (issuerId == null || serial == null) {
+            return null;
+        }
+        for (CertEntry e : entries) {
+            if (serial.equalsIgnoreCase(e.serial)
+                    && issuerId.equalsIgnoreCase(e.issuerId)) {
+                return e;
+            }
+        }
+        return null;
+    }
+
+    /**
      * 按序列号查找其颁发者序列号。
      *
      * @param serial 证书序列号
@@ -149,7 +169,6 @@ public class CertsDB {
      * @param e 新条目
      */
     public void addEntry(CertEntry e) {
-        entries.add(e);
         String line = formatLine(e);
         try {
             Files.createDirectories(dbPath.getParent());
@@ -157,8 +176,11 @@ public class CertsDB {
                     StandardCharsets.UTF_8,
                     StandardOpenOption.CREATE,
                     StandardOpenOption.APPEND);
-        } catch (IOException ignored) {
+        } catch (IOException ex) {
+            // 写文件失败必须暴露：否则内存记录与磁盘不一致（重启后记录丢失）
+            throw new java.io.UncheckedIOException("写 CERTS.txt 失败: " + dbPath, ex);
         }
+        entries.add(e); // 写成功后才加入内存
     }
 
     /**

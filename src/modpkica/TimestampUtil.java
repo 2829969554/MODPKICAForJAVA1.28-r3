@@ -101,8 +101,11 @@ public final class TimestampUtil {
                                                DigestCalculator digestCalc) throws Exception {
         TimeStampRequest req = new TimeStampRequest(requestDer);
 
-        // SerialNumber = 当前时间秒数
-        BigInteger serial = BigInteger.valueOf(System.currentTimeMillis() / 1000L);
+        // SerialNumber = 160 位密码学安全随机正整数（秒级时间同秒多请求会碰撞）
+        BigInteger serial = new BigInteger(160, new java.security.SecureRandom());
+        if (serial.signum() <= 0) {
+            serial = serial.negate();
+        }
         Date genTime = new Date();
 
         // 由 ContentSigner 构造 SignerInfoGenerator（BC TSP 要求）

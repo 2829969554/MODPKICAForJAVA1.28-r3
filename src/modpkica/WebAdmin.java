@@ -271,6 +271,11 @@ public final class WebAdmin {
         int port = (prop != null && prop.matches("\\d+"))
                 ? Integer.parseInt(prop) : readConfigAdminPort();
         String bind = System.getProperty("modpkica.admin.bind", DEFAULT_BIND);
+        // P2-03：默认仅绑定 127.0.0.1；显式绑定到非回环地址时给出警告（管理接口含签发/吊销/签名等写操作）
+        if (!DEFAULT_BIND.equals(bind) && !"localhost".equalsIgnoreCase(bind)) {
+            System.out.println("[WebAdmin] 警告：管理界面绑定地址 " + bind
+                    + " 不是回环地址；若暴露到公网，所有 /api/* 写操作将无认证可访问！");
+        }
         try {
             server = HttpServer.create(new InetSocketAddress(InetAddress.getByName(bind), port), 0);
             server.createContext("/", WebAdmin::route);
@@ -355,6 +360,13 @@ public final class WebAdmin {
                 case "/api/certs":
                     if ("GET".equalsIgnoreCase(method)) {
                         sendJson(ex, 200, certsJson());
+                    } else {
+                        sendJson(ex, 405, Map.of("ok", false, "message", "仅支持 GET"));
+                    }
+                    return;
+                case "/api/certs/cacerts":
+                    if ("GET".equalsIgnoreCase(method)) {
+                        sendJson(ex, 200, cacertsJson());
                     } else {
                         sendJson(ex, 405, Map.of("ok", false, "message", "仅支持 GET"));
                     }
@@ -447,6 +459,9 @@ public final class WebAdmin {
                 case "/api/verify":
                     runAction(ex, m -> Admin.doVerifyCert(baseDir, str(m, "target")));
                     return;
+                case "/api/verify/file":
+                    verifyCertFileAction(ex);
+                    return;
                 case "/api/signcerts":
                     if ("GET".equalsIgnoreCase(method)) {
                         sendJson(ex, 200, signCertsJson(ex));
@@ -491,6 +506,16 @@ public final class WebAdmin {
                     return;
                 case "/api/ctlog/pause":
                     runAction(ex, m -> ctlogSetState(str(m, "log_id"), "disable"));
+                    return;
+                case "/api/ctlog/public":
+                    if ("GET".equalsIgnoreCase(method)) {
+                        sendJson(ex, 200, ctlogPublicJson());
+                    } else {
+                        sendJson(ex, 405, Map.of("ok", false, "message", "仅支持 GET"));
+                    }
+                    return;
+                case "/api/ctlog/publicFetch":
+                    runAction(ex, m -> ctlogPublicFetch());
                     return;
                 default:
                     sendJson(ex, 404, Map.of("ok", false, "message", "未知 API: " + path));
@@ -1286,6 +1311,108 @@ public final class WebAdmin {
         return Map.of("ok", true, "data", list);
     }
 
+    /** /api/certs/cacerts：列出 JAVA 环境 cacerts 中的可信证书（结构同 /api/certs，只读）。 */
+    private static Map<String, Object> cacertsJson() {
+        List<Map<String, Object>> list = new ArrayList<>();
+        for (java.security.cert.X509Certificate c : loadCacertsCerts()) {
+            Map<String, Object> e = new LinkedHashMap<>();
+            e.put("serial", certSerialHex(c));
+            e.put("algo", certAlgoDesc(c));
+            e.put("notBefore", fmtCacertsTime(c.getNotBefore()));
+            e.put("notAfter", fmtCacertsTime(c.getNotAfter()));
+            e.put("subject", c.getSubjectX500Principal().getName());
+            list.add(e);
+        }
+        return Map.of("ok", true, "data", list);
+    }
+
+    /** cacerts 列表时间格式：yyyy/MM/dd HH:mm:ss（本地时区）。 */
+    private static String fmtCacertsTime(java.util.Date d) {
+        try {
+            return new java.text.SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(d);
+        } catch (Exception e) {
+            return String.valueOf(d);
+        }
+    }
+
+    /** 读取 JAVA 环境 cacerts（JKS/PKCS12，默认密码 changeit）中的全部证书。 */
+    private static java.util.List<java.security.cert.X509Certificate> loadCacertsCerts() {
+        java.util.List<java.security.cert.X509Certificate> out = new java.util.ArrayList<>();
+        try {
+            java.nio.file.Path cac = java.nio.file.Paths.get(
+                    System.getProperty("java.home"), "lib", "security", "cacerts");
+            if (!java.nio.file.Files.exists(cac)) {
+                return out;
+            }
+            char[] pw = "changeit".toCharArray();
+            for (String ksType : new String[]{"JKS", "PKCS12"}) {
+                try {
+                    java.security.KeyStore ks = java.security.KeyStore.getInstance(ksType);
+                    try (java.io.InputStream in = java.nio.file.Files.newInputStream(cac)) {
+                        ks.load(in, pw);
+                    }
+                    java.util.Enumeration<String> aliases = ks.aliases();
+                    while (aliases.hasMoreElements()) {
+                        java.security.cert.Certificate c = ks.getCertificate(aliases.nextElement());
+                        if (c instanceof java.security.cert.X509Certificate) {
+                            out.add((java.security.cert.X509Certificate) c);
+                        }
+                    }
+                    break;
+                } catch (Exception ignore) {
+                    // 尝试下一种 keystore 类型
+                }
+            }
+        } catch (Exception ignore) {
+        }
+        return out;
+    }
+
+    /** 证书序列号 -> 小写 hex（补前导零）。 */
+    private static String certSerialHex(java.security.cert.X509Certificate c) {
+        StringBuilder sb = new StringBuilder();
+        for (byte b : c.getSerialNumber().toByteArray()) {
+            sb.append(String.format("%02x", b & 0xff));
+        }
+        return sb.toString();
+    }
+
+    /** 证书公钥算法描述：RSA 2048 / EC 256 / DSA 1024 等。 */
+    private static String certAlgoDesc(java.security.cert.X509Certificate c) {
+        try {
+            java.security.PublicKey pk = c.getPublicKey();
+            String alg = pk.getAlgorithm();
+            int bits = 0;
+            if (pk instanceof java.security.interfaces.RSAPublicKey) {
+                bits = ((java.security.interfaces.RSAPublicKey) pk).getModulus().bitLength();
+            } else if (pk instanceof java.security.interfaces.ECPublicKey) {
+                bits = ((java.security.interfaces.ECPublicKey) pk).getParams()
+                        .getCurve().getField().getFieldSize();
+            } else if (pk instanceof java.security.interfaces.DSAPublicKey) {
+                bits = ((java.security.interfaces.DSAPublicKey) pk).getParams().getP().bitLength();
+            }
+            return alg + (bits > 0 ? " " + bits : "");
+        } catch (Exception e) {
+            return c.getPublicKey().getAlgorithm();
+        }
+    }
+
+    /** 按序列号在 cacerts 中查找证书，返回 PEM 字节；未找到返回 null。 */
+    private static byte[] findCacertsCertBySerial(String serial) {
+        String want = serial == null ? "" : serial.toLowerCase().replace("0x", "");
+        for (java.security.cert.X509Certificate c : loadCacertsCerts()) {
+            if (certSerialHex(c).equals(want)) {
+                try {
+                    return X509JsonConverter.derToPem(c.getEncoded())
+                            .getBytes(StandardCharsets.UTF_8);
+                } catch (Exception e) {
+                    return null;
+                }
+            }
+        }
+        return null;
+    }
+
     /** 可作颁发者的序列号（CERTS.txt 中类型 R 或 C），供签发证书下拉选择。 */
     private static Map<String, Object> issuersJson() throws Exception {
         java.util.List<String> serials = new java.util.ArrayList<>();
@@ -1797,6 +1924,16 @@ public final class WebAdmin {
         }
         String certPath = findCertFile(serial);
         if (certPath == null) {
+            // 回退：在 JAVA cacerts 中按序列号查找
+            byte[] pem = findCacertsCertBySerial(serial);
+            if (pem != null) {
+                try {
+                    String json = X509JsonConverter.certToJson(pem);
+                    return Map.of("ok", true, "serial", serial, "path", "JAVA cacerts", "data", json);
+                } catch (Exception e) {
+                    return Map.of("ok", false, "message", "cacerts 证书解析失败: " + e);
+                }
+            }
             return Map.of("ok", false, "message", "未找到证书文件: " + serial);
         }
         try {
@@ -2160,6 +2297,39 @@ public final class WebAdmin {
         }
     }
 
+    /** /api/verify/file：上传本地 cer/crt/pem 证书文件并执行完整验证（CertVerify）。 */
+    private static void verifyCertFileAction(HttpExchange ex) {
+        String path = ex.getRequestURI().getPath();
+        java.nio.file.Path tmp = null;
+        try {
+            Map<String, byte[]> f = readMultipart(ex);
+            byte[] data = f.get("file");
+            if (data == null || data.length == 0) {
+                throw new IllegalArgumentException("未上传证书文件");
+            }
+            tmp = java.nio.file.Files.createTempFile("modpkica_verify_", ".crt");
+            java.nio.file.Files.write(tmp, data);
+            String out = Admin.doVerifyCert(baseDir, tmp.toString());
+            MLog.append(baseDir, "WebAdmin /api/verify/file",
+                    "POST 上传证书文件 size=" + data.length, out);
+            sendJson(ex, 200, Map.of("ok", true, "message", out));
+        } catch (Exception ex2) {
+            try {
+                MLog.appendErr(baseDir, "WebAdmin /api/verify/file 异常",
+                        "POST 上传证书文件", String.valueOf(ex2));
+                sendJson(ex, 500, Map.of("ok", false, "message", String.valueOf(ex2)));
+            } catch (Exception ignored) {
+            }
+        } finally {
+            if (tmp != null) {
+                try {
+                    java.nio.file.Files.deleteIfExists(tmp);
+                } catch (Exception ignored) {
+                }
+            }
+        }
+    }
+
     /** 可签名证书列表：kind=exe 筛代码签名 EKU；kind=pdf 筛文档签名/代码签名 EKU。 */
     private static Map<String, Object> signCertsJson(HttpExchange ex) {
         String kind = ex.getRequestURI().getQuery() == null ? "exe"
@@ -2241,6 +2411,31 @@ public final class WebAdmin {
     /** /api/ctlog/logs：ctlogs.txt 全部行（只读）。 */
     private static Map<String, Object> ctlogLogsJson() {
         return Map.of("ok", true, "logs", CtLog.readLogs(baseDir));
+    }
+
+    /** /api/ctlog/public：可信公网 CT 日志公钥列表（log_list.json，只读）。 */
+    private static Map<String, Object> ctlogPublicJson() {
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("ok", true);
+        out.put("timestamp", CtLog.publicListTimestamp(baseDir));
+        List<Map<String, Object>> logs = new ArrayList<>();
+        int i = 1;
+        for (CtLog.PubLog k : CtLog.loadPublicList(baseDir)) {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("index", i++);
+            m.put("description", k.description);
+            m.put("logId", k.logIdHex);
+            m.put("state", k.state);
+            m.put("url", k.url);
+            logs.add(m);
+        }
+        out.put("logs", logs);
+        return out;
+    }
+
+    /** /api/ctlog/publicFetch：从 gstatic 拉取最新 log_list.json 并保存。 */
+    private static String ctlogPublicFetch() throws Exception {
+        return CtLog.fetchPublicList(baseDir);
     }
 
     /** /api/ctlog/gen：生成日志密钥对（type=ECDSA/RSA/SM2，缺省 ECDSA）并写入密钥库。 */
@@ -2656,16 +2851,34 @@ public final class WebAdmin {
             <!-- 证书库 -->
             <div class="page" id="page-certs">
               <div class="card">
-                <h2>证书库 CERTS.txt</h2>
-                <div class="toolbar">
-                  <input id="certsFilter" placeholder="筛选：序列号 / 类型 / 状态 / 算法" style="flex:1;max-width:360px" oninput="renderCerts()">
-                  <button class="ghost" onclick="loadCerts()">刷新列表</button>
+                <div class="ct-tabs">
+                  <button class="ct-tab active" id="csTabBtnLocal" onclick="csSwitchTab('local')">证书库 CERTS.txt</button>
+                  <button class="ct-tab" id="csTabBtnCa" onclick="csSwitchTab('cacerts')">可信公网证书库 cacerts</button>
                 </div>
-                <div style="overflow:auto;max-height:60vh">
-                  <table id="certsTable">
-                    <thead><tr><th>序列号</th><th>类型</th><th>状态</th><th>原因</th><th>时间</th><th>颁发者ID</th><th>算法</th><th>操作</th></tr></thead>
-                    <tbody></tbody>
-                  </table>
+                <div id="csPaneLocal">
+                  <div class="toolbar">
+                    <input id="certsFilter" placeholder="筛选：序列号 / 类型 / 状态 / 算法" style="flex:1;max-width:360px" oninput="renderCerts()">
+                    <button class="ghost" onclick="loadCerts()">刷新列表</button>
+                  </div>
+                  <div style="overflow:auto;max-height:60vh">
+                    <table id="certsTable">
+                      <thead><tr><th>序列号</th><th>类型</th><th>状态</th><th>原因</th><th>时间</th><th>颁发者ID</th><th>算法</th><th>操作</th></tr></thead>
+                      <tbody></tbody>
+                    </table>
+                  </div>
+                </div>
+                <div id="csPaneCa" style="display:none">
+                  <div class="hint">JAVA 环境 lib/security/cacerts 中的可信证书（只读参考）。点击"详情"可查看 PEM 证书结构（JSON）。本地证书文件验证请到"证书验证"页面上传。</div>
+                  <div class="toolbar">
+                    <input id="caFilter" placeholder="筛选：序列号 / 颁发者 / 算法" style="flex:1;max-width:360px" oninput="renderCacerts()">
+                    <button class="ghost" onclick="loadCacerts()">刷新列表</button>
+                  </div>
+                  <div style="overflow:auto;max-height:60vh">
+                    <table id="caTable">
+                      <thead><tr><th>序列号</th><th>算法</th><th>生效日期</th><th>失效日期</th><th>DN字段</th><th>操作</th></tr></thead>
+                      <tbody></tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2675,21 +2888,21 @@ public final class WebAdmin {
               <div class="card">
                 <h2>签发根证书（MakeRoot）</h2>
                 <div class="row">
-                  <div style="grid-column:1/-1"><label>证书 DN（逗号分隔 key=value）</label><input id="mkDn" value="CN=Test Root CA,O=My Org,C=CN"></div>
-                  <div><label>密钥位数</label><input id="mkBits" value="2048" placeholder="RSA 1024-8192 / ECC 256 / SM2 256"></div>
+                  <div style="grid-column:1/-1"><label>证书 DN（逗号分隔 key=value）</label><input id="mkDn" placeholder="根证书 DN（key=value 逗号分隔，key 可为标准属性或 OID），如 CN=My Root CA,O=My Org,C=CN"></div>
+                  <div><label>密钥算法</label><select id="mkAlgo" onchange="extAlgoChanged('mk')"><option>RSA</option><option>ECC</option><option>SM2</option></select></div>
                   <div><label>哈希算法</label><select id="mkHash"><option>sha256</option><option>sha1</option><option>sha384</option><option>sha512</option><option>SM3</option></select></div>
-                  <div><label>密钥算法</label><select id="mkAlgo"><option>RSA</option><option>ECC</option><option>SM2</option></select></div>
+                  <div><label>密钥位数</label><select id="mkBits"></select></div>
                 </div>
                 <div class="fsec" style="margin-top:14px">
                   <div class="fsec-title">DN 辅助编辑 — 基础字段 / EV 注册字段 / 自定义 OID</div>
                   <div class="row">
-                    <div><label>CN 通用名称</label><input id="mkDnCn" placeholder="Test Root CA" oninput="syncMkDn()"></div>
-                    <div><label>O 组织</label><input id="mkDnO" placeholder="My Org" oninput="syncMkDn()"></div>
-                    <div><label>OU 组织单位</label><input id="mkDnOu" placeholder="可选" oninput="syncMkDn()"></div>
-                    <div><label>C 国家</label><input id="mkDnC" placeholder="CN" maxlength="2" oninput="syncMkDn()"></div>
-                    <div><label>S 省/州</label><input id="mkDnS" placeholder="可选" oninput="syncMkDn()"></div>
-                    <div><label>L 城市</label><input id="mkDnL" placeholder="可选" oninput="syncMkDn()"></div>
-                    <div><label>E 邮箱（OID 字段）</label><input id="mkDnE" placeholder="admin@example.com" oninput="syncMkDn()"></div>
+                    <div><label>CN 通用名称</label><input id="mkDnCn" placeholder="通用名称（CN），如 My Root CA" oninput="syncMkDn()"></div>
+                    <div><label>O 组织</label><input id="mkDnO" placeholder="组织（O），如 My Org" oninput="syncMkDn()"></div>
+                    <div><label>OU 组织单位</label><input id="mkDnOu" placeholder="组织单位（OU），如 IT Dept（可选）" oninput="syncMkDn()"></div>
+                    <div><label>C 国家</label><input id="mkDnC" placeholder="国家代码（C），如 CN（两位）" maxlength="2" oninput="syncMkDn()"></div>
+                    <div><label>S 省/州</label><input id="mkDnS" placeholder="省/州（S），如 Guangdong（可选）" oninput="syncMkDn()"></div>
+                    <div><label>L 城市</label><input id="mkDnL" placeholder="城市（L），如 Shenzhen（可选）" oninput="syncMkDn()"></div>
+                    <div><label>E 邮箱（OID 字段）</label><input id="mkDnE" placeholder="邮箱（E，OID 1.2.840.113549.1.9.1），如 admin@example.com" oninput="syncMkDn()"></div>
                     <div><label>是否 EV 扩展验证</label>
                       <label style="display:flex;justify-content:flex-start;align-items:center;width:100%;height:32px;cursor:pointer;margin:0"><input type="checkbox" id="mkDnEvToggle" onchange="toggleMkDnEv()" style="margin:0;flex:none"></label>
                     </div>
@@ -2706,12 +2919,12 @@ public final class WebAdmin {
                           <option>Non-Commercial Entity</option>
                         </select>
                       </div>
-                      <div><label>注册号（serialNumber 2.5.4.5）</label><input id="mkDnReg" placeholder="如 91310000MA5XXXXXXXX" oninput="syncMkDn()"></div>
-                      <div><label>注册国家（jurisdictionCountry）</label><input id="mkDnJc" placeholder="CN" maxlength="2" oninput="syncMkDn()"></div>
-                      <div><label>注册省（jurisdictionStateOrProvince）</label><input id="mkDnJs" placeholder="可选" oninput="syncMkDn()"></div>
-                      <div><label>注册市（jurisdictionLocality）</label><input id="mkDnJl" placeholder="可选" oninput="syncMkDn()"></div>
-                      <div><label>注册地址（streetAddress 2.5.4.9）</label><input id="mkDnAddr" placeholder="可选" oninput="syncMkDn()"></div>
-                      <div><label>组织标识符（2.5.4.97）</label><input id="mkDnOi" placeholder="NTRCN-91310000… / VATDE-123456789" oninput="syncMkDn()"></div>
+                      <div><label>注册号（serialNumber 2.5.4.5）</label><input id="mkDnReg" placeholder="注册号（serialNumber 2.5.4.5），如 91310000MA5XXXXXXXX" oninput="syncMkDn()"></div>
+                      <div><label>注册国家（jurisdictionCountry）</label><input id="mkDnJc" placeholder="注册国家（jurisdictionCountry），如 CN（两位）" maxlength="2" oninput="syncMkDn()"></div>
+                      <div><label>注册省（jurisdictionStateOrProvince）</label><input id="mkDnJs" placeholder="注册省（jurisdictionStateOrProvince），如 Guangdong（可选）" oninput="syncMkDn()"></div>
+                      <div><label>注册市（jurisdictionLocality）</label><input id="mkDnJl" placeholder="注册市（jurisdictionLocality），如 Shenzhen（可选）" oninput="syncMkDn()"></div>
+                      <div><label>注册地址（streetAddress 2.5.4.9）</label><input id="mkDnAddr" placeholder="注册地址（streetAddress 2.5.4.9），如 No.1 Beijing Road（可选）" oninput="syncMkDn()"></div>
+                      <div><label>组织标识符（2.5.4.97）</label><input id="mkDnOi" placeholder="组织标识符（2.5.4.97），如 NTRCN-91310000MA5XXXXXXXX" oninput="syncMkDn()"></div>
                       <div><label>组织标识符扩展 OID 版本</label>
                         <label style="display:flex;justify-content:flex-start;align-items:center;width:100%;height:32px;cursor:pointer;margin:0" title="未勾选=旧版 1.3.6.1.4.1.57264.1.8（SC27-2019）；勾选=新版 2.23.140.3.1（EVG 2.0.1）"><input type="checkbox" id="mkDnOidNew" style="margin:0;flex:none"></label>
                       </div>
@@ -2727,7 +2940,7 @@ public final class WebAdmin {
                     <span style="color:var(--dim);font-size:12px">辅助编辑实时同步到上方 DN 输入框；也可直接编辑 DN 后点“解析回填”拆分到各字段。</span>
                   </div>
                 </div>
-                <div style="margin-top:16px"><button onclick="postForm('/api/makeroot', {dn:v('mkDn'),bits:v('mkBits'),hash:v('mkHash'),algo:v('mkAlgo'),evoid: $('mkDnOidNew') && $('mkDnOidNew').checked ? 'new' : 'old'}, 'mkOut')">签发根证书</button></div>
+                <div style="margin-top:16px"><button onclick="postForm('/api/makeroot', {dn:v('mkDn'),bits:extBitsVal('mk'),hash:v('mkHash'),algo:v('mkAlgo'),evoid: $('mkDnOidNew') && $('mkDnOidNew').checked ? 'new' : 'old'}, 'mkOut')">签发根证书</button></div>
                 <pre class="out" id="mkOut"></pre>
               </div>
             </div>
@@ -2739,21 +2952,20 @@ public final class WebAdmin {
 
                 <div class="fsec"><div class="fsec-title">主体信息</div>
                   <div class="row">
-                    <div style="grid-column:1/-1"><label>证书 DN（key=value 逗号分隔，key 可为标准属性或 OID）</label><input id="scDn" value="CN=www.test.com,O=My Org,C=CN"></div>
-                    <div><label>证书类型</label><select id="scCa"><option value="0">终端证书</option><option value="1">中间 CA</option></select></div>
+                    <div style="grid-column:1/-1"><label>证书 DN（key=value 逗号分隔，key 可为标准属性或 OID）</label><input id="scDn" placeholder="证书 DN（key=value 逗号分隔，key 可为标准属性或 OID），如 CN=www.test.com,O=My Org,C=CN"></div>
                   </div>
                 </div>
 
                 <div class="fsec" style="margin-top:14px">
                   <div class="fsec-title">DN 辅助编辑 — 基础字段 / EV 注册字段 / 自定义 OID</div>
                   <div class="row">
-                    <div><label>CN 通用名称</label><input id="scDnCn" placeholder="www.test.com" oninput="syncDn('sc')"></div>
-                    <div><label>O 组织</label><input id="scDnO" placeholder="My Org" oninput="syncDn('sc')"></div>
-                    <div><label>OU 组织单位</label><input id="scDnOu" placeholder="可选" oninput="syncDn('sc')"></div>
-                    <div><label>C 国家</label><input id="scDnC" placeholder="CN" maxlength="2" oninput="syncDn('sc')"></div>
-                    <div><label>S 省/州</label><input id="scDnS" placeholder="可选" oninput="syncDn('sc')"></div>
-                    <div><label>L 城市</label><input id="scDnL" placeholder="可选" oninput="syncDn('sc')"></div>
-                    <div><label>E 邮箱（OID 字段）</label><input id="scDnE" placeholder="admin@example.com" oninput="syncDn('sc')"></div>
+                    <div><label>CN 通用名称</label><input id="scDnCn" placeholder="通用名称（CN），如 www.test.com" oninput="syncDn('sc')"></div>
+                    <div><label>O 组织</label><input id="scDnO" placeholder="组织（O），如 My Org" oninput="syncDn('sc')"></div>
+                    <div><label>OU 组织单位</label><input id="scDnOu" placeholder="组织单位（OU），如 IT Dept（可选）" oninput="syncDn('sc')"></div>
+                    <div><label>C 国家</label><input id="scDnC" placeholder="国家代码（C），如 CN（两位）" maxlength="2" oninput="syncDn('sc')"></div>
+                    <div><label>S 省/州</label><input id="scDnS" placeholder="省/州（S），如 Guangdong（可选）" oninput="syncDn('sc')"></div>
+                    <div><label>L 城市</label><input id="scDnL" placeholder="城市（L），如 Shenzhen（可选）" oninput="syncDn('sc')"></div>
+                    <div><label>E 邮箱（OID 字段）</label><input id="scDnE" placeholder="邮箱（E，OID 1.2.840.113549.1.9.1），如 admin@example.com" oninput="syncDn('sc')"></div>
                     <div><label>是否 EV 扩展验证</label>
                       <label style="display:flex;justify-content:flex-start;align-items:center;width:100%;height:32px;cursor:pointer;margin:0"><input type="checkbox" id="scDnEvToggle" onchange="toggleDnEv('sc')" style="margin:0;flex:none"></label>
                     </div>
@@ -2770,12 +2982,12 @@ public final class WebAdmin {
                           <option>Non-Commercial Entity</option>
                         </select>
                       </div>
-                      <div><label>注册号（serialNumber 2.5.4.5）</label><input id="scDnReg" placeholder="如 91310000MA5XXXXXXXX" oninput="syncDn('sc')"></div>
-                      <div><label>注册国家（jurisdictionCountry）</label><input id="scDnJc" placeholder="CN" maxlength="2" oninput="syncDn('sc')"></div>
-                      <div><label>注册省（jurisdictionStateOrProvince）</label><input id="scDnJs" placeholder="可选" oninput="syncDn('sc')"></div>
-                      <div><label>注册市（jurisdictionLocality）</label><input id="scDnJl" placeholder="可选" oninput="syncDn('sc')"></div>
-                      <div><label>注册地址（streetAddress 2.5.4.9）</label><input id="scDnAddr" placeholder="可选" oninput="syncDn('sc')"></div>
-                      <div><label>组织标识符（2.5.4.97）</label><input id="scDnOi" placeholder="NTRCN-91310000… / VATDE-123456789" oninput="syncDn('sc')"></div>
+                      <div><label>注册号（serialNumber 2.5.4.5）</label><input id="scDnReg" placeholder="注册号（serialNumber 2.5.4.5），如 91310000MA5XXXXXXXX" oninput="syncDn('sc')"></div>
+                      <div><label>注册国家（jurisdictionCountry）</label><input id="scDnJc" placeholder="注册国家（jurisdictionCountry），如 CN（两位）" maxlength="2" oninput="syncDn('sc')"></div>
+                      <div><label>注册省（jurisdictionStateOrProvince）</label><input id="scDnJs" placeholder="注册省（jurisdictionStateOrProvince），如 Guangdong（可选）" oninput="syncDn('sc')"></div>
+                      <div><label>注册市（jurisdictionLocality）</label><input id="scDnJl" placeholder="注册市（jurisdictionLocality），如 Shenzhen（可选）" oninput="syncDn('sc')"></div>
+                      <div><label>注册地址（streetAddress 2.5.4.9）</label><input id="scDnAddr" placeholder="注册地址（streetAddress 2.5.4.9），如 No.1 Beijing Road（可选）" oninput="syncDn('sc')"></div>
+                      <div><label>组织标识符（2.5.4.97）</label><input id="scDnOi" placeholder="组织标识符（2.5.4.97），如 NTRCN-91310000MA5XXXXXXXX" oninput="syncDn('sc')"></div>
                       <div><label>组织标识符扩展 OID 版本</label>
                         <label style="display:flex;justify-content:flex-start;align-items:center;width:100%;height:32px;cursor:pointer;margin:0" title="未勾选=旧版 1.3.6.1.4.1.57264.1.8（SC27-2019）；勾选=新版 2.23.140.3.1（EVG 2.0.1）"><input type="checkbox" id="scDnOidNew" style="margin:0;flex:none"></label>
                       </div>
@@ -2792,17 +3004,9 @@ public final class WebAdmin {
                 </div>
                 <div class="fsec"><div class="fsec-title">密钥与算法</div>
                   <div class="row">
+                    <div><label>证书类型</label><select id="scCa"><option value="0">终端证书</option><option value="1">中间 CA</option></select></div>
                     <div><label>密钥算法</label><select id="scAlgo" onchange="algoChanged()"><option>RSA</option><option>ECC</option><option>SM2</option></select></div>
-                    <div><label>密钥位数</label>
-                      <div style="display:flex;gap:6px;align-items:center">
-                        <input id="scBits" list="scBitsList" value="2048" title="RSA 可编辑；ECC/SM2 只读固定">
-                        <datalist id="scBitsList">
-                          <option value="1024"></option><option value="2048"></option>
-                          <option value="3072"></option><option value="4096"></option><option value="8192"></option>
-                        </datalist>
-                        <select id="scBitsSel" style="display:none"></select>
-                      </div>
-                    </div>
+                    <div><label>密钥位数</label><select id="scBits"></select></div>
                     <div><label>哈希算法</label><select id="scHash"><option>sha256</option><option>sha1</option><option>sha384</option><option>sha512</option><option>SM3</option></select></div>
                   </div>
                 </div>
@@ -2926,8 +3130,9 @@ public final class WebAdmin {
               <div class="card">
                 <h2>证书验证（CertVerify）</h2>
                 <div class="toolbar">
-                  <input id="vfTarget" placeholder="证书文件路径，或序列号（自动查 PKI/WebPublic/CRT/序列号.crt）" style="flex:1;max-width:520px">
+                  <input id="vfTarget" placeholder="证书文件路径，或序列号（自动查 PKI/WebPublic/CRT/序列号.crt）" style="flex:1;max-width:420px">
                   <button onclick="postForm('/api/verify', {target:v('vfTarget')}, 'vfOut')">验证</button>
+                  <input type="file" id="vfFile" accept=".cer,.crt,.pem" onchange="verifyFile()" style="flex:1;max-width:320px">
                 </div>
                 <pre class="out" id="vfOut"></pre>
               </div>
@@ -3059,21 +3264,21 @@ public final class WebAdmin {
                 <h2>初始化环境（Admin init）</h2>
                 <div class="hint">注意：会备份现有 CERTS.txt 为 .old.时间戳，然后写入模板、签发根证书、全量 OCSP 与时间戳证书。仅在全新环境或确认无业务数据时执行。</div>
                 <div class="row">
-                  <div style="grid-column:1/-1"><label>根证书 DN</label><input id="inDn" value="CN=My Root CA,O=My Org,C=CN"></div>
-                  <div><label>密钥位数</label><input id="inBits" value="2048"></div>
+                  <div style="grid-column:1/-1"><label>根证书 DN</label><input id="inDn" placeholder="根证书 DN（key=value 逗号分隔，key 可为标准属性或 OID），如 CN=My Root CA,O=My Org,C=CN"></div>
+                  <div><label>密钥算法</label><select id="inAlgo" onchange="extAlgoChanged('in')"><option>RSA</option><option>ECC</option><option>SM2</option></select></div>
                   <div><label>哈希算法</label><select id="inHash"><option>sha256</option><option>sha1</option><option>sha384</option><option>sha512</option><option>SM3</option></select></div>
-                  <div><label>密钥算法</label><select id="inAlgo"><option>RSA</option><option>ECC</option><option>SM2</option></select></div>
+                  <div><label>密钥位数</label><select id="inBits"></select></div>
                 </div>
                 <div class="fsec" style="margin-top:14px">
                   <div class="fsec-title">DN 辅助编辑 — 基础字段 / EV 注册字段 / 自定义 OID</div>
                   <div class="row">
-                    <div><label>CN 通用名称</label><input id="inDnCn" placeholder="My Root CA" oninput="syncDn('in')"></div>
-                    <div><label>O 组织</label><input id="inDnO" placeholder="My Org" oninput="syncDn('in')"></div>
-                    <div><label>OU 组织单位</label><input id="inDnOu" placeholder="可选" oninput="syncDn('in')"></div>
-                    <div><label>C 国家</label><input id="inDnC" placeholder="CN" maxlength="2" oninput="syncDn('in')"></div>
-                    <div><label>S 省/州</label><input id="inDnS" placeholder="可选" oninput="syncDn('in')"></div>
-                    <div><label>L 城市</label><input id="inDnL" placeholder="可选" oninput="syncDn('in')"></div>
-                    <div><label>E 邮箱（OID 字段）</label><input id="inDnE" placeholder="admin@example.com" oninput="syncDn('in')"></div>
+                    <div><label>CN 通用名称</label><input id="inDnCn" placeholder="通用名称（CN），如 My Root CA" oninput="syncDn('in')"></div>
+                    <div><label>O 组织</label><input id="inDnO" placeholder="组织（O），如 My Org" oninput="syncDn('in')"></div>
+                    <div><label>OU 组织单位</label><input id="inDnOu" placeholder="组织单位（OU），如 IT Dept（可选）" oninput="syncDn('in')"></div>
+                    <div><label>C 国家</label><input id="inDnC" placeholder="国家代码（C），如 CN（两位）" maxlength="2" oninput="syncDn('in')"></div>
+                    <div><label>S 省/州</label><input id="inDnS" placeholder="省/州（S），如 Guangdong（可选）" oninput="syncDn('in')"></div>
+                    <div><label>L 城市</label><input id="inDnL" placeholder="城市（L），如 Shenzhen（可选）" oninput="syncDn('in')"></div>
+                    <div><label>E 邮箱（OID 字段）</label><input id="inDnE" placeholder="邮箱（E，OID 1.2.840.113549.1.9.1），如 admin@example.com" oninput="syncDn('in')"></div>
                     <div><label>是否 EV 扩展验证</label>
                       <label style="display:flex;justify-content:flex-start;align-items:center;width:100%;height:32px;cursor:pointer;margin:0"><input type="checkbox" id="inDnEvToggle" onchange="toggleDnEv('in')" style="margin:0;flex:none"></label>
                     </div>
@@ -3090,12 +3295,12 @@ public final class WebAdmin {
                           <option>Non-Commercial Entity</option>
                         </select>
                       </div>
-                      <div><label>注册号（serialNumber 2.5.4.5）</label><input id="inDnReg" placeholder="如 91310000MA5XXXXXXXX" oninput="syncDn('in')"></div>
-                      <div><label>注册国家（jurisdictionCountry）</label><input id="inDnJc" placeholder="CN" maxlength="2" oninput="syncDn('in')"></div>
-                      <div><label>注册省（jurisdictionStateOrProvince）</label><input id="inDnJs" placeholder="可选" oninput="syncDn('in')"></div>
-                      <div><label>注册市（jurisdictionLocality）</label><input id="inDnJl" placeholder="可选" oninput="syncDn('in')"></div>
-                      <div><label>注册地址（streetAddress 2.5.4.9）</label><input id="inDnAddr" placeholder="可选" oninput="syncDn('in')"></div>
-                      <div><label>组织标识符（2.5.4.97）</label><input id="inDnOi" placeholder="NTRCN-91310000… / VATDE-123456789" oninput="syncDn('in')"></div>
+                      <div><label>注册号（serialNumber 2.5.4.5）</label><input id="inDnReg" placeholder="注册号（serialNumber 2.5.4.5），如 91310000MA5XXXXXXXX" oninput="syncDn('in')"></div>
+                      <div><label>注册国家（jurisdictionCountry）</label><input id="inDnJc" placeholder="注册国家（jurisdictionCountry），如 CN（两位）" maxlength="2" oninput="syncDn('in')"></div>
+                      <div><label>注册省（jurisdictionStateOrProvince）</label><input id="inDnJs" placeholder="注册省（jurisdictionStateOrProvince），如 Guangdong（可选）" oninput="syncDn('in')"></div>
+                      <div><label>注册市（jurisdictionLocality）</label><input id="inDnJl" placeholder="注册市（jurisdictionLocality），如 Shenzhen（可选）" oninput="syncDn('in')"></div>
+                      <div><label>注册地址（streetAddress 2.5.4.9）</label><input id="inDnAddr" placeholder="注册地址（streetAddress 2.5.4.9），如 No.1 Beijing Road（可选）" oninput="syncDn('in')"></div>
+                      <div><label>组织标识符（2.5.4.97）</label><input id="inDnOi" placeholder="组织标识符（2.5.4.97），如 NTRCN-91310000MA5XXXXXXXX" oninput="syncDn('in')"></div>
                       <div><label>组织标识符扩展 OID 版本</label>
                         <label style="display:flex;justify-content:flex-start;align-items:center;width:100%;height:32px;cursor:pointer;margin:0" title="未勾选=旧版 1.3.6.1.4.1.57264.1.8（SC27-2019）；勾选=新版 2.23.140.3.1（EVG 2.0.1）"><input type="checkbox" id="inDnOidNew" style="margin:0;flex:none"></label>
                       </div>
@@ -3110,7 +3315,7 @@ public final class WebAdmin {
                     <button type="button" class="ghost" onclick="parseDn('in')">从上方 DN 解析回填</button>
                   </div>
                 </div>
-                <div style="margin-top:16px"><button class="danger" onclick="postForm('/api/init', {dn:v('inDn'),bits:v('inBits'),hash:v('inHash'),algo:v('inAlgo')}, 'inOut')">执行初始化</button></div>
+                <div style="margin-top:16px"><button class="danger" onclick="postForm('/api/init', {dn:v('inDn'),bits:extBitsVal('in'),hash:v('inHash'),algo:v('inAlgo')}, 'inOut')">执行初始化</button></div>
                 <pre class="out" id="inOut"></pre>
               </div>
             </div>
@@ -3334,7 +3539,7 @@ public final class WebAdmin {
             <!-- SCT 服务管理 -->
             <div class="page" id="page-ctlog">
               <style>
-                #ctKeysTable, #ctLogsTable { table-layout: fixed; width: 100%; }
+                #ctKeysTable, #ctLogsTable, #ctPubTable { table-layout: fixed; width: 100%; }
                 #ctKeysTable th:nth-child(1) { width: 5%; }
                 #ctKeysTable th:nth-child(2) { width: 18%; }
                 #ctKeysTable th:nth-child(3) { width: 8%; }
@@ -3345,7 +3550,12 @@ public final class WebAdmin {
                 #ctLogsTable th:nth-child(1) { width: 6%; }
                 #ctLogsTable th:nth-child(2) { width: 94%; }
                 /* 鍗曞厓鏍奸暱鍐呭鐢?td > div 妯悜婊氬姩澶勭悊锛屼笉鎹㈣ */
-                #ctKeysTable td > div, #ctLogsTable td > div { overflow-x: auto; min-height: 1.4em; white-space: nowrap; }
+                #ctKeysTable td > div, #ctLogsTable td > div, #ctPubTable td > div { overflow-x: auto; min-height: 1.4em; white-space: nowrap; }
+                #ctPubTable th:nth-child(1) { width: 5%; }
+                #ctPubTable th:nth-child(2) { width: 22%; }
+                #ctPubTable th:nth-child(3) { width: 32%; }
+                #ctPubTable th:nth-child(4) { width: 8%; }
+                #ctPubTable th:nth-child(5) { width: 33%; }
                 #ctKeysTable td:last-child > div { overflow: visible; white-space: nowrap; }
                 .ct-tabs { display: flex; gap: 6px; margin-bottom: 12px; border-bottom: 2px solid var(--border); }
                 .ct-tab { padding: 8px 18px; border: 1px solid var(--border); border-bottom: none; border-radius: 8px 8px 0 0; background: var(--panel); color: var(--text); cursor: pointer; font-size: 14px; font-weight: 600; }
@@ -3355,6 +3565,7 @@ public final class WebAdmin {
                 <div class="ct-tabs">
                   <button class="ct-tab active" id="ctTabBtnKeys" onclick="ctSwitchTab('keys')">CT 日志密钥管理</button>
                   <button class="ct-tab" id="ctTabBtnLogs" onclick="ctSwitchTab('logs')">CT 请求日志</button>
+                  <button class="ct-tab" id="ctTabBtnPub" onclick="ctSwitchTab('pub')">可信公网CT公钥管理</button>
                 </div>
                 <div id="ctPaneKeys">
                   <div class="hint">MAIN 服务 /ct/add 按 RFC 6962 标准对预证书签发 SCT。密钥库：PKI/CTLOG/modpkica_ct_list.json（支持 ECDSA-P256 / RSA-2048 / SM2-P256，结构参考 Google log_list v3；状态 usable=启用 / disable=暂停）。</div>
@@ -3383,6 +3594,21 @@ public final class WebAdmin {
                     </table>
                   </div>
                 </div>
+                <div id="ctPanePub" style="display:none">
+                  <div class="hint">可信公网 CT 日志公钥库：PKI/CTLOG/log_list.json（Google CT log list v3，来源 https://www.gstatic.com/ct/log_list/v3/log_list.json）。公网日志为只读参考数据，不支持启用/暂停/删除。</div>
+                  <div class="toolbar">
+                    <span style="font-size:13px;color:var(--dim)">数据日期：<span id="ctPubDate" style="font-family:var(--mono)">-</span></span>
+                    <button onclick="fetchCtPub()">拉取最新数据</button>
+                    <button class="ghost" onclick="loadCtPub()">刷新列表</button>
+                    <span id="ctPubMsg" style="margin-left:12px;font-size:12px"></span>
+                  </div>
+                  <div style="overflow:auto;max-height:52vh">
+                    <table id="ctPubTable">
+                      <thead><tr><th>#</th><th>日志名称</th><th>日志公钥 ID（log_id）</th><th>状态</th><th>日志地址（url）</th></tr></thead>
+                      <tbody></tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             </div>
 """;
@@ -3406,6 +3632,21 @@ const $ = id => document.getElementById(id);
           el.hidden = false;
           el.textContent = text || '(无输出)';
           el.className = 'out ' + (ok ? 'ok' : 'err');
+        }
+
+        // 证书验证：上传本地 cer/crt/pem 文件验证
+        async function verifyFile() {
+          const inp = $('vfFile');
+          if (!inp.files || !inp.files.length) { showOut('vfOut', '请先选择证书文件（cer / crt / pem）', false); return; }
+          const fd = new FormData();
+          fd.append('file', inp.files[0]);
+          showOut('vfOut', '验证中...', true);
+          try {
+            const resp = await fetch('/api/verify/file', { method: 'POST', body: fd });
+            const j = await resp.json();
+            if (j.ok) showOut('vfOut', j.message || '(无输出)', true);
+            else showOut('vfOut', '验证失败: ' + (j.message || ''), false);
+          } catch (e) { showOut('vfOut', '请求异常: ' + e, false); }
         }
 
         async function postForm(path, params, outId, btn) {
@@ -3947,6 +4188,38 @@ const $ = id => document.getElementById(id);
             '<div class="kv"><b>时间：</b>' + esc(e.time) + '</div>';
         }
 
+        // ===== 证书库：可信公网 cacerts 选择夹（结构同 CERTS.txt 列表） =====
+        let caData = [];
+        function csSwitchTab(t) {
+          document.getElementById('csTabBtnLocal').className = 'ct-tab' + (t==='local' ? ' active' : '');
+          document.getElementById('csTabBtnCa').className = 'ct-tab' + (t==='cacerts' ? ' active' : '');
+          document.getElementById('csPaneLocal').style.display = t==='local' ? '' : 'none';
+          document.getElementById('csPaneCa').style.display = t==='cacerts' ? '' : 'none';
+          if (t==='cacerts') loadCacerts();
+        }
+        async function loadCacerts() {
+          try {
+            const r = await api('/api/certs/cacerts');
+            if (r.ok) { caData = r.data; renderCacerts(); }
+          } catch (e) { /* ignore */ }
+        }
+        function renderCacerts() {
+          const f = v('caFilter').toLowerCase();
+          const rows = caData.filter(e => !f || JSON.stringify(e).toLowerCase().includes(f));
+          const tb = $('caTable').querySelector('tbody');
+          tb.innerHTML = '';
+          rows.forEach(e => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = '<td style="font-family:var(--mono);font-size:12px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(e.serial) + '">' + esc(e.serial) + '</td>' +
+              '<td>' + esc(e.algo) + '</td>' +
+              '<td>' + esc(e.notBefore) + '</td><td>' + esc(e.notAfter) + '</td>' +
+              '<td style="max-width:360px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(e.subject) + '">' + esc(e.subject) + '</td>' +
+              '<td><button class="ghost" data-serial="' + esc(e.serial) + '" style="padding:4px 12px;font-size:12px">详情</button></td>';
+            tb.appendChild(tr);
+          });
+          if (!rows.length) tb.innerHTML = '<tr><td colspan="6" style="color:var(--dim)">（无匹配记录）</td></tr>';
+        }
+
         // 签发证书的颁发者下拉：CERTS.txt 中 R/C 类型序列号（悬停显示证书详情）
         let issuerMap = {};
         async function loadIssuers() {
@@ -3956,6 +4229,8 @@ const $ = id => document.getElementById(id);
             issuerMap = {};
             if (rc.ok) {
               // /api/chain 返回嵌套树，展平为 serial → 节点
+    """;
+    private static final String PAGE_P2B = """
               const walk = nodes => (nodes || []).forEach(n => {
                 issuerMap[n.serial] = n;
                 if (n.children && n.children.length) walk(n.children);
@@ -4304,28 +4579,36 @@ const $ = id => document.getElementById(id);
         }
 
         // ===== 密钥位数联动（RSA 可编辑下拉 / ECC·SM2 只读固定） =====
-        const BITS_OPT = { RSA: [1024, 2048, 3072, 4096, 8192], ECC: [256, 384, 521], SM2: [256] };
+        const BITS_OPT = { RSA: [1024, 2048, 3072, 4096, 5120, 6144, 7168, 8192], ECC: [256, 384, 521], SM2: [256] };
         function algoChanged() {
           const algo = $('scAlgo').value;
           const opts = BITS_OPT[algo] || [];
-          if (algo === 'RSA') {
-            // 可编辑：input + datalist 下拉
-            $('scBitsSel').style.display = 'none';
-            $('scBits').style.display = '';
-            $('scBitsList').innerHTML = opts.map(v => '<option value="' + v + '"></option>').join('');
-            if (!opts.includes(parseInt($('scBits').value, 10))) { $('scBits').value = '2048'; }
-          } else {
-            // 只读：隐藏 input，显示固定选项 select
-            $('scBits').style.display = 'none';
-            $('scBitsSel').style.display = '';
-            $('scBitsSel').innerHTML = opts.map(v => '<option>' + v + '</option>').join('');
-            $('scBitsSel').value = String(opts[0]);
-          }
+          const cur = parseInt($('scBits').value, 10);
+          $('scBits').innerHTML = opts.map(v => '<option>' + v + '</option>').join('');
+          $('scBits').value = opts.includes(cur) ? String(cur) : String(opts[0]);
         }
         // 取当前密钥位数实际值
         function bitsVal() {
-          return $('scBits').style.display === 'none' ? $('scBitsSel').value : $('scBits').value;
+          return $('scBits').value;
         }
+
+        // ===== 密钥位数联动（扩展列表：签发根证书/初始化环境共用） =====
+        // RSA 可编辑下拉 1024..8192（含 5120/6144/7168）；ECC 固定 256/384/521；SM2 固定 256
+        const BITS_OPT_EXT = { RSA: [1024, 2048, 3072, 4096, 5120, 6144, 7168, 8192], ECC: [256, 384, 521], SM2: [256] };
+        function extAlgoChanged(p) {
+          const algo = $(p + 'Algo').value;
+          const opts = BITS_OPT_EXT[algo] || [];
+          const cur = parseInt($(p + 'Bits').value, 10);
+          $(p + 'Bits').innerHTML = opts.map(v => '<option>' + v + '</option>').join('');
+          $(p + 'Bits').value = opts.includes(cur) ? String(cur) : String(opts[0]);
+        }
+        function extBitsVal(p) {
+          return $(p + 'Bits').value;
+        }
+        // 初始填充（脚本位于 DOM 之后，直接填充三个页面）
+        algoChanged();
+        extAlgoChanged('mk');
+        extAlgoChanged('in');
 
         // ===== 有效期选择器 =====
         // 前端 datetime-local: '2026-09-12T10:30:00' ↔ 后端格式 '2026/09/12-10:30:00'
@@ -4563,6 +4846,12 @@ const $ = id => document.getElementById(id);
           const obtn = ev.target.closest ? ev.target.closest('button[data-op]') : null;
           if (obtn) openOp(obtn.getAttribute('data-op'));
         });
+
+        // 可信公网证书库 cacerts 表格：详情按钮事件委托
+        $('caTable').querySelector('tbody').addEventListener('click', function (ev) {
+          const btn = ev.target.closest ? ev.target.closest('button[data-serial]') : null;
+          if (btn) showDetail(btn.getAttribute('data-serial'));
+        });
         </script>
         </body>
         
@@ -4603,13 +4892,15 @@ const $ = id => document.getElementById(id);
         }
 
         // ===== SCT 服务管理 =====
-        async function loadCtLog() { loadCtKeys(); loadCtLogs(); }
+        async function loadCtLog() { loadCtKeys(); loadCtLogs(); loadCtPub(); }
         function ctSwitchTab(t) {
           document.getElementById('ctTabBtnKeys').className = 'ct-tab' + (t==='keys' ? ' active' : '');
           document.getElementById('ctTabBtnLogs').className = 'ct-tab' + (t==='logs' ? ' active' : '');
+          document.getElementById('ctTabBtnPub').className = 'ct-tab' + (t==='pub' ? ' active' : '');
           document.getElementById('ctPaneKeys').style.display = t==='keys' ? '' : 'none';
           document.getElementById('ctPaneLogs').style.display = t==='logs' ? '' : 'none';
-          if (t==='keys') loadCtKeys(); else loadCtLogs();
+          document.getElementById('ctPanePub').style.display = t==='pub' ? '' : 'none';
+          if (t==='keys') loadCtKeys(); else if (t==='logs') loadCtLogs(); else loadCtPub();
         }
         async function loadCtKeys() {
           try {
@@ -4627,9 +4918,8 @@ const $ = id => document.getElementById(id);
                 '<td><div style="font-family:var(--mono);font-size:12px">' + esc(k.logId) + '</div></td>' +
                 '<td><div style="' + stCls + '">' + esc(stTxt) + '</div></td>' +
                 '<td><div>' + esc(k.created) + '</div></td>' +
-                '<td><div><button class="ghost" onclick="delCtKey(\\'' + esc(k.logId) + '\\')">删除</button> ' +
-                '<button class="ghost" onclick="setCtState(\\'' + esc(k.logId) + '\\',\\'usable\\')">启用</button> ' +
-                '<button class="ghost" onclick="setCtState(\\'' + esc(k.logId) + '\\',\\'disable\\')">暂停</button></div></td>';
+                '<td><div><button class="ghost" onclick="setCtState(\\'' + esc(k.logId) + '\\',\\'' + (k.state === 'usable' ? 'disable' : 'usable') + '\\')">' + (k.state === 'usable' ? '暂停' : '启用') + '</button> ' +
+                '<button class="ghost" onclick="delCtKey(\\'' + esc(k.logId) + '\\')">删除</button></div></td>';
               tb.appendChild(tr);
             });
           } catch (e) { const tb = $('ctKeysTable'); if (tb) tb.innerHTML = '<tr><td colspan="7" style="color:#dc2626;padding:8px">加载失败: ' + (e && e.message ? e.message : e) + '</td></tr>'; }
@@ -4647,6 +4937,36 @@ const $ = id => document.getElementById(id);
               tb.appendChild(tr);
             });
           } catch (e) { const tb = $('ctLogsTable'); if (tb) tb.innerHTML = '<tr><td colspan="2" style="color:#dc2626;padding:8px">加载失败: ' + (e && e.message ? e.message : e) + '</td></tr>'; }
+        }
+        const CT_PUB_STATES = { usable: '可用（usable）', readonly: '只读（readonly）', retired: '退役（retired）', pending: '待定（pending）', rejected: '拒绝（rejected）' };
+        async function loadCtPub() {
+          try {
+            const r = await api('/api/ctlog/public');
+            if (!r.ok) return;
+            $('ctPubDate').textContent = r.timestamp || '-';
+            const tb = $('ctPubTable').querySelector('tbody');
+            tb.innerHTML = '';
+            (r.logs || []).forEach(k => {
+              const tr = document.createElement('tr');
+              const stTxt = CT_PUB_STATES[k.state] || k.state || '未知';
+              const stCls = k.state === 'usable' ? 'color:var(--ok);font-weight:700' : 'color:#d97706;font-weight:700';
+              tr.innerHTML = '<td><div>' + k.index + '</div></td>' +
+                '<td><div>' + esc(k.description) + '</div></td>' +
+                '<td><div style="font-family:var(--mono);font-size:12px">' + esc(k.logId) + '</div></td>' +
+                '<td><div style="' + stCls + '">' + esc(stTxt) + '</div></td>' +
+                '<td><div style="font-family:var(--mono);font-size:12px">' + esc(k.url) + '</div></td>';
+              tb.appendChild(tr);
+            });
+          } catch (e) { const tb = $('ctPubTable'); if (tb) tb.innerHTML = '<tr><td colspan="5" style="color:#dc2626;padding:8px">加载失败: ' + (e && e.message ? e.message : e) + '</td></tr>'; }
+        }
+        async function fetchCtPub() {
+          const msg = $('ctPubMsg');
+          if (msg) msg.textContent = '正在拉取…';
+          try {
+            const r = await api('/api/ctlog/publicFetch', {});
+            if (r.ok) { if (msg) msg.textContent = r.message || '已更新'; loadCtPub(); }
+            else { if (msg) msg.textContent = '拉取失败: ' + (r.message || ''); }
+          } catch (e) { if (msg) msg.textContent = '拉取异常: ' + e; }
         }
         async function genCtKey(type) {
           const desc = $('ctDesc').value.trim();
@@ -4673,5 +4993,5 @@ const $ = id => document.getElementById(id);
         </script>
         </html>
     """;
-    private static final String PAGE_HTML = PAGE_P1.concat(PAGE_P1B).concat(PAGE_P2).concat(PAGE_P3);
+    private static final String PAGE_HTML = PAGE_P1.concat(PAGE_P1B).concat(PAGE_P2).concat(PAGE_P2B).concat(PAGE_P3);
 }

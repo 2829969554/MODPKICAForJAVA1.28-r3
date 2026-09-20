@@ -1,7 +1,7 @@
 WEBPORT=80
-OCSP=http://localhost:80/ocsp
-CRL=http://localhost:80/CRL/{CID}.crl
-CRT=http://localhost:80/CRT/{CID}.crt
+OCSP=http://localhost/ocsp
+CRL=http://localhost/crl/{CID}.crl
+CRT=http://localhost/crt/{CID}.crt
 CPS=https://gitee.com/wxgshuju/modpkica
-CPS_Nonice=http://example.com/nonice
+CPS_Nonice=http://localhost
 SUPORT=8080

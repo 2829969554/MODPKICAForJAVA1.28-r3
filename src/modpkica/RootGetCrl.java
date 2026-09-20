@@ -94,7 +94,10 @@ public final class RootGetCrl {
         List<CertsDB.CertEntry> all = db.getAll();
         List<CrlUtil.RevokedCert> revoked = new ArrayList<>();
         for (CertsDB.CertEntry e : all) {
-            if (e.status == 'R') {
+            // CRL 属于具体颁发者：只收集该 issuer 签发的已吊销证书
+            // （自签根证书 issuerId == 自身序列号，天然匹配；避免混入其它颁发者的吊销条目）
+            if (e.status == 'R' && e.issuerId != null
+                    && e.issuerId.equalsIgnoreCase(issuer.serial)) {
                 BigInteger serial = new BigInteger(e.serial, 16);
                 Date revTime = parseModTime(e.time);
                 revoked.add(new CrlUtil.RevokedCert(serial, revTime, e.reason));
@@ -108,13 +111,14 @@ public final class RootGetCrl {
         java.nio.file.Files.write(java.nio.file.Paths.get(webCrlDir + issuer.serial + ".crl"),
                 pem.getBytes(java.nio.charset.StandardCharsets.UTF_8));
         System.out.println("CRL 已生成: " + issuer.serial + " (算法 " + keyType + "/" + hash
-                + ", 吊销 " + revokedCount(all) + " 条)");
+                + ", 吊销 " + revokedCount(issuer, all) + " 条)");
     }
 
-    private static int revokedCount(List<CertsDB.CertEntry> all) {
+    private static int revokedCount(CertsDB.CertEntry issuer, List<CertsDB.CertEntry> all) {
         int n = 0;
         for (CertsDB.CertEntry e : all) {
-            if (e.status == 'R') {
+            if (e.status == 'R' && e.issuerId != null
+                    && e.issuerId.equalsIgnoreCase(issuer.serial)) {
                 n++;
             }
         }

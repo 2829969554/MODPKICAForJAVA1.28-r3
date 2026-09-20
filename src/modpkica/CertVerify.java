@@ -12,8 +12,10 @@ import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.asn1.ocsp.OCSPObjectIdentifiers;
 import org.bouncycastle.asn1.x509.CRLReason;
 import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -183,7 +185,15 @@ public final class CertVerify {
             } else {
                 System.out.println("验证签名： 失败");
             }
-            System.out.println("信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n");
+            // 实验 TrustAnchor：自签名有效 ≠ 属于当前环境的信任锚
+            // （PKI/ROOT/*.crt 中存在该证书公钥才算可信）
+            if (signOk && isInTrustAnchor(cert)) {
+                System.out.println("信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n");
+            } else if (signOk) {
+                System.out.println("信任状态： 不可信 (自签名有效，但不在实验信任锚 PKI/ROOT 中)\n");
+            } else {
+                System.out.println("信任状态： 不可信 (自签名验证失败)\n");
+            }
         } else {
             System.out.println("证书类别： 非根证书\n");
             System.out.println("证书链： ");
@@ -689,7 +699,11 @@ public final class CertVerify {
         String ski = subjectKeyIdHex(issuer);
         if (isSelfSigned(issuer)) {
             System.out.println("       Root --> " + ski);
-            System.out.println("信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n");
+            if (isInTrustAnchor(issuer)) {
+                System.out.println("信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n");
+            } else {
+                System.out.println("信任状态： 不可信 (根证书不在实验信任锚 PKI/ROOT 中)\n");
+            }
             return;
         }
         System.out.println("       CA   --> " + ski);
@@ -711,6 +725,75 @@ public final class CertVerify {
             System.out.println("       CA   -->????????????????????");
             System.out.println("信任状态： 不可信 (由于无法找到上级证书链 或 证书链验证失败，所以它不受信任。)\n");
         }
+    }
+
+    /**
+     * 实验 TrustAnchor 检查：证书公钥是否存在于 PKI/ROOT/*.crt（按 SPKI 字节匹配）。
+     *
+     * <p>自签名验证通过只证明签名有效；是否属于当前环境的信任锚，
+     * 以 PKI/ROOT 目录中是否登记该根为准（实验型 PKI 的信任模型）。
+     */
+    private static boolean isInTrustAnchor(X509Certificate cert) {
+        try {
+            java.io.File rootDir = new java.io.File(AppPaths.baseDir() + "/PKI/ROOT");
+            java.io.File[] files = rootDir.listFiles();
+            if (files == null) {
+                return false;
+            }
+            byte[] spki = cert.getPublicKey().getEncoded();
+            for (java.io.File f : files) {
+                String n = f.getName().toLowerCase();
+                if (!n.endsWith(".crt") && !n.endsWith(".cer") && !n.endsWith(".der")) {
+                    continue;
+                }
+                try {
+                    X509Certificate root = parseCert(java.nio.file.Files.readAllBytes(f.toPath()));
+                    if (java.util.Arrays.equals(root.getPublicKey().getEncoded(), spki)) {
+                        return true;
+                    }
+                } catch (Exception ignore) {
+                }
+            }
+        } catch (Exception ignore) {
+        }
+        // 信任锚第二来源：JAVA 环境 lib/security/cacerts 中的证书
+        return inJavaCacerts(cert);
+    }
+
+    /**
+     * JAVA cacerts 信任锚检查：证书公钥（SPKI）是否存在于
+     * {@code <java.home>/lib/security/cacerts}（JKS/PKCS12，默认密码 changeit）。
+     */
+    private static boolean inJavaCacerts(X509Certificate cert) {
+        try {
+            java.io.File cac = new java.io.File(System.getProperty("java.home"), "lib/security/cacerts");
+            if (!cac.exists()) {
+                return false;
+            }
+            byte[] spki = cert.getPublicKey().getEncoded();
+            char[] pw = "changeit".toCharArray();
+            for (String ksType : new String[]{"JKS", "PKCS12"}) {
+                try {
+                    java.security.KeyStore ks = java.security.KeyStore.getInstance(ksType);
+                    try (java.io.FileInputStream in = new java.io.FileInputStream(cac)) {
+                        ks.load(in, pw);
+                    }
+                    java.util.Enumeration<String> aliases = ks.aliases();
+                    while (aliases.hasMoreElements()) {
+                        java.security.cert.Certificate c = ks.getCertificate(aliases.nextElement());
+                        if (c instanceof X509Certificate
+                                && java.util.Arrays.equals(c.getPublicKey().getEncoded(), spki)) {
+                            return true;
+                        }
+                    }
+                    break;
+                } catch (Exception ignore) {
+                    // 尝试下一种 keystore 类型
+                }
+            }
+        } catch (Exception ignore) {
+        }
+        return false;
     }
 
     /** 判断证书是否为自签名（Subject == Issuer）。 */
@@ -764,12 +847,33 @@ public final class CertVerify {
                 return;
             }
             CertificateFactory cf = CertificateFactory.getInstance("X.509", "BC");
-            X509CRL crl;
+            X509CRL crl = (X509CRL) cf.generateCRL(new ByteArrayInputStream(data));
+            // ---- CRL 本身验证：颁发者身份 / 签名 / 有效期（P1-03） ----
+            X509Certificate issuerCert = fetchIssuerSilent(cert);
+            if (issuerCert == null) {
+                System.out.println("CRL无法检查吊销状态 | 无法获取颁发者证书验证 CRL~ ");
+                return;
+            }
+            if (!crl.getIssuerX500Principal().equals(issuerCert.getSubjectX500Principal())) {
+                System.out.println("CRL无法检查吊销状态 | CRL 颁发者与证书颁发者不匹配~ ");
+                return;
+            }
             try {
-                crl = (X509CRL) cf.generateCRL(new ByteArrayInputStream(data));
-            } catch (CRLException e) {
-                // 尝试 PEM 解码
-                crl = (X509CRL) cf.generateCRL(new ByteArrayInputStream(data));
+                crl.verify(issuerCert.getPublicKey());
+            } catch (Exception e) {
+                System.out.println("CRL无法检查吊销状态 | CRL 签名验证失败~ ");
+                return;
+            }
+            Date now = new Date();
+            if (now.before(crl.getThisUpdate())) {
+                System.out.println("CRL无法检查吊销状态 | CRL 尚未生效 (thisUpdate="
+                        + crl.getThisUpdate() + ")~ ");
+                return;
+            }
+            if (crl.getNextUpdate() != null && now.after(crl.getNextUpdate())) {
+                System.out.println("CRL无法检查吊销状态 | CRL 已过期 (nextUpdate="
+                        + crl.getNextUpdate() + ")~ ");
+                return;
             }
             X509CRLEntry entry = crl.getRevokedCertificate(cert.getSerialNumber());
             if (entry != null) {
@@ -790,8 +894,15 @@ public final class CertVerify {
                 System.out.println("        OCSP无法检查吊销状态:None~ ");
                 return;
             }
-            // 构造 OCSP 请求（CertID 用 SHA1，issuer 信息从证书自身取）
-            byte[] req = buildOcspRequest(cert);
+            X509Certificate issuerCert = fetchIssuerSilent(cert);
+            if (issuerCert == null) {
+                System.out.println("        OCSP无法检查吊销状态 | 无法获取颁发者证书~ ");
+                return;
+            }
+            // 构造 OCSP 请求（CertID 用 SHA1，RFC 5019 兼容；含 Nonce，RFC 6960 §4.4.1）
+            byte[][] reqAndNonce = buildOcspRequest(cert, issuerCert);
+            byte[] req = reqAndNonce[0];
+            byte[] reqNonce = reqAndNonce[1];
             HttpURLConnection conn = (HttpURLConnection) new URL(urls.get(0)).openConnection();
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-Type", "application/ocsp-request");
@@ -803,14 +914,67 @@ public final class CertVerify {
                 os.write(req);
             }
             byte[] resp = readAll(conn.getInputStream());
-            OcspUtil.OcspRequest parsed = OcspUtil.parseRequest(req);
-            // 用 BC 解析 OCSP 响应状态
             org.bouncycastle.cert.ocsp.OCSPResp ocspResp =
                     new org.bouncycastle.cert.ocsp.OCSPResp(resp);
+            // responseStatus：0 = successful
+            if (ocspResp.getStatus() != 0) {
+                System.out.println("        OCSP响应状态异常: " + ocspResp.getStatus() + "~ ");
+                return;
+            }
             org.bouncycastle.cert.ocsp.BasicOCSPResp basic =
                     (org.bouncycastle.cert.ocsp.BasicOCSPResp) ocspResp.getResponseObject();
+            // 响应签名验证（responder 授权：内嵌 OCSP 证书或签发者直接应答）
+            PublicKey respKey = ocspResponderKey(basic, issuerCert);
+            if (!basic.isSignatureValid(
+                    new org.bouncycastle.operator.jcajce.JcaContentVerifierProviderBuilder()
+                            .setProvider("BC").build(respKey))) {
+                System.out.println("        OCSP响应签名验证失败~ ");
+                return;
+            }
             org.bouncycastle.cert.ocsp.SingleResp single =
                     basic.getResponses()[0];
+            // CertID 对应性
+            org.bouncycastle.cert.ocsp.CertificateID reqCid =
+                    new org.bouncycastle.cert.ocsp.CertificateID(
+                            new org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder()
+                                    .setProvider("BC").build()
+                                    .get(new org.bouncycastle.asn1.x509.AlgorithmIdentifier(
+                                            new org.bouncycastle.asn1.ASN1ObjectIdentifier("1.3.14.3.2.26"))),
+                            new org.bouncycastle.cert.jcajce.JcaX509CertificateHolder(issuerCert),
+                            cert.getSerialNumber());
+            // 逐字段比对（RFC 6960 CertID 对应性）；不用 CertificateID.equals()，
+            // 因为 BC 会对 AlgorithmIdentifier 参数表示（null vs DERNull）敏感，
+            // 而响应与服务端 SM2 手动 ASN.1 分支参数表示可能不同（哈希字节实际一致）。
+            org.bouncycastle.cert.ocsp.CertificateID respCid = single.getCertID();
+            if (!respCid.getHashAlgOID().equals(reqCid.getHashAlgOID())
+                    || !java.util.Arrays.equals(respCid.getIssuerNameHash(),
+                            reqCid.getIssuerNameHash())
+                    || !java.util.Arrays.equals(respCid.getIssuerKeyHash(),
+                            reqCid.getIssuerKeyHash())
+                    || !respCid.getSerialNumber().equals(reqCid.getSerialNumber())) {
+                System.out.println("        OCSP响应 CertID 与请求不匹配~ ");
+                return;
+            }
+            // Nonce 回显（RFC 6960 §4.4.1）：Nonce 位于 BasicOCSPResponse 全局
+            // responseExtensions，而非 SingleResp 扩展；存在且值一致才算回显成功
+            Extension nonceExt = basic.getExtension(OCSPObjectIdentifiers.id_pkix_ocsp_nonce);
+            if (nonceExt == null) {
+                System.out.println("        OCSP响应缺少 Nonce 回显（可接受，部分实现不回显）~ ");
+            } else if (!java.util.Arrays.equals(nonceExt.getExtnValue().getOctets(), reqNonce)) {
+                System.out.println("        OCSP响应 Nonce 回显值不一致（可接受，部分实现不回显）~ ");
+            }
+            // 新鲜度：thisUpdate / nextUpdate
+            Date now = new Date();
+            if (now.before(single.getThisUpdate())) {
+                System.out.println("        OCSP响应尚未生效 (thisUpdate="
+                        + single.getThisUpdate() + ")~ ");
+                return;
+            }
+            if (single.getNextUpdate() != null && now.after(single.getNextUpdate())) {
+                System.out.println("        OCSP响应已过期 (nextUpdate="
+                        + single.getNextUpdate() + ")~ ");
+                return;
+            }
             Object st = single.getCertStatus();
             if (st == org.bouncycastle.cert.ocsp.CertificateStatus.GOOD) {
                 System.out.println("          证书正常。（OCSP）");
@@ -827,20 +991,43 @@ public final class CertVerify {
         }
     }
 
-    /** 构造 SHA1 CertID 的 OCSP 请求。 */
-    private static byte[] buildOcspRequest(X509Certificate cert) throws Exception {
+    /**
+     * 取 OCSP 响应者公钥（responder 授权，RFC 6960 §4.2.2.3）：
+     * 优先使用 BasicOCSPResp 内嵌的 OCSP 签名证书；无内嵌证书时
+     * 视为颁发者直接应答，使用颁发者公钥。
+     */
+    private static PublicKey ocspResponderKey(
+            org.bouncycastle.cert.ocsp.BasicOCSPResp basic,
+            X509Certificate issuerCert) throws Exception {
+        org.bouncycastle.cert.X509CertificateHolder[] holders = basic.getCerts();
+        if (holders != null && holders.length > 0) {
+            return new JcaX509CertificateConverter().setProvider("BC")
+                    .getCertificate(holders[0]).getPublicKey();
+        }
+        return issuerCert.getPublicKey();
+    }
+
+    /** 构造 SHA1 CertID 的 OCSP 请求（含 Nonce 扩展）。返回 {请求字节, nonce}。 */
+    private static byte[][] buildOcspRequest(X509Certificate cert,
+                                             X509Certificate issuerCert) throws Exception {
         org.bouncycastle.cert.ocsp.CertificateID cid =
                 new org.bouncycastle.cert.ocsp.CertificateID(
                         new org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder()
                                 .setProvider("BC").build()
                                 .get(new org.bouncycastle.asn1.x509.AlgorithmIdentifier(
                                         new org.bouncycastle.asn1.ASN1ObjectIdentifier("1.3.14.3.2.26"))),
-                        new org.bouncycastle.cert.jcajce.JcaX509CertificateHolder(cert),
+                        new org.bouncycastle.cert.jcajce.JcaX509CertificateHolder(issuerCert),
                         cert.getSerialNumber());
         org.bouncycastle.cert.ocsp.OCSPReqBuilder builder =
                 new org.bouncycastle.cert.ocsp.OCSPReqBuilder();
         builder.addRequest(cid);
-        return builder.build().getEncoded();
+        byte[] nonce = new byte[16];
+        new java.security.SecureRandom().nextBytes(nonce);
+        builder.setRequestExtensions(new org.bouncycastle.asn1.x509.Extensions(
+                new org.bouncycastle.asn1.x509.Extension(
+                        OCSPObjectIdentifiers.id_pkix_ocsp_nonce,
+                        false, new DEROctetString(nonce))));
+        return new byte[][]{builder.build().getEncoded(), nonce};
     }
 
     private static List<String> crlUrls(X509Certificate cert) throws Exception {
@@ -954,9 +1141,18 @@ public final class CertVerify {
     // HTTP / 工具
     // ============================================================
 
+    /** HTTP 响应最大字节数（防恶意证书 AIA/CRL/OCSP 拉取超大响应，P2-01）。 */
+    private static final int MAX_HTTP_SIZE = 5 * 1024 * 1024;
+
     private static byte[] httpGet(String url, int timeoutMs) {
         try {
-            HttpURLConnection conn = (HttpURLConnection) URI.create(url).toURL().openConnection();
+            URI uri = URI.create(url);
+            String scheme = uri.getScheme() == null ? "" : uri.getScheme().toLowerCase();
+            // 网络策略（P2-02）：只允许 HTTP / HTTPS，拒绝 file: 等其它协议
+            if (!"http".equals(scheme) && !"https".equals(scheme)) {
+                return null;
+            }
+            HttpURLConnection conn = (HttpURLConnection) uri.toURL().openConnection();
             conn.setConnectTimeout(timeoutMs);
             conn.setReadTimeout(timeoutMs);
             int code = conn.getResponseCode();
@@ -975,6 +1171,10 @@ public final class CertVerify {
         int n;
         while ((n = in.read(buf)) != -1) {
             out.write(buf, 0, n);
+            if (out.size() > MAX_HTTP_SIZE) {
+                throw new IOException("HTTP 响应超过大小限制 "
+                        + (MAX_HTTP_SIZE / 1024 / 1024) + "MB");
+            }
         }
         return out.toByteArray();
     }

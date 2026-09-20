@@ -300,6 +300,41 @@ public final class OcspUtil {
         return new DERSequence(outerVec).getEncoded();
     }
 
+    /**
+     * 校验请求 CertID 中的 issuerNameHash / issuerKeyHash 是否与颁发者证书一致
+     * （P1-06：不同颁发者下相同序列号不得互相误命中）。
+     *
+     * <p>口径与响应构造完全一致：issuerKeyHash 取 SPKI BIT STRING 裸公钥字节，
+     * issuerNameHash 取 issuer 证书 Subject 的规范 DER 编码。
+     *
+     * @param issuerCert  颁发者证书
+     * @param hashAlgOid  请求 CertID 的哈希算法 OID
+     * @param reqNameHash 请求中的 issuerNameHash
+     * @param reqKeyHash  请求中的 issuerKeyHash
+     * @return 一致返回 true；请求缺少哈希或计算失败返回 false
+     */
+    public static boolean matchesIssuerHash(X509Certificate issuerCert,
+                                            String hashAlgOid,
+                                            byte[] reqNameHash,
+                                            byte[] reqKeyHash) {
+        if (reqNameHash == null || reqKeyHash == null || hashAlgOid == null) {
+            return false;
+        }
+        try {
+            java.security.MessageDigest md =
+                    java.security.MessageDigest.getInstance(hashDigestName(hashAlgOid));
+            byte[] calcKeyHash = md.digest(
+                    new org.bouncycastle.cert.jcajce.JcaX509CertificateHolder(issuerCert)
+                            .getSubjectPublicKeyInfo().getPublicKeyData().getBytes());
+            md.reset();
+            byte[] calcNameHash = md.digest(issuerCert.getSubjectX500Principal().getEncoded());
+            return java.util.Arrays.equals(calcNameHash, reqNameHash)
+                    && java.util.Arrays.equals(calcKeyHash, reqKeyHash);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     /** 把哈希 OID 映射为 JCA 摘要名，用于回算 issuerNameHash/issuerKeyHash。 */
     private static String hashDigestName(String oid) {
         if (Sm2Util.OID_SM3.equals(oid)) {

@@ -271,6 +271,11 @@ public final class CertUtil {
         @Override
         public byte[] getSignature() {
             byte[] msg = buffer.toByteArray();
+            // 关键：每次取签名后必须清空输入缓冲并复位签名器——
+            // SCT 流程（预证书 -> 最终证书）复用同一 ContentSigner 构建两次，
+            // 不清空会导致第二次签名基于 预证书TBS+最终TBS 拼接，签名无效。
+            buffer.reset();
+            signer.reset();
             signer.update(msg, 0, msg.length);
             try {
                 return signer.generateSignature();

@@ -100,13 +100,14 @@ public final class MAIN {
 
         System.out.println("MOD PKI CA Server is running on http://localhost:" + port);
         System.out.println("MOD PKI CA 服务端启动: http://localhost:" + port);
-        System.out.println("MOD PKI CA OCSP服务启动: http://localhost:" + port + "/OCSP");
+        System.out.println("MOD PKI CA OCSP服务启动: http://localhost:" + port + "/OCSP（RSA/ECC/SM2，摘要自适应 SHA1/SHA256/SHA384/SHA512/SM3）");
         System.out.println("MOD PKI CA 微软Authenticode时间戳SHA1 服务启动: http://localhost:"
                 + port + "/timestamp/sha1");
         System.out.println("MOD PKI CA 微软Authenticode时间戳SHA256 服务启动: http://localhost:"
-                + port + "/timestamp");
-        System.out.println("MOD PKI CA RFC3161文档签名专用时间戳(SHA1&SHA256自适应) 服务启动: http://localhost:"
+                + port + "/timestamp（SM2/SM3 自适应）");
+        System.out.println("MOD PKI CA RFC3161文档签名专用时间戳(SHA1&SHA256&SM3自适应) 服务启动: http://localhost:"
                 + port + "/rfc3161");
+        System.out.println("MOD PKI CA CT日志服务启动: http://localhost:" + port + "/ct/add（RFC 6962 / Certificate Transparency，接收 PEM 预证书+颁发者证书）");
         System.out.println("MOD PKI CA 监听端口  :" + port);
         System.out.println("如需修改配置请编辑./PKI/CONFIG.txt文件");
         System.out.println("本程序作者：@魔帝本尊  QQ：2829969554");
@@ -200,6 +201,21 @@ public final class MAIN {
                     "PKI/ROOT/" + issuerId + ".crt",
                     "PKI/CA/" + issuerId + ".crt");
             X509Certificate issuerCert = PemIO.readCert(baseDir + "/" + issuerCertPath);
+
+            // ---- P1-06：按 issuer 二次校验 ----
+            // 请求 CertID 携带 issuerNameHash/issuerKeyHash 时，与真正颁发者证书重算值比对；
+            // 不一致说明请求的 serial 属于其它颁发者（同序列号冲突），按未知序列号返回无签名响应。
+            if (parsed.issuerNameHash != null && parsed.issuerKeyHash != null
+                    && !OcspUtil.matchesIssuerHash(issuerCert, hashOid,
+                            parsed.issuerNameHash, parsed.issuerKeyHash)) {
+                log("OCSP:颁发者哈希不匹配,返回无签名响应 序列号=" + serialHex
+                        + " 实际颁发者=" + issuerCert.getSubjectX500Principal());
+                byte[] unsigned = OcspUtil.unauthorizedResponse();
+                sendBytes(ex, unsigned, "application/ocsp-response");
+                MLog.append(baseDir, "OCSP响应",
+                        "状态=unauthorized(颁发者哈希不匹配) 长度=" + unsigned.length + "字节");
+                return;
+            }
 
             // ---- 构造响应 ----
             byte[] respBytes;

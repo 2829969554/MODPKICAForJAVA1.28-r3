@@ -61,13 +61,45 @@ import java.util.Locale;
  */
 public final class MakeRoot {
 
-    /** 根证书序列号基准：90000000000000000 + 当前 Unix 秒（与 Go 版一致） */
-    private static final BigInteger SERIAL_BASE = BigInteger.valueOf(90000000000000000L);
-
     /** 证书生效时间（Go 版固定值） */
     private static final String NOT_BEFORE = "2001-07-19 15:30:00";
     /** 证书过期时间（Go 版固定值） */
     private static final String NOT_AFTER = "2099-07-19 15:30:00";
+
+    /** 生成 128 位安全随机正序列号（十六进制小写，查 CERTS.txt 去重）。 */
+    private static BigInteger buildSerial(String baseDir) {
+        java.security.SecureRandom rnd = new java.security.SecureRandom();
+        java.util.Set<String> used = existingSerials(baseDir);
+        BigInteger serial;
+        do {
+            serial = new BigInteger(128, rnd);
+        } while (serial.signum() <= 0 || used.contains(serial.toString(16)));
+        return serial;
+    }
+
+    /** 读取 CERTS.txt 中已登记的序列号集合（十六进制小写），避免新序列号碰撞。 */
+    private static java.util.Set<String> existingSerials(String baseDir) {
+        java.util.Set<String> used = new java.util.HashSet<>();
+        try {
+            java.nio.file.Path p = java.nio.file.Paths.get(baseDir + "/PKI/CERTS.txt");
+            if (java.nio.file.Files.exists(p)) {
+                for (String raw : java.nio.file.Files.readAllLines(p,
+                        java.nio.charset.StandardCharsets.UTF_8)) {
+                    String line = raw.trim();
+                    if (line.isEmpty() || line.startsWith("#")) {
+                        continue;
+                    }
+                    String[] parts = line.split("\s+");
+                    if (parts.length >= 1) {
+                        used.add(parts[0].toLowerCase());
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+            // 读不到视为空集合，随机序列号碰撞概率可忽略
+        }
+        return used;
+    }
 
     private MakeRoot() {
     }
@@ -112,7 +144,8 @@ public final class MakeRoot {
         }
 
         // ---- 2. 序列号 / 有效期 ----
-        BigInteger serial = SERIAL_BASE.add(BigInteger.valueOf(System.currentTimeMillis() / 1000L));
+        // 128 位密码学安全随机正整数（避免同秒/并发签发碰撞），与 MakeCert.buildSerial 一致
+        BigInteger serial = buildSerial(baseDir);
         Date notBefore = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(NOT_BEFORE);
         Date notAfter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(NOT_AFTER);
 
@@ -237,10 +270,8 @@ public final class MakeRoot {
      */
     private static X500Name buildSubject(String dn) {
         X500NameBuilder builder = new X500NameBuilder();
-        String[] parts = dn.split(",");
-        // 记录值，最后按 Go 版顺序统一添加
         java.util.Map<String, String> fields = new java.util.LinkedHashMap<>();
-        for (String part : parts) {
+        for (String part : dn.split(",")) {
             String p = part.trim();
             int idx = p.indexOf('=');
             if (idx <= 0) {
@@ -253,28 +284,62 @@ public final class MakeRoot {
             }
             fields.put(key, value);
         }
-        addIfPresent(builder, BCStyle.C, fields.get("C"));
-        addIfPresent(builder, BCStyle.O, fields.get("O"));
-        addIfPresent(builder, BCStyle.OU, fields.get("OU"));
-        addIfPresent(builder, BCStyle.L, fields.get("L"));
-        addIfPresent(builder, BCStyle.ST, fields.get("S"));
-        addIfPresent(builder, BCStyle.STREET, fields.get("STREET"));
-        addIfPresent(builder, BCStyle.POSTAL_CODE, fields.get("PostalCode"));
-        addIfPresent(builder, BCStyle.SERIALNUMBER, fields.get("SERIALNUMBER"));
-        addIfPresent(builder, BCStyle.CN, fields.get("CN"));
-        // 非标准字段：key 直接写 OID（如 2.5.4.42=张三、1.2.3.4.5=自定义），按输入顺序追加
-        for (java.util.Map.Entry<String, String> e : fields.entrySet()) {
-            String k = e.getKey();
-            if (isStandardDnKey(k)) {
-                continue;
-            }
-            try {
-                addIfPresent(builder, new ASN1ObjectIdentifier(k), e.getValue());
-            } catch (Exception ignored) {
-                // 既不是标准字段也不是合法 OID：忽略该 RDN
-            }
+        // 统一标准排序：按 X.500/RFC 规范顺序（C,ST,L,STREET,PostalCode,O,OU,SERIALNUMBER,CN），
+        // EV 注册字段（jurisdiction* 注册市/省/国、organizationIdentifier、emailAddress）随后，
+        // 自定义 OID 字段排最后并保持输入顺序。
+        java.util.List<java.util.Map.Entry<String, String>> sorted =
+                new java.util.ArrayList<>(fields.entrySet());
+        sorted.sort(java.util.Comparator.comparingInt(e -> dnOrder(e.getKey())));
+        for (java.util.Map.Entry<String, String> e : sorted) {
+            addDnField(builder, e.getKey(), e.getValue());
         }
         return builder.build();
+    }
+
+    /** 统一 DN 属性排序权重（X.500/RFC 规范顺序，从根到叶）：C→ST→L→STREET→PostalCode→O→OU→SERIALNUMBER→CN，
+     *  EV 注册字段（jurisdiction* 注册市/省/国、organizationIdentifier、emailAddress）随后，自定义 OID 最后。 */
+    private static int dnOrder(String key) {
+        switch (key) {
+            case "C": case "2.5.4.6": return 10;                       // 国家
+            case "S": case "ST": case "2.5.4.8": return 20;            // 省/州
+            case "L": case "2.5.4.7": return 30;                       // 城市
+            case "STREET": case "2.5.4.9": return 40;                  // 街道
+            case "PostalCode": case "2.5.4.17": return 50;             // 邮编
+            case "O": case "2.5.4.10": return 60;                      // 组织
+            case "OU": case "2.5.4.11": return 70;                     // 组织单位
+            case "SERIALNUMBER": case "2.5.4.5": return 80;            // 注册号
+            case "CN": case "2.5.4.3": return 90;                      // 通用名称
+            case "1.3.6.1.4.1.311.60.2.1.1": return 100;               // jurisdictionLocality 注册市
+            case "1.3.6.1.4.1.311.60.2.1.2": return 110;               // jurisdictionStateOrProvince 注册省
+            case "1.3.6.1.4.1.311.60.2.1.3": return 120;               // jurisdictionCountry 注册国家
+            case "2.5.4.97": return 130;                               // organizationIdentifier 组织标识符
+            case "1.2.840.113549.1.9.1": return 140;                   // emailAddress
+            default: return 1000;                                      // 自定义 OID：保持输入顺序
+        }
+    }
+
+    /** 按 key（短名或 OID）添加 RDN，非标准 key 直接按 OID 解析。 */
+    private static void addDnField(X500NameBuilder builder, String key, String value) {
+        if (value == null || value.isEmpty()) {
+            return;
+        }
+        switch (key) {
+            case "C": addIfPresent(builder, BCStyle.C, value); return;
+            case "O": addIfPresent(builder, BCStyle.O, value); return;
+            case "OU": addIfPresent(builder, BCStyle.OU, value); return;
+            case "L": addIfPresent(builder, BCStyle.L, value); return;
+            case "S": case "ST": addIfPresent(builder, BCStyle.ST, value); return;
+            case "STREET": addIfPresent(builder, BCStyle.STREET, value); return;
+            case "PostalCode": addIfPresent(builder, BCStyle.POSTAL_CODE, value); return;
+            case "SERIALNUMBER": addIfPresent(builder, BCStyle.SERIALNUMBER, value); return;
+            case "CN": addIfPresent(builder, BCStyle.CN, value); return;
+            default:
+                try {
+                    addIfPresent(builder, new ASN1ObjectIdentifier(key), value);
+                } catch (Exception ignored) {
+                    // 既不是标准字段也不是合法 OID：忽略该 RDN
+                }
+        }
     }
 
     /** 标准 DN 短名（Go 版 pkix.Name 支持的固定字段）。 */
