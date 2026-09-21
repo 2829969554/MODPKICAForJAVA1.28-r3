@@ -18216,3 +18216,2793 @@
 命令: POST /api/verify 提交数据={"target":"54084a05bcd2585704d2856a3a082cb3"}
 结果:         版本： 3\r\n      序列号： 54084a05bcd2585704d2856a3a082cb3\r\n    签名算法： SHA256-RSA (1.2.840.113549.1.1.11)\r\n签名哈希算法： SHA256\n\r\n颁发者： CN=RSA测试中间CA, OU=ChinaITBoys, O=MODPKICA\r\n有效期从： Mon Sep 21 00:13:50 CST 2026\r\n有效期到： Tue Sep 21 00:13:50 CST 2027\n\r\n使用者： CN=RSA吊销的样本\r\n    公钥： RSA 1024\r\n授权密钥标识符  ： 25c13e635f66bb241c1e8776483db5fb61839b0f\r\n使用者密钥标识符： 91b0a434cc3c6e132ce9745c27a05c6aa7b3bbb6\n\r\n增强型密钥用法：\n\r\n              服务器身份验证 (1.3.6.1.5.5.7.3.1)\r\n授权信息访问：\r\n              OCSP   URL=http://localhost/ocsp\r\n              颁发者 URL=http://localhost/crt/1bbafe9733ea1d09dd26a18e8f3b6.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost/crl/1bbafe9733ea1d09dd26a18e8f3b6.crl\r\n              CRL分发点 = http://localhost/crl/1bbafe9733ea1d09dd26a18e8f3b6.der.crl\r\ndigitalSignature, nonRepudiation, keyEncipherment, dataEncipherment, keyAgreement\r\n证书策略：\r\n              证书颁发策略(Statement Identifier) OID = 1.3.6.1.4.1.4146.1.95\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\nSCT列表:\r\n      第 1 条 SCT:\r\n        日志版本:  V1\r\n        日志名称:  MODPKICA CT Log RSA\r\n      日志标识符:  90cc21ee226524a0e54bd351193b32d668654a88c249357418ec298d58321ca6\r\n          时间戳:  Mon Sep 21 00:13:50 CST 2026\r\n        签名类型:  RSA-SHA256\r\n            签名:  39648045f0a1b60b077b1c933599a9c7f84252f2ecec7f61536360bfb42922b0898d4590aaad2730982815ba97142d9883428b889ff3057878a099e9eb06b27084c00d8b0686929dbb58ce508434e91b3ed1d765d36a3814a53f758a9e1ca00961ed84eae8f2d9edf9ee060cf9461e3d34bcd1de5815bfb8150861149f323155aa969d7b516738eea35014f0ffdd96f1305143ef5a06dda92b9947f66f7f2257aaf2d3a177b0c67b435db0dcb5e023628dc0002831b9520676747640161f474d731e2b593a64848615645cbffdbcff03024a6c16c8aeaa570e25cf619948da3a22125565f4806bf90856d3946b74087c9e2157e534652093a485d0eea5ce7a35\r\n            状态:  签名有效\r\n\r\n      第 2 条 SCT:\r\n        日志版本:  V1\r\n        日志名称:  MODPKICA CT Log ECDSA\r\n      日志标识符:  9a1bb0c17324f2c23c32c01b558c154a7b629cbd0167fd1a498cd302c1d17bb9\r\n          时间戳:  Mon Sep 21 00:13:50 CST 2026\r\n        签名类型:  ECDSA-SHA256\r\n            签名:  3045022100a919ef2a60cd7bbf505a30cd6f0bc60985723f33c26de8195b9aa7c0a6822c0c022049db56f45687afef772fc40011a9e22c3d72fb9a1a17c8e9a5bed97f4f972efc\r\n            状态:  签名有效\r\n\r\n      第 3 条 SCT:\r\n        日志版本:  V1\r\n        日志名称:  MODPKICA CT Log RSA\r\n      日志标识符:  a27f74a6e509622a347ec2fce3ad374570d94d69062cc55b921a548ad46c300c\r\n          时间戳:  Mon Sep 21 00:13:50 CST 2026\r\n        签名类型:  RSA-SHA256\r\n            签名:  6ab8ec30c1e87b090137c8cf3f948eb95ecc60f7bb27a16cade6e65693d4d5c65abe584e9b1fee1ab86280bd2ab4456cbeaa102085c2db3eb288f82b34b7b17f2f56bc6e8ac054bd2b5f01651630a042894d50d9ea01111748c8708204115dd0f9893a2b43b9a10ab57aa6ed3cf54bd557dd58b46f10be61a9d4d14ce6c62b8f0d93d2bdf565820923c9eb908204e4dbe3ef52ee3913a07635340f6a3a27339247ab55171a231207f9401e57ef4f10dcc23e73d80962693f9ca9248354d133c54a351ec8a55c34af5de7dbe25a6c2c9af242bdad845b0c88f2503fab5fc3d86fda21e6170b17884455b8d354a1c0b6471e9ec9fdc915cd54d3f2f61a824b27b9\r\n            状态:  签名有效\r\n\r\n\n\n\r\n证书签名：\n        12f349482e4378586884914947de6c7b220063086bfecf5dac2208c263c36eff27eb61079c1b4dbd3a925305406112e1d964c180d5f761c122d211ce575c08b0123fdb07a89b58c23f596f20e357c032ca14b09bb2243dac77033f9c4ce590eec2f958d26893e1387300886b6a22d14b91cc4e6d75c32a227d97879483a162708962f75a3d28285c907a116cf2d116e89efb3b0889d1aff7f6c9a05319a7d608a400d7bbd54eea27372bcfbc26148db6955f80a237250f25e2b39134a78125e3fda8aab9ba2aa8bf2c5c3906e621f9ed8c6237db9e78ecea0fa00feb329dcf1b16b44d87b2ee215c45de6b0d833b6f950206d96f7fd52f654c47cd6210aa4d05\n\r\n证书类别： 非根证书\n\r\n证书链： \r\n       CA   --> 25c13e635f66bb241c1e8776483db5fb61839b0f\r\n       Root --> ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n验证签名： 通过、签名有效 颁发者=CN=RSA测试中间CA, OU=ChinaITBoys, O=MODPKICA\r\n证书状态：          此证书已被颁发机构吊销。（CRL） 吊销时间：Fri Sep 18 00:15:18 CST 2026\r\n2026/09/21 00:16:14 OCSP:已吊销,序列号 54084a05bcd2585704d2856a3a082cb3\r\n          此证书已被颁发机构吊销。（OCSP）吊销时间：Fri Sep 18 00:15:18 CST 2026 原因:1\r\n\r\n密钥 Id 哈希(SHA1)          ： 852b41b1faa5edc07db537316d8ac41c3c8f6510\r\n密钥 Id 哈希(RFC-SHA1)      ： 91b0a434cc3c6e132ce9745c27a05c6aa7b3bbb6\r\n密钥 Id 哈希(Pin-SHA256)    ： hJyUR0Hz1qozeaEth54xvj8exCVwzUq+pUJgi4gUTL4=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 849c944741f3d6aa3379a12d879e31be3f1ec42570cd4abea542608b88144cbe\r\n\n\r\n证书哈希(SHA1)              ： 4b5641b8c2d3c34d89a819fec6aaec26f8ec2f07\r\n证书哈希(SHA256)            ： 4aa47aabdbbe0ed17bf6d6596bf5ad0121e9f8b3bca00f54b0cb5d805aed5033\r\n签名哈希                    ： 3c679fc19a847c5996b85dafbe79516b1da7ed33935ed1696a8afa7b78db52a4\r\n
 
+时间: 2026/09/21 22:53:20
+时间戳: 1790002400731
+操作: ADMIN initOCSP
+命令: initOCSP RSA 66ef152dc259591fc0b9f15ae02e1af8
+结果: OCSP 签名证书 66ef152dc259591fc0b9f15ae02e1af8 算法=RSA
+
+时间: 2026/09/21 22:53:20
+时间戳: 1790002400774
+操作: ADMIN initOCSP
+命令: initOCSP SM2 904c5cb2cbef8317a1fb6b06744fea69
+结果: OCSP 签名证书 904c5cb2cbef8317a1fb6b06744fea69 算法=SM2
+
+时间: 2026/09/21 22:53:20
+时间戳: 1790002400824
+操作: ADMIN initOCSP
+命令: initOCSP ECC 613077af29b3beddef72620948bf6453
+结果: OCSP 签名证书 613077af29b3beddef72620948bf6453 算法=ECC
+
+时间: 2026/09/21 22:53:21
+时间戳: 1790002401174
+操作: ADMIN initOCSP
+命令: initOCSP RSA 1bbafe9733ea1d09dd26a18e8f3b6
+结果: OCSP 签名证书 1bbafe9733ea1d09dd26a18e8f3b6 算法=RSA
+
+时间: 2026/09/21 22:53:21
+时间戳: 1790002401200
+操作: ADMIN initOCSP
+命令: initOCSP ECC 1fe5611df74dcf1d51d48a1be40592a6
+结果: OCSP 签名证书 1fe5611df74dcf1d51d48a1be40592a6 算法=ECC
+
+时间: 2026/09/21 22:53:21
+时间戳: 1790002401229
+操作: ADMIN initOCSP
+命令: initOCSP SM2 7d33a265e4442fd4810e3ca75ea35fcc
+结果: OCSP 签名证书 7d33a265e4442fd4810e3ca75ea35fcc 算法=SM2
+
+时间: 2026/09/21 22:53:21
+时间戳: 1790002401231
+操作: WebAdmin /api/initocsp
+命令: POST /api/initocsp 提交数据={}
+结果: OCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/66ef152dc259591fc0b9f15ae02e1af8_ocsp.crt\r\nOCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/904c5cb2cbef8317a1fb6b06744fea69_ocsp.crt\r\nOCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/613077af29b3beddef72620948bf6453_ocsp.crt\r\nOCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/1bbafe9733ea1d09dd26a18e8f3b6_ocsp.crt\r\nOCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/1fe5611df74dcf1d51d48a1be40592a6_ocsp.crt\r\nOCSP专用证书生成成功！C:\Users\28299\Desktop\modpkica4JAVA/PKI/OCSP/7d33a265e4442fd4810e3ca75ea35fcc_ocsp.crt\r\ninitOCSP 完成，共 6 张\n
+
+时间: 2026/09/21 22:53:22
+时间戳: 1790002402633
+操作: ADMIN initTIMSTAMP
+命令: initTIMSTAMP SHA1 RSA 66ef152dc259591fc0b9f15ae02e1af8
+结果: TSA 证书 RSA_sha1 根=66ef152dc259591fc0b9f15ae02e1af8
+
+时间: 2026/09/21 22:53:23
+时间戳: 1790002403135
+操作: ADMIN initTIMSTAMP
+命令: initTIMSTAMP SHA256 RSA 66ef152dc259591fc0b9f15ae02e1af8
+结果: TSA 证书 RSA_sha256 根=66ef152dc259591fc0b9f15ae02e1af8
+
+时间: 2026/09/21 22:53:23
+时间戳: 1790002403171
+操作: ADMIN initTIMSTAMP
+命令: initTIMSTAMP SM3 SM2 904c5cb2cbef8317a1fb6b06744fea69
+结果: TSA 证书 SM2_sm3 根=904c5cb2cbef8317a1fb6b06744fea69
+
+时间: 2026/09/21 22:53:23
+时间戳: 1790002403200
+操作: ADMIN initTIMSTAMP
+命令: initTIMSTAMP SHA1 ECC 613077af29b3beddef72620948bf6453
+结果: TSA 证书 ECC_sha1 根=613077af29b3beddef72620948bf6453
+
+时间: 2026/09/21 22:53:23
+时间戳: 1790002403239
+操作: ADMIN initTIMSTAMP
+命令: initTIMSTAMP SHA256 ECC 613077af29b3beddef72620948bf6453
+结果: TSA 证书 ECC_sha256 根=613077af29b3beddef72620948bf6453
+
+时间: 2026/09/21 22:53:23
+时间戳: 1790002403240
+操作: WebAdmin /api/inittimestamp
+命令: POST /api/inittimestamp 提交数据={}
+结果: initTIMSTAMP 完成，共 3 张\n
+
+时间: 2026/09/21 22:53:23
+时间戳: 1790002403949
+操作: ADMIN signCRL
+命令: signCRL
+结果: CRL 已刷新
+
+时间: 2026/09/21 22:53:23
+时间戳: 1790002403950
+操作: WebAdmin /api/crl
+命令: POST /api/crl 提交数据={}
+结果: CRL 已生成: 66ef152dc259591fc0b9f15ae02e1af8 (算法 RSA/sha256, 吊销 0 条)\r\nCRL 已生成: 904c5cb2cbef8317a1fb6b06744fea69 (算法 SM2/sm3, 吊销 0 条)\r\nCRL 已生成: 613077af29b3beddef72620948bf6453 (算法 ECC/sha256, 吊销 0 条)\r\nCRL 已生成: 1bbafe9733ea1d09dd26a18e8f3b6 (算法 RSA/sha256, 吊销 1 条)\r\nCRL 已生成: 1fe5611df74dcf1d51d48a1be40592a6 (算法 ECC/sha256, 吊销 1 条)\r\nCRL 已生成: 7d33a265e4442fd4810e3ca75ea35fcc (算法 SM2/sm3, 吊销 1 条)\r\nCRL 生成完成，共处理颁发者 6 个\r\n
+
+时间: 2026/09/21 22:59:08
+时间戳: 1790002748560
+操作: 收到CTLog请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ct/add 长度=4171字节
+
+时间: 2026/09/21 22:59:08
+时间戳: 1790002748610
+操作: CTLog签发SCT列表
+命令: 预证书=CN=test 颁发者=CN=RSA测试中间CA, OU=ChinaITBoys, O=MODPKICA 类型=RSA/ECDSA 密钥组数=3
+结果: SCT列表=548字节，已写入 ctlogs.txt
+
+时间: 2026/09/21 22:59:08
+时间戳: 1790002748618
+操作: CTLog提交预证书
+命令: url=http://127.0.0.1:80/ct/add 长度=4171字节
+结果: 获取 SCT 列表 548字节
+
+时间: 2026/09/21 22:59:08
+时间戳: 1790002748658
+操作: ADMIN signCERT
+命令: signCERT "CN=test" 1024 sha1 1 1.3.6.1.5.5.7.3.1,1.3.6.1.5.5.7.3.2,1.3.6.1.5.5.7.3.3,1.3.6.1.5.5.7.3.4,1.3.6.1.5.5.7.3.5,1.3.6.1.5.5.7.3.6,1.3.6.1.5.5.7.3.7,1.3.6.1.5.5.7.3.8,1.3.6.1.5.5.7.3.9,1.3.6.1.4.1.311.61.1.1,1.3.6.1.4.1.311.10.3.5,1.3.6.1.4.1.311.10.3.6,1.3.6.1.4.1.311.10.3.7,1.3.6.1.4.1.311.10.3.8,1.3.6.1.4.1.311.64.1.1,1.3.6.1.5.5.7.3.36,1.3.6.1.4.1.311.10.3.19,1.3.6.1.5.2.3.5,1.3.6.1.4.1.311.10.3.13,1.3.6.1.4.1.311.21.5,1.3.6.1.4.1.311.10.3.10,1.3.6.1.4.1.311.10.3.11,1.3.6.1.4.1.311.10.3.12,1.3.6.1.4.1.311.10.3.2,1.3.6.1.4.1.311.10.3.4,1.3.6.1.4.1.311.21.6,1.3.6.1.4.1.311.21.19,1.3.6.1.5.5.8.2.2,1.3.6.1.4.1.311.10.3.4.1,1.3.6.1.4.1.311.10.3.9,1.3.6.1.4.1.311.10.5.1,1.3.6.1.4.1.311.20.1,1.3.6.1.4.1.311.10.6.1,1.3.6.1.4.1.311.10.6.2,1.3.6.1.4.1.311.20.2.2 0 1 null null 1bbafe9733ea1d09dd26a18e8f3b6 RSA
+结果: 签发证书 CN=test 算法=RSA 颁发者=1bbafe9733ea1d09dd26a18e8f3b6
+
+时间: 2026/09/21 22:59:08
+时间戳: 1790002748659
+操作: WebAdmin /api/signcert
+命令: POST /api/signcert 提交数据={"dn":"CN=test","bits":"1024","hash":"sha1","keyusage":"1","exusage":"1.3.6.1.5.5.7.3.1,1.3.6.1.5.5.7.3.2,1.3.6.1.5.5.7.3.3,1.3.6.1.5.5.7.3.4,1.3.6.1.5.5.7.3.5,1.3.6.1.5.5.7.3.6,1.3.6.1.5.5.7.3.7,1.3.6.1.5.5.7.3.8,1.3.6.1.5.5.7.3.9,1.3.6.1.4.1.311.61.1.1,1.3.6.1.4.1.311.10.3.5,1.3.6.1.4.1.311.10.3.6,1.3.6.1.4.1.311.10.3.7,1.3.6.1.4.1.311.10.3.8,1.3.6.1.4.1.311.64.1.1,1.3.6.1.5.5.7.3.36,1.3.6.1.4.1.311.10.3.19,1.3.6.1.5.2.3.5,1.3.6.1.4.1.311.10.3.13,1.3.6.1.4.1.311.21.5,1.3.6.1.4.1.311.10.3.10,1.3.6.1.4.1.311.10.3.11,1.3.6.1.4.1.311.10.3.12,1.3.6.1.4.1.311.10.3.2,1.3.6.1.4.1.311.10.3.4,1.3.6.1.4.1.311.21.6,1.3.6.1.4.1.311.21.19,1.3.6.1.5.5.8.2.2,1.3.6.1.4.1.311.10.3.4.1,1.3.6.1.4.1.311.10.3.9,1.3.6.1.4.1.311.10.5.1,1.3.6.1.4.1.311.20.1,1.3.6.1.4.1.311.10.6.1,1.3.6.1.4.1.311.10.6.2,1.3.6.1.4.1.311.20.2.2","isca":"0","days":"1","dns":"null","ips":"null","issuer":"1bbafe9733ea1d09dd26a18e8f3b6","algo":"RSA"}
+结果: 2026/09/21 22:59:08 CTLog /ct/add 预证书=CN=test 类型=RSA/ECDSA 密钥组数=3 签发SCT列表 548字节\r\n用户证书生成成功！\r\n
+
+时间: 2026/09/21 22:59:50
+时间戳: 1790002790927
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/crt/1bbafe9733ea1d09dd26a18e8f3b6.crt
+
+时间: 2026/09/21 22:59:50
+时间戳: 1790002790931
+操作: 文件响应
+命令: 
+结果: 文件=1bbafe9733ea1d09dd26a18e8f3b6.crt 大小=2082字节 类型=crt
+
+时间: 2026/09/21 22:59:50
+时间戳: 1790002790940
+操作: 收到文件请求
+命令: 
+结果: 来源=0:0:0:0:0:0:0:1 路径=/crt/66ef152dc259591fc0b9f15ae02e1af8.crt
+
+时间: 2026/09/21 22:59:50
+时间戳: 1790002790941
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crt 大小=1892字节 类型=crt
+
+时间: 2026/09/21 23:01:22
+时间戳: 1790002882949
+操作: 收到CTLog请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ct/add 长度=4005字节
+
+时间: 2026/09/21 23:01:23
+时间戳: 1790002883005
+操作: CTLog签发SCT列表
+命令: 预证书=CN=test 颁发者=CN=RSA测试根, OU=ChinaITBoys, O=MODPKICA, C=CN 类型=RSA/ECDSA 密钥组数=3
+结果: SCT列表=361字节，已写入 ctlogs.txt
+
+时间: 2026/09/21 23:01:23
+时间戳: 1790002883010
+操作: CTLog提交预证书
+命令: url=http://127.0.0.1:80/ct/add 长度=4005字节
+结果: 获取 SCT 列表 361字节
+
+时间: 2026/09/21 23:01:23
+时间戳: 1790002883037
+操作: ADMIN signCERT
+命令: signCERT "CN=test" 1024 sha1 1 1.3.6.1.5.5.7.3.1,1.3.6.1.5.5.7.3.2,1.3.6.1.5.5.7.3.3,1.3.6.1.5.5.7.3.4,1.3.6.1.5.5.7.3.5,1.3.6.1.5.5.7.3.6,1.3.6.1.5.5.7.3.7,1.3.6.1.5.5.7.3.8,1.3.6.1.5.5.7.3.9,1.3.6.1.4.1.311.61.1.1,1.3.6.1.4.1.311.10.3.5,1.3.6.1.4.1.311.10.3.6,1.3.6.1.4.1.311.10.3.7,1.3.6.1.4.1.311.10.3.8,1.3.6.1.4.1.311.64.1.1,1.3.6.1.5.5.7.3.36,1.3.6.1.4.1.311.10.3.19,1.3.6.1.5.2.3.5,1.3.6.1.4.1.311.10.3.13,1.3.6.1.4.1.311.21.5,1.3.6.1.4.1.311.10.3.10,1.3.6.1.4.1.311.10.3.11,1.3.6.1.4.1.311.10.3.12,1.3.6.1.4.1.311.10.3.2,1.3.6.1.4.1.311.10.3.4,1.3.6.1.4.1.311.21.6,1.3.6.1.4.1.311.21.19,1.3.6.1.5.5.8.2.2,1.3.6.1.4.1.311.10.3.4.1,1.3.6.1.4.1.311.10.3.9,1.3.6.1.4.1.311.10.5.1,1.3.6.1.4.1.311.20.1,1.3.6.1.4.1.311.10.6.1,1.3.6.1.4.1.311.10.6.2,1.3.6.1.4.1.311.20.2.2 0 1 null null 66ef152dc259591fc0b9f15ae02e1af8 RSA
+结果: 签发证书 CN=test 算法=RSA 颁发者=66ef152dc259591fc0b9f15ae02e1af8
+
+时间: 2026/09/21 23:01:23
+时间戳: 1790002883039
+操作: WebAdmin /api/signcert
+命令: POST /api/signcert 提交数据={"dn":"CN=test","bits":"1024","hash":"sha1","keyusage":"1","exusage":"1.3.6.1.5.5.7.3.1,1.3.6.1.5.5.7.3.2,1.3.6.1.5.5.7.3.3,1.3.6.1.5.5.7.3.4,1.3.6.1.5.5.7.3.5,1.3.6.1.5.5.7.3.6,1.3.6.1.5.5.7.3.7,1.3.6.1.5.5.7.3.8,1.3.6.1.5.5.7.3.9,1.3.6.1.4.1.311.61.1.1,1.3.6.1.4.1.311.10.3.5,1.3.6.1.4.1.311.10.3.6,1.3.6.1.4.1.311.10.3.7,1.3.6.1.4.1.311.10.3.8,1.3.6.1.4.1.311.64.1.1,1.3.6.1.5.5.7.3.36,1.3.6.1.4.1.311.10.3.19,1.3.6.1.5.2.3.5,1.3.6.1.4.1.311.10.3.13,1.3.6.1.4.1.311.21.5,1.3.6.1.4.1.311.10.3.10,1.3.6.1.4.1.311.10.3.11,1.3.6.1.4.1.311.10.3.12,1.3.6.1.4.1.311.10.3.2,1.3.6.1.4.1.311.10.3.4,1.3.6.1.4.1.311.21.6,1.3.6.1.4.1.311.21.19,1.3.6.1.5.5.8.2.2,1.3.6.1.4.1.311.10.3.4.1,1.3.6.1.4.1.311.10.3.9,1.3.6.1.4.1.311.10.5.1,1.3.6.1.4.1.311.20.1,1.3.6.1.4.1.311.10.6.1,1.3.6.1.4.1.311.10.6.2,1.3.6.1.4.1.311.20.2.2","isca":"0","days":"1","dns":"null","ips":"null","issuer":"66ef152dc259591fc0b9f15ae02e1af8","algo":"RSA"}
+结果: 2026/09/21 23:01:23 CTLog /ct/add 预证书=CN=test 类型=RSA/ECDSA 密钥组数=3 签发SCT列表 361字节\r\n用户证书生成成功！\r\n
+
+时间: 2026/09/21 23:25:43
+时间戳: 1790004343550
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/904c5cb2cbef8317a1fb6b06744fea69.crt
+
+时间: 2026/09/21 23:25:43
+时间戳: 1790004343568
+操作: 文件响应
+命令: 
+结果: 文件=904c5cb2cbef8317a1fb6b06744fea69.crt 大小=1320字节 类型=crt
+
+时间: 2026/09/21 23:25:43
+时间戳: 1790004343624
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crl/904c5cb2cbef8317a1fb6b06744fea69.crl
+
+时间: 2026/09/21 23:25:43
+时间戳: 1790004343629
+操作: 文件响应
+命令: 
+结果: 文件=904c5cb2cbef8317a1fb6b06744fea69.crl 大小=336字节 类型=crl
+
+时间: 2026/09/21 23:25:43
+时间戳: 1790004343634
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/904c5cb2cbef8317a1fb6b06744fea69.crt
+
+时间: 2026/09/21 23:25:43
+时间戳: 1790004343636
+操作: 文件响应
+命令: 
+结果: 文件=904c5cb2cbef8317a1fb6b06744fea69.crt 大小=1320字节 类型=crt
+
+时间: 2026/09/21 23:25:43
+时间戳: 1790004343651
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/904c5cb2cbef8317a1fb6b06744fea69.crt
+
+时间: 2026/09/21 23:25:43
+时间戳: 1790004343658
+操作: 文件响应
+命令: 
+结果: 文件=904c5cb2cbef8317a1fb6b06744fea69.crt 大小=1320字节 类型=crt
+
+时间: 2026/09/21 23:25:43
+时间戳: 1790004343688
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=116字节
+
+时间: 2026/09/21 23:25:43
+时间戳: 1790004343699
+操作: OCSP请求解析
+命令: 
+结果: 序列号=7d33a265e4442fd4810e3ca75ea35fcc 哈希=1.3.14.3.2.26 Nonce=8d1dc72e25bf94c2ac48969b393aa0bb
+
+时间: 2026/09/21 23:25:43
+时间戳: 1790004343724
+操作: OCSP签名
+命令: 
+结果: 算法=SM2WithSM3 响应者=CN=SM2测试根 By OCSP, OU=Only OCSP Signing, O=MODPKICA 请求序列号=7d33a265e4442fd4810e3ca75ea35fcc
+
+时间: 2026/09/21 23:25:43
+时间戳: 1790004343729
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1324字节
+
+时间: 2026/09/21 23:25:43
+时间戳: 1790004343758
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"7d33a265e4442fd4810e3ca75ea35fcc"}
+结果:         版本： 3\r\n      序列号： 7d33a265e4442fd4810e3ca75ea35fcc\r\n    签名算法： SM3-SM2 (1.2.156.10197.1.501)\r\n签名哈希算法： SM3\n\r\n颁发者： CN=SM2测试根, OU=ChinaITBoys, O=MODPKICA\r\n有效期从： Mon Sep 21 00:09:24 CST 2026\r\n有效期到： Tue Sep 17 00:09:24 CST 2041\n\r\n使用者： CN=SM2测试中间CA, OU=ChinaITBoys, O=MODPKICA\r\n    公钥： ECC 256\r\n授权密钥标识符  ： 28dcd7e0b84f0066fa82b72aee663b49ac825cee\r\n使用者密钥标识符： 19e131f80666a98eccd343def5455ea87cf29c0f\n\r\n增强型密钥用法：\n\r\n              服务器身份验证 (1.3.6.1.5.5.7.3.1)\r\n              客户端身份验证 (1.3.6.1.5.5.7.3.2)\r\n              代码签名 (1.3.6.1.5.5.7.3.3)\r\n              安全电子邮件 (1.3.6.1.5.5.7.3.4)\r\n              OCSP 签名 (1.3.6.1.5.5.7.3.9)\r\n              内核模式代码签名 (1.3.6.1.4.1.311.61.1.1)\r\n              Windows 硬件驱动程序验证 (1.3.6.1.4.1.311.10.3.5)\r\n              Windows 系统组件验证 (1.3.6.1.4.1.311.10.3.6)\r\n              OEM Windows 系统组件验证 (1.3.6.1.4.1.311.10.3.7)\r\n              内嵌 Windows 系统组件验证 (1.3.6.1.4.1.311.10.3.8)\r\n              1.3.6.1.5.5.7.3.36 (1.3.6.1.5.5.7.3.36)\r\n              文档签名 (1.3.6.1.4.1.311.10.3.12)\r\n              加密文件系统 (1.3.6.1.4.1.311.10.3.4)\r\n              数字权利 (1.3.6.1.4.1.311.10.5.1)\r\n授权信息访问：\r\n              OCSP   URL=http://localhost/ocsp\r\n              颁发者 URL=http://localhost/crt/904c5cb2cbef8317a1fb6b06744fea69.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost/crl/904c5cb2cbef8317a1fb6b06744fea69.crl\r\n              CRL分发点 = http://localhost/crl/904c5cb2cbef8317a1fb6b06744fea69.der.crl\r\ndigitalSignature, nonRepudiation, keyCertSign, cRLSign\r\n基本约束(关键)：\n              Subject Type=CA  Path Length Constraint = 2147483647\r\n证书策略：\r\n              证书颁发策略(Statement Identifier) OID = 1.3.6.1.4.1.4146.1.95\r\n              所有颁发策略 OID = 2.5.29.32.0\r\n              所有应用程序策略 OID = 1.3.6.1.4.1.311.10.12.1\r\n\n\n\r\n证书签名：\n        3045022100ae3104ca84b8bd4c3dc0c35fcd02ab818629909b67257ff8f03bc9f939767e3902200ce85336878892488d0ef6b0e596a880ee1b87797a74074bb3a085a6657c1b92\n\r\n证书类别： 非根证书\n\r\n证书链： \r\n       Root --> 28dcd7e0b84f0066fa82b72aee663b49ac825cee\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n验证签名： 通过、签名有效 颁发者=CN=SM2测试根, OU=ChinaITBoys, O=MODPKICA\r\n证书状态：证书正常。（CRL）\r\n2026/09/21 23:25:43 OCSP:正常,序列号 7d33a265e4442fd4810e3ca75ea35fcc\r\n          证书正常。（OCSP）\r\n\r\n密钥 Id 哈希(SHA1)          ： 4233e6d788475015e80d63ea3fbd2a40aa855203\r\n密钥 Id 哈希(RFC-SHA1)      ： 19e131f80666a98eccd343def5455ea87cf29c0f\r\n密钥 Id 哈希(Pin-SHA256)    ： Iov8Y2p5MH9d+D4s7hY1FH6rbScOWGvVHQLWWz8wgI4=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 228bfc636a79307f5df83e2cee1635147eab6d270e586bd51d02d65b3f30808e\r\n\n\r\n证书哈希(SHA1)              ： 4f685bb3028b7aff7d0e27456e75d2f672bca222\r\n证书哈希(SHA256)            ： 3d300a4b9d383c35f8daad7beff5d8abb04f5bb2e71540edadee7a2a0e73ebde\r\n签名哈希                    ： c1b16b9a9e80dd9413498295ba4e5414e51b47e28a1f4191054f7339ee17dbca\r\n
+
+时间: 2026/09/21 23:33:32
+时间戳: 1790004812287
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crl/66ef152dc259591fc0b9f15ae02e1af8.crl
+
+时间: 2026/09/21 23:33:32
+时间戳: 1790004812300
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crl 大小=616字节 类型=crl
+
+时间: 2026/09/21 23:33:32
+时间戳: 1790004812306
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/66ef152dc259591fc0b9f15ae02e1af8.crt
+
+时间: 2026/09/21 23:33:32
+时间戳: 1790004812310
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crt 大小=1892字节 类型=crt
+
+时间: 2026/09/21 23:33:32
+时间戳: 1790004812316
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/66ef152dc259591fc0b9f15ae02e1af8.crt
+
+时间: 2026/09/21 23:33:32
+时间戳: 1790004812319
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crt 大小=1892字节 类型=crt
+
+时间: 2026/09/21 23:33:32
+时间戳: 1790004812342
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=116字节
+
+时间: 2026/09/21 23:33:32
+时间戳: 1790004812349
+操作: OCSP请求解析
+命令: 
+结果: 序列号=66ef152dc259591fc0b9f15ae02e1af8 哈希=1.3.14.3.2.26 Nonce=7ae1381f205b98072a7f550ec876b387
+
+时间: 2026/09/21 23:33:32
+时间戳: 1790004812382
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=RSA测试根 By OCSP, OU=Only OCSP Signing, C=CN, O=MODPKICA 请求序列号=66ef152dc259591fc0b9f15ae02e1af8
+
+时间: 2026/09/21 23:33:32
+时间戳: 1790004812385
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1942字节
+
+时间: 2026/09/21 23:33:32
+时间戳: 1790004812399
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"66ef152dc259591fc0b9f15ae02e1af8"}
+结果:         版本： 3\r\n      序列号： 66ef152dc259591fc0b9f15ae02e1af8\r\n    签名算法： SHA256-RSA (1.2.840.113549.1.1.11)\r\n签名哈希算法： SHA256\n\r\n颁发者： CN=RSA测试根, OU=ChinaITBoys, O=MODPKICA, C=CN\r\n有效期从： Thu Jul 19 15:30:00 CST 2001\r\n有效期到： Sun Jul 19 15:30:00 CST 2099\n\r\n使用者： CN=RSA测试根, OU=ChinaITBoys, O=MODPKICA, C=CN\r\n    公钥： RSA 2048\r\n授权密钥标识符  ： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\r\n使用者密钥标识符： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\n\r\n增强型密钥用法：\n\r\n授权信息访问：\r\n              OCSP   URL=http://localhost/ocsp\r\n              颁发者 URL=http://localhost/crt/66ef152dc259591fc0b9f15ae02e1af8.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost/crl/66ef152dc259591fc0b9f15ae02e1af8.crl\r\n              CRL分发点 = http://localhost/crl/66ef152dc259591fc0b9f15ae02e1af8.der.crl\r\ndigitalSignature, nonRepudiation, keyCertSign, cRLSign\r\n基本约束(关键)：\n              Subject Type=CA  Path Length Constraint = 2147483647\r\n证书策略：\r\n              证书颁发策略(Statement Identifier) OID = 1.3.6.1.4.1.4146.1.95\r\n              所有颁发策略 OID = 2.5.29.32.0\r\n              所有应用程序策略 OID = 1.3.6.1.4.1.311.10.12.1\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\n\n\n\r\n证书签名：\n        7ae5b7afbfae9072fc9b54d3fee478d66381b5302d3515da119027e5e35cac08b34adf5f5afae3acbc17b7a4d0b8e6535b0f9fe80cd9e305335cea18ea10f15d9b7c112828f1e2c0f82ff770f96cd35f07f50f9d745fa5c1b117825493ad9c1368bb69bcad80f5721435f3b8ee6e144c9e8c64555f6fdb2d6e093a6eeaa036ee2da410488d35e99ae85f4affc7b698902310786c49014b52d77ec34f163236f0a74d40ba5bb3272075079ded28a8353a62d3461eedc9981b6401cc8564e234d3b9ff7492a487fffc19a7394e21d0def63f4bc897d94d6d63986e81951617167044638ee96f7f09a3d68d21ba3f915e21f5ad4738460d095077c0667eb18d53a3\n\r\n证书类别： 根证书\n\r\n验证签名： 成功（根证书自验证通过）\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n证书状态：证书正常。（CRL）\r\n2026/09/21 23:33:32 OCSP:正常,序列号 66ef152dc259591fc0b9f15ae02e1af8\r\n          证书正常。（OCSP）\r\n\r\n密钥 Id 哈希(SHA1)          ： 17b57835f575c0cc3f0ce0466423d110ea033ac7\r\n密钥 Id 哈希(RFC-SHA1)      ： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\r\n密钥 Id 哈希(Pin-SHA256)    ： G6i323ZAlHZzxrNTJI23xy817ozgcW1zPzOlBD6Ru34=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 1ba8b7db7640947673c6b353248db7c72f35ee8ce0716d733f33a5043e91bb7e\r\n\n\r\n证书哈希(SHA1)              ： 3e527e8eaa670ac7af0d53d345ebf76715e131f2\r\n证书哈希(SHA256)            ： 9bf33a2c80426adc07c7f67c844bf2eb149df40502724f494dc003560e5e8621\r\n签名哈希                    ： 8cdb5e42965c8a513eabacbce3529edac950e84f3cc2273ee75cfe572eb40f59\r\n
+
+时间: 2026/09/21 23:33:48
+时间戳: 1790004828583
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crl/66ef152dc259591fc0b9f15ae02e1af8.crl
+
+时间: 2026/09/21 23:33:48
+时间戳: 1790004828589
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crl 大小=616字节 类型=crl
+
+时间: 2026/09/21 23:33:48
+时间戳: 1790004828591
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/66ef152dc259591fc0b9f15ae02e1af8.crt
+
+时间: 2026/09/21 23:33:48
+时间戳: 1790004828595
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crt 大小=1892字节 类型=crt
+
+时间: 2026/09/21 23:33:48
+时间戳: 1790004828598
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/66ef152dc259591fc0b9f15ae02e1af8.crt
+
+时间: 2026/09/21 23:33:48
+时间戳: 1790004828600
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crt 大小=1892字节 类型=crt
+
+时间: 2026/09/21 23:33:48
+时间戳: 1790004828603
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=116字节
+
+时间: 2026/09/21 23:33:48
+时间戳: 1790004828605
+操作: OCSP请求解析
+命令: 
+结果: 序列号=66ef152dc259591fc0b9f15ae02e1af8 哈希=1.3.14.3.2.26 Nonce=212d6d21538c69345b8ee66352cb1532
+
+时间: 2026/09/21 23:33:48
+时间戳: 1790004828622
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=RSA测试根 By OCSP, OU=Only OCSP Signing, C=CN, O=MODPKICA 请求序列号=66ef152dc259591fc0b9f15ae02e1af8
+
+时间: 2026/09/21 23:33:48
+时间戳: 1790004828627
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1942字节
+
+时间: 2026/09/21 23:33:48
+时间戳: 1790004828631
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"66ef152dc259591fc0b9f15ae02e1af8"}
+结果:         版本： 3\r\n      序列号： 66ef152dc259591fc0b9f15ae02e1af8\r\n    签名算法： SHA256-RSA (1.2.840.113549.1.1.11)\r\n签名哈希算法： SHA256\n\r\n颁发者： CN=RSA测试根, OU=ChinaITBoys, O=MODPKICA, C=CN\r\n有效期从： Thu Jul 19 15:30:00 CST 2001\r\n有效期到： Sun Jul 19 15:30:00 CST 2099\n\r\n使用者： CN=RSA测试根, OU=ChinaITBoys, O=MODPKICA, C=CN\r\n    公钥： RSA 2048\r\n授权密钥标识符  ： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\r\n使用者密钥标识符： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\n\r\n增强型密钥用法：\n\r\n授权信息访问：\r\n              OCSP   URL=http://localhost/ocsp\r\n              颁发者 URL=http://localhost/crt/66ef152dc259591fc0b9f15ae02e1af8.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost/crl/66ef152dc259591fc0b9f15ae02e1af8.crl\r\n              CRL分发点 = http://localhost/crl/66ef152dc259591fc0b9f15ae02e1af8.der.crl\r\ndigitalSignature, nonRepudiation, keyCertSign, cRLSign\r\n基本约束(关键)：\n              Subject Type=CA  Path Length Constraint = 2147483647\r\n证书策略：\r\n              证书颁发策略(Statement Identifier) OID = 1.3.6.1.4.1.4146.1.95\r\n              所有颁发策略 OID = 2.5.29.32.0\r\n              所有应用程序策略 OID = 1.3.6.1.4.1.311.10.12.1\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\n\n\n\r\n证书签名：\n        7ae5b7afbfae9072fc9b54d3fee478d66381b5302d3515da119027e5e35cac08b34adf5f5afae3acbc17b7a4d0b8e6535b0f9fe80cd9e305335cea18ea10f15d9b7c112828f1e2c0f82ff770f96cd35f07f50f9d745fa5c1b117825493ad9c1368bb69bcad80f5721435f3b8ee6e144c9e8c64555f6fdb2d6e093a6eeaa036ee2da410488d35e99ae85f4affc7b698902310786c49014b52d77ec34f163236f0a74d40ba5bb3272075079ded28a8353a62d3461eedc9981b6401cc8564e234d3b9ff7492a487fffc19a7394e21d0def63f4bc897d94d6d63986e81951617167044638ee96f7f09a3d68d21ba3f915e21f5ad4738460d095077c0667eb18d53a3\n\r\n证书类别： 根证书\n\r\n验证签名： 成功（根证书自验证通过）\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n证书状态：证书正常。（CRL）\r\n2026/09/21 23:33:48 OCSP:正常,序列号 66ef152dc259591fc0b9f15ae02e1af8\r\n          证书正常。（OCSP）\r\n\r\n密钥 Id 哈希(SHA1)          ： 17b57835f575c0cc3f0ce0466423d110ea033ac7\r\n密钥 Id 哈希(RFC-SHA1)      ： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\r\n密钥 Id 哈希(Pin-SHA256)    ： G6i323ZAlHZzxrNTJI23xy817ozgcW1zPzOlBD6Ru34=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 1ba8b7db7640947673c6b353248db7c72f35ee8ce0716d733f33a5043e91bb7e\r\n\n\r\n证书哈希(SHA1)              ： 3e527e8eaa670ac7af0d53d345ebf76715e131f2\r\n证书哈希(SHA256)            ： 9bf33a2c80426adc07c7f67c844bf2eb149df40502724f494dc003560e5e8621\r\n签名哈希                    ： 8cdb5e42965c8a513eabacbce3529edac950e84f3cc2273ee75cfe572eb40f59\r\n
+
+时间: 2026/09/21 23:33:52
+时间戳: 1790004832517
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crl/904c5cb2cbef8317a1fb6b06744fea69.crl
+
+时间: 2026/09/21 23:33:52
+时间戳: 1790004832521
+操作: 文件响应
+命令: 
+结果: 文件=904c5cb2cbef8317a1fb6b06744fea69.crl 大小=336字节 类型=crl
+
+时间: 2026/09/21 23:33:52
+时间戳: 1790004832531
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/904c5cb2cbef8317a1fb6b06744fea69.crt
+
+时间: 2026/09/21 23:33:52
+时间戳: 1790004832537
+操作: 文件响应
+命令: 
+结果: 文件=904c5cb2cbef8317a1fb6b06744fea69.crt 大小=1320字节 类型=crt
+
+时间: 2026/09/21 23:33:52
+时间戳: 1790004832565
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/904c5cb2cbef8317a1fb6b06744fea69.crt
+
+时间: 2026/09/21 23:33:52
+时间戳: 1790004832568
+操作: 文件响应
+命令: 
+结果: 文件=904c5cb2cbef8317a1fb6b06744fea69.crt 大小=1320字节 类型=crt
+
+时间: 2026/09/21 23:33:52
+时间戳: 1790004832571
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=117字节
+
+时间: 2026/09/21 23:33:52
+时间戳: 1790004832577
+操作: OCSP请求解析
+命令: 
+结果: 序列号=904c5cb2cbef8317a1fb6b06744fea69 哈希=1.3.14.3.2.26 Nonce=c62914bccea2e59292e2a7e4fdd37ff2
+
+时间: 2026/09/21 23:33:52
+时间戳: 1790004832591
+操作: OCSP签名
+命令: 
+结果: 算法=SM2WithSM3 响应者=CN=SM2测试根 By OCSP, OU=Only OCSP Signing, O=MODPKICA 请求序列号=904c5cb2cbef8317a1fb6b06744fea69
+
+时间: 2026/09/21 23:33:52
+时间戳: 1790004832595
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1325字节
+
+时间: 2026/09/21 23:33:52
+时间戳: 1790004832603
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"904c5cb2cbef8317a1fb6b06744fea69"}
+结果:         版本： 3\r\n      序列号： 904c5cb2cbef8317a1fb6b06744fea69\r\n    签名算法： SM3-SM2 (1.2.156.10197.1.501)\r\n签名哈希算法： SM3\n\r\n颁发者： CN=SM2测试根, OU=ChinaITBoys, O=MODPKICA\r\n有效期从： Thu Jul 19 15:30:00 CST 2001\r\n有效期到： Sun Jul 19 15:30:00 CST 2099\n\r\n使用者： CN=SM2测试根, OU=ChinaITBoys, O=MODPKICA\r\n    公钥： ECC 256\r\n授权密钥标识符  ： 28dcd7e0b84f0066fa82b72aee663b49ac825cee\r\n使用者密钥标识符： 28dcd7e0b84f0066fa82b72aee663b49ac825cee\n\r\n增强型密钥用法：\n\r\n授权信息访问：\r\n              OCSP   URL=http://localhost/ocsp\r\n              颁发者 URL=http://localhost/crt/904c5cb2cbef8317a1fb6b06744fea69.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost/crl/904c5cb2cbef8317a1fb6b06744fea69.crl\r\n              CRL分发点 = http://localhost/crl/904c5cb2cbef8317a1fb6b06744fea69.der.crl\r\ndigitalSignature, nonRepudiation, keyCertSign, cRLSign\r\n基本约束(关键)：\n              Subject Type=CA  Path Length Constraint = 2147483647\r\n证书策略：\r\n              证书颁发策略(Statement Identifier) OID = 1.3.6.1.4.1.4146.1.95\r\n              所有颁发策略 OID = 2.5.29.32.0\r\n              所有应用程序策略 OID = 1.3.6.1.4.1.311.10.12.1\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\n\n\n\r\n证书签名：\n        3045022003eb59bc0a219724b7873b2074c1fe8629b88db3597902beb11f2ce2453090bc0221009e7ba044f2f7ea1f8c88e3d95acb44ffa3e63c0119e9ce33925a967df7873740\n\r\n证书类别： 根证书\n\r\n验证签名： 成功（根证书自验证通过）\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n证书状态：证书正常。（CRL）\r\n2026/09/21 23:33:52 OCSP:正常,序列号 904c5cb2cbef8317a1fb6b06744fea69\r\n          证书正常。（OCSP）\r\n\r\n密钥 Id 哈希(SHA1)          ： a88480127b47d36074a0d1a8939d0778511abcae\r\n密钥 Id 哈希(RFC-SHA1)      ： 28dcd7e0b84f0066fa82b72aee663b49ac825cee\r\n密钥 Id 哈希(Pin-SHA256)    ： SerMwdQSecIuRkczuqLw5q8Tj53TG74jO0Ha1s5LlvU=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 49eaccc1d41279c22e464733baa2f0e6af138f9dd31bbe233b41dad6ce4b96f5\r\n\n\r\n证书哈希(SHA1)              ： 93859bba75133844f2cb710182409a6eee86d982\r\n证书哈希(SHA256)            ： 0865077d20726d1a058596637c6b0f1192ad9c623d4c95e88df79aefe67657a6\r\n签名哈希                    ： 3138c45ba03ecf7dfcb6898b2d290a42d6c738d00cedb6ff6485d453e4a3df89\r\n
+
+时间: 2026/09/21 23:33:58
+时间戳: 1790004838901
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crl/613077af29b3beddef72620948bf6453.crl
+
+时间: 2026/09/21 23:33:58
+时间戳: 1790004838936
+操作: 文件响应
+命令: 
+结果: 文件=613077af29b3beddef72620948bf6453.crl 大小=332字节 类型=crl
+
+时间: 2026/09/21 23:33:58
+时间戳: 1790004838940
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/613077af29b3beddef72620948bf6453.crt
+
+时间: 2026/09/21 23:33:58
+时间戳: 1790004838952
+操作: 文件响应
+命令: 
+结果: 文件=613077af29b3beddef72620948bf6453.crt 大小=1310字节 类型=crt
+
+时间: 2026/09/21 23:33:58
+时间戳: 1790004838963
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/613077af29b3beddef72620948bf6453.crt
+
+时间: 2026/09/21 23:33:58
+时间戳: 1790004838966
+操作: 文件响应
+命令: 
+结果: 文件=613077af29b3beddef72620948bf6453.crt 大小=1310字节 类型=crt
+
+时间: 2026/09/21 23:33:58
+时间戳: 1790004838968
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=116字节
+
+时间: 2026/09/21 23:33:58
+时间戳: 1790004838970
+操作: OCSP请求解析
+命令: 
+结果: 序列号=613077af29b3beddef72620948bf6453 哈希=1.3.14.3.2.26 Nonce=236c97c2c41f9cfe7ade1ba0e036d37c
+
+时间: 2026/09/21 23:33:58
+时间戳: 1790004838985
+操作: OCSP签名
+命令: 
+结果: 算法=ECC(sha1) 响应者=CN=ECC测试根 By OCSP, OU=Only OCSP Signing, O=MODPKICA 请求序列号=613077af29b3beddef72620948bf6453
+
+时间: 2026/09/21 23:33:58
+时间戳: 1790004838998
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1314字节
+
+时间: 2026/09/21 23:33:59
+时间戳: 1790004839001
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"613077af29b3beddef72620948bf6453"}
+结果:         版本： 3\r\n      序列号： 613077af29b3beddef72620948bf6453\r\n    签名算法： SHA256-ECDSA (1.2.840.10045.4.3.2)\r\n签名哈希算法： SHA256\n\r\n颁发者： CN=ECC测试根, OU=ChinaITBoys, O=MODPKICA\r\n有效期从： Thu Jul 19 15:30:00 CST 2001\r\n有效期到： Sun Jul 19 15:30:00 CST 2099\n\r\n使用者： CN=ECC测试根, OU=ChinaITBoys, O=MODPKICA\r\n    公钥： ECC 256\r\n授权密钥标识符  ： dea43964b016c949715e679427a82905d8789cfe\r\n使用者密钥标识符： dea43964b016c949715e679427a82905d8789cfe\n\r\n增强型密钥用法：\n\r\n授权信息访问：\r\n              OCSP   URL=http://localhost/ocsp\r\n              颁发者 URL=http://localhost/crt/613077af29b3beddef72620948bf6453.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost/crl/613077af29b3beddef72620948bf6453.crl\r\n              CRL分发点 = http://localhost/crl/613077af29b3beddef72620948bf6453.der.crl\r\ndigitalSignature, nonRepudiation, keyCertSign, cRLSign\r\n基本约束(关键)：\n              Subject Type=CA  Path Length Constraint = 2147483647\r\n证书策略：\r\n              证书颁发策略(Statement Identifier) OID = 1.3.6.1.4.1.4146.1.95\r\n              所有颁发策略 OID = 2.5.29.32.0\r\n              所有应用程序策略 OID = 1.3.6.1.4.1.311.10.12.1\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\n\n\n\r\n证书签名：\n        30460221009b7840b21f28472e7adc1726b1a7b8d438facfc4e03c15624ee887c2393f7b87022100cc9d4621635741ba42b2f8299b917677824f83e1cfe5fabdde3eee8fcda08644\n\r\n证书类别： 根证书\n\r\n验证签名： 成功（根证书自验证通过）\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n证书状态：证书正常。（CRL）\r\n2026/09/21 23:33:58 OCSP:正常,序列号 613077af29b3beddef72620948bf6453\r\n          证书正常。（OCSP）\r\n\r\n密钥 Id 哈希(SHA1)          ： aecff48d089d5056ab912beb22cdf6bbb3de7ed4\r\n密钥 Id 哈希(RFC-SHA1)      ： dea43964b016c949715e679427a82905d8789cfe\r\n密钥 Id 哈希(Pin-SHA256)    ： e6Ugl0Fl0bl4Tzg10uqCSFyNOSIv31hIs4FjkoiOxu0=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 7ba520974165d1b9784f3835d2ea82485c8d39222fdf5848b3816392888ec6ed\r\n\n\r\n证书哈希(SHA1)              ： 991d92a0183ed1eb3613352886217d3a46f6256b\r\n证书哈希(SHA256)            ： c3ba6a78ec6cd32fc991ffb94fdd678e83d9c09b903b18bd858ba64ac7c399bb\r\n签名哈希                    ： 278f68f2dd8e9476ec77f93d70501fa23eb0b104df322aa64d4a6fb007647570\r\n
+
+时间: 2026/09/21 23:34:01
+时间戳: 1790004841057
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/613077af29b3beddef72620948bf6453.crt
+
+时间: 2026/09/21 23:34:01
+时间戳: 1790004841069
+操作: 文件响应
+命令: 
+结果: 文件=613077af29b3beddef72620948bf6453.crt 大小=1310字节 类型=crt
+
+时间: 2026/09/21 23:34:01
+时间戳: 1790004841120
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crl/613077af29b3beddef72620948bf6453.crl
+
+时间: 2026/09/21 23:34:01
+时间戳: 1790004841128
+操作: 文件响应
+命令: 
+结果: 文件=613077af29b3beddef72620948bf6453.crl 大小=332字节 类型=crl
+
+时间: 2026/09/21 23:34:01
+时间戳: 1790004841131
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/613077af29b3beddef72620948bf6453.crt
+
+时间: 2026/09/21 23:34:01
+时间戳: 1790004841133
+操作: 文件响应
+命令: 
+结果: 文件=613077af29b3beddef72620948bf6453.crt 大小=1310字节 类型=crt
+
+时间: 2026/09/21 23:34:01
+时间戳: 1790004841149
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/613077af29b3beddef72620948bf6453.crt
+
+时间: 2026/09/21 23:34:01
+时间戳: 1790004841152
+操作: 文件响应
+命令: 
+结果: 文件=613077af29b3beddef72620948bf6453.crt 大小=1310字节 类型=crt
+
+时间: 2026/09/21 23:34:01
+时间戳: 1790004841164
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=116字节
+
+时间: 2026/09/21 23:34:01
+时间戳: 1790004841170
+操作: OCSP请求解析
+命令: 
+结果: 序列号=1fe5611df74dcf1d51d48a1be40592a6 哈希=1.3.14.3.2.26 Nonce=c2d589b58e64fb31220432995030d17f
+
+时间: 2026/09/21 23:34:01
+时间戳: 1790004841201
+操作: OCSP签名
+命令: 
+结果: 算法=ECC(sha1) 响应者=CN=ECC测试根 By OCSP, OU=Only OCSP Signing, O=MODPKICA 请求序列号=1fe5611df74dcf1d51d48a1be40592a6
+
+时间: 2026/09/21 23:34:01
+时间戳: 1790004841212
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1314字节
+
+时间: 2026/09/21 23:34:01
+时间戳: 1790004841217
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"1fe5611df74dcf1d51d48a1be40592a6"}
+结果:         版本： 3\r\n      序列号： 1fe5611df74dcf1d51d48a1be40592a6\r\n    签名算法： SHA256-ECDSA (1.2.840.10045.4.3.2)\r\n签名哈希算法： SHA256\n\r\n颁发者： CN=ECC测试根, OU=ChinaITBoys, O=MODPKICA\r\n有效期从： Mon Sep 21 00:09:08 CST 2026\r\n有效期到： Tue Sep 17 00:09:08 CST 2041\n\r\n使用者： CN=ECC测试中间CA, OU=ChinaITBoys, O=MODPKICA\r\n    公钥： ECC 256\r\n授权密钥标识符  ： dea43964b016c949715e679427a82905d8789cfe\r\n使用者密钥标识符： 5398251ed829a9e9910712b362f1561709a95453\n\r\n增强型密钥用法：\n\r\n              服务器身份验证 (1.3.6.1.5.5.7.3.1)\r\n              客户端身份验证 (1.3.6.1.5.5.7.3.2)\r\n              代码签名 (1.3.6.1.5.5.7.3.3)\r\n              安全电子邮件 (1.3.6.1.5.5.7.3.4)\r\n              OCSP 签名 (1.3.6.1.5.5.7.3.9)\r\n              内核模式代码签名 (1.3.6.1.4.1.311.61.1.1)\r\n              Windows 硬件驱动程序验证 (1.3.6.1.4.1.311.10.3.5)\r\n              Windows 系统组件验证 (1.3.6.1.4.1.311.10.3.6)\r\n              OEM Windows 系统组件验证 (1.3.6.1.4.1.311.10.3.7)\r\n              内嵌 Windows 系统组件验证 (1.3.6.1.4.1.311.10.3.8)\r\n              1.3.6.1.5.5.7.3.36 (1.3.6.1.5.5.7.3.36)\r\n              文档签名 (1.3.6.1.4.1.311.10.3.12)\r\n              加密文件系统 (1.3.6.1.4.1.311.10.3.4)\r\n              数字权利 (1.3.6.1.4.1.311.10.5.1)\r\n授权信息访问：\r\n              OCSP   URL=http://localhost/ocsp\r\n              颁发者 URL=http://localhost/crt/613077af29b3beddef72620948bf6453.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost/crl/613077af29b3beddef72620948bf6453.crl\r\n              CRL分发点 = http://localhost/crl/613077af29b3beddef72620948bf6453.der.crl\r\ndigitalSignature, nonRepudiation, keyCertSign, cRLSign\r\n基本约束(关键)：\n              Subject Type=CA  Path Length Constraint = 2147483647\r\n证书策略：\r\n              证书颁发策略(Statement Identifier) OID = 1.3.6.1.4.1.4146.1.95\r\n              所有颁发策略 OID = 2.5.29.32.0\r\n              所有应用程序策略 OID = 1.3.6.1.4.1.311.10.12.1\r\n\n\n\r\n证书签名：\n        3046022100fa3c01c7b22639d76c2d65a051230618ddba25f4e695ffc3ec6463a956f43b06022100db91dfdbc104e6f30f5b9f4425a2f380537f7f1bf5064e338af4e003a990eb7c\n\r\n证书类别： 非根证书\n\r\n证书链： \r\n       Root --> dea43964b016c949715e679427a82905d8789cfe\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n验证签名： 通过、签名有效 颁发者=CN=ECC测试根, OU=ChinaITBoys, O=MODPKICA\r\n证书状态：证书正常。（CRL）\r\n2026/09/21 23:34:01 OCSP:正常,序列号 1fe5611df74dcf1d51d48a1be40592a6\r\n          证书正常。（OCSP）\r\n\r\n密钥 Id 哈希(SHA1)          ： ce0052387f98600f14808df5bf8587e350c0eab3\r\n密钥 Id 哈希(RFC-SHA1)      ： 5398251ed829a9e9910712b362f1561709a95453\r\n密钥 Id 哈希(Pin-SHA256)    ： crIRQXIow4k/vfKK0rt/pTaEuBn+qbtEYZiLawbrr6c=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 72b211417228c3893fbdf28ad2bb7fa53684b819fea9bb4461988b6b06ebafa7\r\n\n\r\n证书哈希(SHA1)              ： 1dee249402e4a563c3c9a3e61bb6e9da32b595f9\r\n证书哈希(SHA256)            ： 324e4f1df6be55a918101b93d0db43c883ab6a66b582202914e1f9eba35ec4a6\r\n签名哈希                    ： 25856fad4c41a22cba36e6b9d80f974e94f0a574700350a1105fb90965fe9486\r\n
+
+时间: 2026/09/21 23:35:10
+时间戳: 1790004910243
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crl/66ef152dc259591fc0b9f15ae02e1af8.crl
+
+时间: 2026/09/21 23:35:10
+时间戳: 1790004910247
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crl 大小=616字节 类型=crl
+
+时间: 2026/09/21 23:35:10
+时间戳: 1790004910250
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/66ef152dc259591fc0b9f15ae02e1af8.crt
+
+时间: 2026/09/21 23:35:10
+时间戳: 1790004910252
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crt 大小=1892字节 类型=crt
+
+时间: 2026/09/21 23:35:10
+时间戳: 1790004910256
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/66ef152dc259591fc0b9f15ae02e1af8.crt
+
+时间: 2026/09/21 23:35:10
+时间戳: 1790004910271
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crt 大小=1892字节 类型=crt
+
+时间: 2026/09/21 23:35:10
+时间戳: 1790004910273
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=116字节
+
+时间: 2026/09/21 23:35:10
+时间戳: 1790004910275
+操作: OCSP请求解析
+命令: 
+结果: 序列号=66ef152dc259591fc0b9f15ae02e1af8 哈希=1.3.14.3.2.26 Nonce=e3c192c1e5d5392ab0418a444e8340a6
+
+时间: 2026/09/21 23:35:10
+时间戳: 1790004910307
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=RSA测试根 By OCSP, OU=Only OCSP Signing, C=CN, O=MODPKICA 请求序列号=66ef152dc259591fc0b9f15ae02e1af8
+
+时间: 2026/09/21 23:35:10
+时间戳: 1790004910310
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1942字节
+
+时间: 2026/09/21 23:35:10
+时间戳: 1790004910323
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"66ef152dc259591fc0b9f15ae02e1af8"}
+结果:         版本： 3\r\n      序列号： 66ef152dc259591fc0b9f15ae02e1af8\r\n    签名算法： SHA256-RSA (1.2.840.113549.1.1.11)\r\n签名哈希算法： SHA256\n\r\n颁发者： CN=RSA测试根, OU=ChinaITBoys, O=MODPKICA, C=CN\r\n有效期从： Thu Jul 19 15:30:00 CST 2001\r\n有效期到： Sun Jul 19 15:30:00 CST 2099\n\r\n使用者： CN=RSA测试根, OU=ChinaITBoys, O=MODPKICA, C=CN\r\n    公钥： RSA 2048\r\n授权密钥标识符  ： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\r\n使用者密钥标识符： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\n\r\n增强型密钥用法：\n\r\n授权信息访问：\r\n              OCSP   URL=http://localhost/ocsp\r\n              颁发者 URL=http://localhost/crt/66ef152dc259591fc0b9f15ae02e1af8.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost/crl/66ef152dc259591fc0b9f15ae02e1af8.crl\r\n              CRL分发点 = http://localhost/crl/66ef152dc259591fc0b9f15ae02e1af8.der.crl\r\ndigitalSignature, nonRepudiation, keyCertSign, cRLSign\r\n基本约束(关键)：\n              Subject Type=CA  Path Length Constraint = 2147483647\r\n证书策略：\r\n              证书颁发策略(Statement Identifier) OID = 1.3.6.1.4.1.4146.1.95\r\n              所有颁发策略 OID = 2.5.29.32.0\r\n              所有应用程序策略 OID = 1.3.6.1.4.1.311.10.12.1\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\n\n\n\r\n证书签名：\n        7ae5b7afbfae9072fc9b54d3fee478d66381b5302d3515da119027e5e35cac08b34adf5f5afae3acbc17b7a4d0b8e6535b0f9fe80cd9e305335cea18ea10f15d9b7c112828f1e2c0f82ff770f96cd35f07f50f9d745fa5c1b117825493ad9c1368bb69bcad80f5721435f3b8ee6e144c9e8c64555f6fdb2d6e093a6eeaa036ee2da410488d35e99ae85f4affc7b698902310786c49014b52d77ec34f163236f0a74d40ba5bb3272075079ded28a8353a62d3461eedc9981b6401cc8564e234d3b9ff7492a487fffc19a7394e21d0def63f4bc897d94d6d63986e81951617167044638ee96f7f09a3d68d21ba3f915e21f5ad4738460d095077c0667eb18d53a3\n\r\n证书类别： 根证书\n\r\n验证签名： 成功（根证书自验证通过）\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n证书状态：证书正常。（CRL）\r\n2026/09/21 23:35:10 OCSP:正常,序列号 66ef152dc259591fc0b9f15ae02e1af8\r\n          证书正常。（OCSP）\r\n\r\n密钥 Id 哈希(SHA1)          ： 17b57835f575c0cc3f0ce0466423d110ea033ac7\r\n密钥 Id 哈希(RFC-SHA1)      ： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\r\n密钥 Id 哈希(Pin-SHA256)    ： G6i323ZAlHZzxrNTJI23xy817ozgcW1zPzOlBD6Ru34=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 1ba8b7db7640947673c6b353248db7c72f35ee8ce0716d733f33a5043e91bb7e\r\n\n\r\n证书哈希(SHA1)              ： 3e527e8eaa670ac7af0d53d345ebf76715e131f2\r\n证书哈希(SHA256)            ： 9bf33a2c80426adc07c7f67c844bf2eb149df40502724f494dc003560e5e8621\r\n签名哈希                    ： 8cdb5e42965c8a513eabacbce3529edac950e84f3cc2273ee75cfe572eb40f59\r\n
+
+时间: 2026/09/21 23:37:28
+时间戳: 1790005048984
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crl/66ef152dc259591fc0b9f15ae02e1af8.crl
+
+时间: 2026/09/21 23:37:28
+时间戳: 1790005048998
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crl 大小=616字节 类型=crl
+
+时间: 2026/09/21 23:37:29
+时间戳: 1790005049008
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/66ef152dc259591fc0b9f15ae02e1af8.crt
+
+时间: 2026/09/21 23:37:29
+时间戳: 1790005049012
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crt 大小=1892字节 类型=crt
+
+时间: 2026/09/21 23:37:29
+时间戳: 1790005049018
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/66ef152dc259591fc0b9f15ae02e1af8.crt
+
+时间: 2026/09/21 23:37:29
+时间戳: 1790005049021
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crt 大小=1892字节 类型=crt
+
+时间: 2026/09/21 23:37:29
+时间戳: 1790005049045
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=116字节
+
+时间: 2026/09/21 23:37:29
+时间戳: 1790005049057
+操作: OCSP请求解析
+命令: 
+结果: 序列号=66ef152dc259591fc0b9f15ae02e1af8 哈希=1.3.14.3.2.26 Nonce=b50f292e39761e604bfa4265dd2f0994
+
+时间: 2026/09/21 23:37:29
+时间戳: 1790005049100
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=RSA测试根 By OCSP, OU=Only OCSP Signing, C=CN, O=MODPKICA 请求序列号=66ef152dc259591fc0b9f15ae02e1af8
+
+时间: 2026/09/21 23:37:29
+时间戳: 1790005049108
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1942字节
+
+时间: 2026/09/21 23:37:29
+时间戳: 1790005049124
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"66ef152dc259591fc0b9f15ae02e1af8"}
+结果:         版本： 3\r\n      序列号： 66ef152dc259591fc0b9f15ae02e1af8\r\n    签名算法： SHA256-RSA (1.2.840.113549.1.1.11)\r\n签名哈希算法： SHA256\n\r\n颁发者： CN=RSA测试根, OU=ChinaITBoys, O=MODPKICA, C=CN\r\n有效期从： Thu Jul 19 15:30:00 CST 2001\r\n有效期到： Sun Jul 19 15:30:00 CST 2099\n\r\n使用者： CN=RSA测试根, OU=ChinaITBoys, O=MODPKICA, C=CN\r\n    公钥： RSA 2048\r\n授权密钥标识符  ： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\r\n使用者密钥标识符： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\n\r\n增强型密钥用法：\n\r\n授权信息访问：\r\n              OCSP   URL=http://localhost/ocsp\r\n              颁发者 URL=http://localhost/crt/66ef152dc259591fc0b9f15ae02e1af8.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost/crl/66ef152dc259591fc0b9f15ae02e1af8.crl\r\n              CRL分发点 = http://localhost/crl/66ef152dc259591fc0b9f15ae02e1af8.der.crl\r\ndigitalSignature, nonRepudiation, keyCertSign, cRLSign\r\n基本约束(关键)：\n              Subject Type=CA  Path Length Constraint = 2147483647\r\n证书策略：\r\n              证书颁发策略(Statement Identifier) OID = 1.3.6.1.4.1.4146.1.95\r\n              所有颁发策略 OID = 2.5.29.32.0\r\n              所有应用程序策略 OID = 1.3.6.1.4.1.311.10.12.1\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\n\n\n\r\n证书签名：\n        7ae5b7afbfae9072fc9b54d3fee478d66381b5302d3515da119027e5e35cac08b34adf5f5afae3acbc17b7a4d0b8e6535b0f9fe80cd9e305335cea18ea10f15d9b7c112828f1e2c0f82ff770f96cd35f07f50f9d745fa5c1b117825493ad9c1368bb69bcad80f5721435f3b8ee6e144c9e8c64555f6fdb2d6e093a6eeaa036ee2da410488d35e99ae85f4affc7b698902310786c49014b52d77ec34f163236f0a74d40ba5bb3272075079ded28a8353a62d3461eedc9981b6401cc8564e234d3b9ff7492a487fffc19a7394e21d0def63f4bc897d94d6d63986e81951617167044638ee96f7f09a3d68d21ba3f915e21f5ad4738460d095077c0667eb18d53a3\n\r\n证书类别： 根证书\n\r\n验证签名： 成功（根证书自验证通过）\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n证书状态：证书正常。（CRL）\r\n2026/09/21 23:37:29 OCSP:正常,序列号 66ef152dc259591fc0b9f15ae02e1af8\r\n          证书正常。（OCSP）\r\n\r\n密钥 Id 哈希(SHA1)          ： 17b57835f575c0cc3f0ce0466423d110ea033ac7\r\n密钥 Id 哈希(RFC-SHA1)      ： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\r\n密钥 Id 哈希(Pin-SHA256)    ： G6i323ZAlHZzxrNTJI23xy817ozgcW1zPzOlBD6Ru34=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 1ba8b7db7640947673c6b353248db7c72f35ee8ce0716d733f33a5043e91bb7e\r\n\n\r\n证书哈希(SHA1)              ： 3e527e8eaa670ac7af0d53d345ebf76715e131f2\r\n证书哈希(SHA256)            ： 9bf33a2c80426adc07c7f67c844bf2eb149df40502724f494dc003560e5e8621\r\n签名哈希                    ： 8cdb5e42965c8a513eabacbce3529edac950e84f3cc2273ee75cfe572eb40f59\r\n
+
+时间: 2026/09/21 23:37:43
+时间戳: 1790005063430
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crl/66ef152dc259591fc0b9f15ae02e1af8.crl
+
+时间: 2026/09/21 23:37:43
+时间戳: 1790005063435
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crl 大小=616字节 类型=crl
+
+时间: 2026/09/21 23:37:43
+时间戳: 1790005063445
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/66ef152dc259591fc0b9f15ae02e1af8.crt
+
+时间: 2026/09/21 23:37:43
+时间戳: 1790005063453
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crt 大小=1892字节 类型=crt
+
+时间: 2026/09/21 23:37:43
+时间戳: 1790005063477
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/66ef152dc259591fc0b9f15ae02e1af8.crt
+
+时间: 2026/09/21 23:37:43
+时间戳: 1790005063486
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crt 大小=1892字节 类型=crt
+
+时间: 2026/09/21 23:37:43
+时间戳: 1790005063492
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=116字节
+
+时间: 2026/09/21 23:37:43
+时间戳: 1790005063498
+操作: OCSP请求解析
+命令: 
+结果: 序列号=66ef152dc259591fc0b9f15ae02e1af8 哈希=1.3.14.3.2.26 Nonce=9a48876f7429c2e09a4bd6ea85495fa1
+
+时间: 2026/09/21 23:37:43
+时间戳: 1790005063542
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=RSA测试根 By OCSP, OU=Only OCSP Signing, C=CN, O=MODPKICA 请求序列号=66ef152dc259591fc0b9f15ae02e1af8
+
+时间: 2026/09/21 23:37:43
+时间戳: 1790005063545
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1942字节
+
+时间: 2026/09/21 23:37:43
+时间戳: 1790005063555
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"66ef152dc259591fc0b9f15ae02e1af8"}
+结果:         版本： 3\r\n      序列号： 66ef152dc259591fc0b9f15ae02e1af8\r\n    签名算法： SHA256-RSA (1.2.840.113549.1.1.11)\r\n签名哈希算法： SHA256\n\r\n颁发者： CN=RSA测试根, OU=ChinaITBoys, O=MODPKICA, C=CN\r\n有效期从： Thu Jul 19 15:30:00 CST 2001\r\n有效期到： Sun Jul 19 15:30:00 CST 2099\n\r\n使用者： CN=RSA测试根, OU=ChinaITBoys, O=MODPKICA, C=CN\r\n    公钥： RSA 2048\r\n授权密钥标识符  ： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\r\n使用者密钥标识符： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\n\r\n增强型密钥用法：\n\r\n授权信息访问：\r\n              OCSP   URL=http://localhost/ocsp\r\n              颁发者 URL=http://localhost/crt/66ef152dc259591fc0b9f15ae02e1af8.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost/crl/66ef152dc259591fc0b9f15ae02e1af8.crl\r\n              CRL分发点 = http://localhost/crl/66ef152dc259591fc0b9f15ae02e1af8.der.crl\r\ndigitalSignature, nonRepudiation, keyCertSign, cRLSign\r\n基本约束(关键)：\n              Subject Type=CA  Path Length Constraint = 2147483647\r\n证书策略：\r\n              证书颁发策略(Statement Identifier) OID = 1.3.6.1.4.1.4146.1.95\r\n              所有颁发策略 OID = 2.5.29.32.0\r\n              所有应用程序策略 OID = 1.3.6.1.4.1.311.10.12.1\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\n\n\n\r\n证书签名：\n        7ae5b7afbfae9072fc9b54d3fee478d66381b5302d3515da119027e5e35cac08b34adf5f5afae3acbc17b7a4d0b8e6535b0f9fe80cd9e305335cea18ea10f15d9b7c112828f1e2c0f82ff770f96cd35f07f50f9d745fa5c1b117825493ad9c1368bb69bcad80f5721435f3b8ee6e144c9e8c64555f6fdb2d6e093a6eeaa036ee2da410488d35e99ae85f4affc7b698902310786c49014b52d77ec34f163236f0a74d40ba5bb3272075079ded28a8353a62d3461eedc9981b6401cc8564e234d3b9ff7492a487fffc19a7394e21d0def63f4bc897d94d6d63986e81951617167044638ee96f7f09a3d68d21ba3f915e21f5ad4738460d095077c0667eb18d53a3\n\r\n证书类别： 根证书\n\r\n验证签名： 成功（根证书自验证通过）\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n证书状态：证书正常。（CRL）\r\n2026/09/21 23:37:43 OCSP:正常,序列号 66ef152dc259591fc0b9f15ae02e1af8\r\n          证书正常。（OCSP）\r\n\r\n密钥 Id 哈希(SHA1)          ： 17b57835f575c0cc3f0ce0466423d110ea033ac7\r\n密钥 Id 哈希(RFC-SHA1)      ： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\r\n密钥 Id 哈希(Pin-SHA256)    ： G6i323ZAlHZzxrNTJI23xy817ozgcW1zPzOlBD6Ru34=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 1ba8b7db7640947673c6b353248db7c72f35ee8ce0716d733f33a5043e91bb7e\r\n\n\r\n证书哈希(SHA1)              ： 3e527e8eaa670ac7af0d53d345ebf76715e131f2\r\n证书哈希(SHA256)            ： 9bf33a2c80426adc07c7f67c844bf2eb149df40502724f494dc003560e5e8621\r\n签名哈希                    ： 8cdb5e42965c8a513eabacbce3529edac950e84f3cc2273ee75cfe572eb40f59\r\n
+
+时间: 2026/09/21 23:41:02
+时间戳: 1790005262518
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crl/66ef152dc259591fc0b9f15ae02e1af8.crl
+
+时间: 2026/09/21 23:41:02
+时间戳: 1790005262522
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crl 大小=616字节 类型=crl
+
+时间: 2026/09/21 23:41:02
+时间戳: 1790005262533
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/66ef152dc259591fc0b9f15ae02e1af8.crt
+
+时间: 2026/09/21 23:41:02
+时间戳: 1790005262548
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crt 大小=1892字节 类型=crt
+
+时间: 2026/09/21 23:41:02
+时间戳: 1790005262554
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/66ef152dc259591fc0b9f15ae02e1af8.crt
+
+时间: 2026/09/21 23:41:02
+时间戳: 1790005262562
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crt 大小=1892字节 类型=crt
+
+时间: 2026/09/21 23:41:02
+时间戳: 1790005262566
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=116字节
+
+时间: 2026/09/21 23:41:02
+时间戳: 1790005262577
+操作: OCSP请求解析
+命令: 
+结果: 序列号=66ef152dc259591fc0b9f15ae02e1af8 哈希=1.3.14.3.2.26 Nonce=8dc22b3c83a29dc7ad9818679d53a787
+
+时间: 2026/09/21 23:41:02
+时间戳: 1790005262718
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=RSA测试根 By OCSP, OU=Only OCSP Signing, C=CN, O=MODPKICA 请求序列号=66ef152dc259591fc0b9f15ae02e1af8
+
+时间: 2026/09/21 23:41:02
+时间戳: 1790005262734
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1942字节
+
+时间: 2026/09/21 23:41:02
+时间戳: 1790005262750
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"66ef152dc259591fc0b9f15ae02e1af8"}
+结果:         版本： 3\r\n      序列号： 66ef152dc259591fc0b9f15ae02e1af8\r\n    签名算法： SHA256-RSA (1.2.840.113549.1.1.11)\r\n签名哈希算法： SHA256\n\r\n颁发者： CN=RSA测试根, OU=ChinaITBoys, O=MODPKICA, C=CN\r\n有效期从： Thu Jul 19 15:30:00 CST 2001\r\n有效期到： Sun Jul 19 15:30:00 CST 2099\n\r\n使用者： CN=RSA测试根, OU=ChinaITBoys, O=MODPKICA, C=CN\r\n    公钥： RSA 2048\r\n授权密钥标识符  ： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\r\n使用者密钥标识符： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\n\r\n增强型密钥用法：\n\r\n授权信息访问：\r\n              OCSP   URL=http://localhost/ocsp\r\n              颁发者 URL=http://localhost/crt/66ef152dc259591fc0b9f15ae02e1af8.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost/crl/66ef152dc259591fc0b9f15ae02e1af8.crl\r\n              CRL分发点 = http://localhost/crl/66ef152dc259591fc0b9f15ae02e1af8.der.crl\r\ndigitalSignature, nonRepudiation, keyCertSign, cRLSign\r\n基本约束(关键)：\n              Subject Type=CA  Path Length Constraint = 2147483647\r\n证书策略：\r\n              证书颁发策略(Statement Identifier) OID = 1.3.6.1.4.1.4146.1.95\r\n              所有颁发策略 OID = 2.5.29.32.0\r\n              所有应用程序策略 OID = 1.3.6.1.4.1.311.10.12.1\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\n\n\n\r\n证书签名：\n        7ae5b7afbfae9072fc9b54d3fee478d66381b5302d3515da119027e5e35cac08b34adf5f5afae3acbc17b7a4d0b8e6535b0f9fe80cd9e305335cea18ea10f15d9b7c112828f1e2c0f82ff770f96cd35f07f50f9d745fa5c1b117825493ad9c1368bb69bcad80f5721435f3b8ee6e144c9e8c64555f6fdb2d6e093a6eeaa036ee2da410488d35e99ae85f4affc7b698902310786c49014b52d77ec34f163236f0a74d40ba5bb3272075079ded28a8353a62d3461eedc9981b6401cc8564e234d3b9ff7492a487fffc19a7394e21d0def63f4bc897d94d6d63986e81951617167044638ee96f7f09a3d68d21ba3f915e21f5ad4738460d095077c0667eb18d53a3\n\r\n证书类别： 根证书\n\r\n验证签名： 成功（根证书自验证通过）\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n证书状态：证书正常。（CRL）\r\n2026/09/21 23:41:02 OCSP:正常,序列号 66ef152dc259591fc0b9f15ae02e1af8\r\n          证书正常。（OCSP）\r\n\r\n密钥 Id 哈希(SHA1)          ： 17b57835f575c0cc3f0ce0466423d110ea033ac7\r\n密钥 Id 哈希(RFC-SHA1)      ： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\r\n密钥 Id 哈希(Pin-SHA256)    ： G6i323ZAlHZzxrNTJI23xy817ozgcW1zPzOlBD6Ru34=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 1ba8b7db7640947673c6b353248db7c72f35ee8ce0716d733f33a5043e91bb7e\r\n\n\r\n证书哈希(SHA1)              ： 3e527e8eaa670ac7af0d53d345ebf76715e131f2\r\n证书哈希(SHA256)            ： 9bf33a2c80426adc07c7f67c844bf2eb149df40502724f494dc003560e5e8621\r\n签名哈希                    ： 8cdb5e42965c8a513eabacbce3529edac950e84f3cc2273ee75cfe572eb40f59\r\n
+
+时间: 2026/09/21 23:41:08
+时间戳: 1790005268345
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crl/66ef152dc259591fc0b9f15ae02e1af8.crl
+
+时间: 2026/09/21 23:41:08
+时间戳: 1790005268348
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crl 大小=616字节 类型=crl
+
+时间: 2026/09/21 23:41:08
+时间戳: 1790005268351
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/66ef152dc259591fc0b9f15ae02e1af8.crt
+
+时间: 2026/09/21 23:41:08
+时间戳: 1790005268354
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crt 大小=1892字节 类型=crt
+
+时间: 2026/09/21 23:41:08
+时间戳: 1790005268371
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/66ef152dc259591fc0b9f15ae02e1af8.crt
+
+时间: 2026/09/21 23:41:08
+时间戳: 1790005268377
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crt 大小=1892字节 类型=crt
+
+时间: 2026/09/21 23:41:08
+时间戳: 1790005268388
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=116字节
+
+时间: 2026/09/21 23:41:08
+时间戳: 1790005268398
+操作: OCSP请求解析
+命令: 
+结果: 序列号=66ef152dc259591fc0b9f15ae02e1af8 哈希=1.3.14.3.2.26 Nonce=002b807937f6ee738a234e95098925fa
+
+时间: 2026/09/21 23:41:08
+时间戳: 1790005268464
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=RSA测试根 By OCSP, OU=Only OCSP Signing, C=CN, O=MODPKICA 请求序列号=66ef152dc259591fc0b9f15ae02e1af8
+
+时间: 2026/09/21 23:41:08
+时间戳: 1790005268492
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1942字节
+
+时间: 2026/09/21 23:41:08
+时间戳: 1790005268500
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"66ef152dc259591fc0b9f15ae02e1af8"}
+结果:         版本： 3\r\n      序列号： 66ef152dc259591fc0b9f15ae02e1af8\r\n    签名算法： SHA256-RSA (1.2.840.113549.1.1.11)\r\n签名哈希算法： SHA256\n\r\n颁发者： CN=RSA测试根, OU=ChinaITBoys, O=MODPKICA, C=CN\r\n有效期从： Thu Jul 19 15:30:00 CST 2001\r\n有效期到： Sun Jul 19 15:30:00 CST 2099\n\r\n使用者： CN=RSA测试根, OU=ChinaITBoys, O=MODPKICA, C=CN\r\n    公钥： RSA 2048\r\n授权密钥标识符  ： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\r\n使用者密钥标识符： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\n\r\n增强型密钥用法：\n\r\n授权信息访问：\r\n              OCSP   URL=http://localhost/ocsp\r\n              颁发者 URL=http://localhost/crt/66ef152dc259591fc0b9f15ae02e1af8.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost/crl/66ef152dc259591fc0b9f15ae02e1af8.crl\r\n              CRL分发点 = http://localhost/crl/66ef152dc259591fc0b9f15ae02e1af8.der.crl\r\ndigitalSignature, nonRepudiation, keyCertSign, cRLSign\r\n基本约束(关键)：\n              Subject Type=CA  Path Length Constraint = 2147483647\r\n证书策略：\r\n              证书颁发策略(Statement Identifier) OID = 1.3.6.1.4.1.4146.1.95\r\n              所有颁发策略 OID = 2.5.29.32.0\r\n              所有应用程序策略 OID = 1.3.6.1.4.1.311.10.12.1\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\n\n\n\r\n证书签名：\n        7ae5b7afbfae9072fc9b54d3fee478d66381b5302d3515da119027e5e35cac08b34adf5f5afae3acbc17b7a4d0b8e6535b0f9fe80cd9e305335cea18ea10f15d9b7c112828f1e2c0f82ff770f96cd35f07f50f9d745fa5c1b117825493ad9c1368bb69bcad80f5721435f3b8ee6e144c9e8c64555f6fdb2d6e093a6eeaa036ee2da410488d35e99ae85f4affc7b698902310786c49014b52d77ec34f163236f0a74d40ba5bb3272075079ded28a8353a62d3461eedc9981b6401cc8564e234d3b9ff7492a487fffc19a7394e21d0def63f4bc897d94d6d63986e81951617167044638ee96f7f09a3d68d21ba3f915e21f5ad4738460d095077c0667eb18d53a3\n\r\n证书类别： 根证书\n\r\n验证签名： 成功（根证书自验证通过）\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n证书状态：证书正常。（CRL）\r\n2026/09/21 23:41:08 OCSP:正常,序列号 66ef152dc259591fc0b9f15ae02e1af8\r\n          证书正常。（OCSP）\r\n\r\n密钥 Id 哈希(SHA1)          ： 17b57835f575c0cc3f0ce0466423d110ea033ac7\r\n密钥 Id 哈希(RFC-SHA1)      ： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\r\n密钥 Id 哈希(Pin-SHA256)    ： G6i323ZAlHZzxrNTJI23xy817ozgcW1zPzOlBD6Ru34=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 1ba8b7db7640947673c6b353248db7c72f35ee8ce0716d733f33a5043e91bb7e\r\n\n\r\n证书哈希(SHA1)              ： 3e527e8eaa670ac7af0d53d345ebf76715e131f2\r\n证书哈希(SHA256)            ： 9bf33a2c80426adc07c7f67c844bf2eb149df40502724f494dc003560e5e8621\r\n签名哈希                    ： 8cdb5e42965c8a513eabacbce3529edac950e84f3cc2273ee75cfe572eb40f59\r\n
+
+时间: 2026/09/21 23:42:39
+时间戳: 1790005359141
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crl/66ef152dc259591fc0b9f15ae02e1af8.crl
+
+时间: 2026/09/21 23:42:39
+时间戳: 1790005359155
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crl 大小=616字节 类型=crl
+
+时间: 2026/09/21 23:42:39
+时间戳: 1790005359163
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/66ef152dc259591fc0b9f15ae02e1af8.crt
+
+时间: 2026/09/21 23:42:39
+时间戳: 1790005359169
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crt 大小=1892字节 类型=crt
+
+时间: 2026/09/21 23:42:39
+时间戳: 1790005359178
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/66ef152dc259591fc0b9f15ae02e1af8.crt
+
+时间: 2026/09/21 23:42:39
+时间戳: 1790005359183
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crt 大小=1892字节 类型=crt
+
+时间: 2026/09/21 23:42:39
+时间戳: 1790005359206
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=116字节
+
+时间: 2026/09/21 23:42:39
+时间戳: 1790005359216
+操作: OCSP请求解析
+命令: 
+结果: 序列号=66ef152dc259591fc0b9f15ae02e1af8 哈希=1.3.14.3.2.26 Nonce=31a562b2f29177d5820fae5645985b12
+
+时间: 2026/09/21 23:42:39
+时间戳: 1790005359266
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=RSA测试根 By OCSP, OU=Only OCSP Signing, C=CN, O=MODPKICA 请求序列号=66ef152dc259591fc0b9f15ae02e1af8
+
+时间: 2026/09/21 23:42:39
+时间戳: 1790005359271
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1942字节
+
+时间: 2026/09/21 23:42:39
+时间戳: 1790005359291
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"66ef152dc259591fc0b9f15ae02e1af8"}
+结果:         版本： 3\r\n      序列号： 66ef152dc259591fc0b9f15ae02e1af8\r\n    签名算法： SHA256-RSA (1.2.840.113549.1.1.11)\r\n签名哈希算法： SHA256\n\r\n颁发者： CN=RSA测试根, OU=ChinaITBoys, O=MODPKICA, C=CN\r\n有效期从： Thu Jul 19 15:30:00 CST 2001\r\n有效期到： Sun Jul 19 15:30:00 CST 2099\n\r\n使用者： CN=RSA测试根, OU=ChinaITBoys, O=MODPKICA, C=CN\r\n    公钥： RSA 2048\r\n授权密钥标识符  ： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\r\n使用者密钥标识符： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\n\r\n增强型密钥用法：\n\r\n授权信息访问：\r\n              OCSP   URL=http://localhost/ocsp\r\n              颁发者 URL=http://localhost/crt/66ef152dc259591fc0b9f15ae02e1af8.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost/crl/66ef152dc259591fc0b9f15ae02e1af8.crl\r\n              CRL分发点 = http://localhost/crl/66ef152dc259591fc0b9f15ae02e1af8.der.crl\r\ndigitalSignature, nonRepudiation, keyCertSign, cRLSign\r\n基本约束(关键)：\n              Subject Type=CA  Path Length Constraint = 2147483647\r\n证书策略：\r\n              证书颁发策略(Statement Identifier) OID = 1.3.6.1.4.1.4146.1.95\r\n              所有颁发策略 OID = 2.5.29.32.0\r\n              所有应用程序策略 OID = 1.3.6.1.4.1.311.10.12.1\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\n\n\n\r\n证书签名：\n        7ae5b7afbfae9072fc9b54d3fee478d66381b5302d3515da119027e5e35cac08b34adf5f5afae3acbc17b7a4d0b8e6535b0f9fe80cd9e305335cea18ea10f15d9b7c112828f1e2c0f82ff770f96cd35f07f50f9d745fa5c1b117825493ad9c1368bb69bcad80f5721435f3b8ee6e144c9e8c64555f6fdb2d6e093a6eeaa036ee2da410488d35e99ae85f4affc7b698902310786c49014b52d77ec34f163236f0a74d40ba5bb3272075079ded28a8353a62d3461eedc9981b6401cc8564e234d3b9ff7492a487fffc19a7394e21d0def63f4bc897d94d6d63986e81951617167044638ee96f7f09a3d68d21ba3f915e21f5ad4738460d095077c0667eb18d53a3\n\r\n证书类别： 根证书\n\r\n验证签名： 成功（根证书自验证通过）\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n证书状态：证书正常。（CRL）\r\n2026/09/21 23:42:39 OCSP:正常,序列号 66ef152dc259591fc0b9f15ae02e1af8\r\n          证书正常。（OCSP）\r\n\r\n密钥 Id 哈希(SHA1)          ： 17b57835f575c0cc3f0ce0466423d110ea033ac7\r\n密钥 Id 哈希(RFC-SHA1)      ： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\r\n密钥 Id 哈希(Pin-SHA256)    ： G6i323ZAlHZzxrNTJI23xy817ozgcW1zPzOlBD6Ru34=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 1ba8b7db7640947673c6b353248db7c72f35ee8ce0716d733f33a5043e91bb7e\r\n\n\r\n证书哈希(SHA1)              ： 3e527e8eaa670ac7af0d53d345ebf76715e131f2\r\n证书哈希(SHA256)            ： 9bf33a2c80426adc07c7f67c844bf2eb149df40502724f494dc003560e5e8621\r\n签名哈希                    ： 8cdb5e42965c8a513eabacbce3529edac950e84f3cc2273ee75cfe572eb40f59\r\n
+
+时间: 2026/09/21 23:42:51
+时间戳: 1790005371789
+操作: ADMIN RevokeCERT
+命令: revokecert 66ef152dc259591fc0b9f15ae02e1af8 0
+结果: 吊销证书 66ef152dc259591fc0b9f15ae02e1af8 原因=0
+
+时间: 2026/09/21 23:42:51
+时间戳: 1790005371790
+操作: WebAdmin /api/revoke
+命令: POST /api/revoke 提交数据={"serial":"66ef152dc259591fc0b9f15ae02e1af8","reason":"0"}
+结果: 已吊销证书 66ef152dc259591fc0b9f15ae02e1af8（原因=0），CRL 已刷新。\nCRL 已生成: 66ef152dc259591fc0b9f15ae02e1af8 (算法 RSA/sha256, 吊销 1 条)\r\nCRL 已生成: 904c5cb2cbef8317a1fb6b06744fea69 (算法 SM2/sm3, 吊销 0 条)\r\nCRL 已生成: 613077af29b3beddef72620948bf6453 (算法 ECC/sha256, 吊销 0 条)\r\nCRL 已生成: 1bbafe9733ea1d09dd26a18e8f3b6 (算法 RSA/sha256, 吊销 1 条)\r\nCRL 已生成: 1fe5611df74dcf1d51d48a1be40592a6 (算法 ECC/sha256, 吊销 1 条)\r\nCRL 已生成: 7d33a265e4442fd4810e3ca75ea35fcc (算法 SM2/sm3, 吊销 1 条)\r\nCRL 生成完成，共处理颁发者 6 个\r\n
+
+时间: 2026/09/21 23:42:54
+时间戳: 1790005374380
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crl/66ef152dc259591fc0b9f15ae02e1af8.crl
+
+时间: 2026/09/21 23:42:54
+时间戳: 1790005374385
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crl 大小=666字节 类型=crl
+
+时间: 2026/09/21 23:42:54
+时间戳: 1790005374387
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/66ef152dc259591fc0b9f15ae02e1af8.crt
+
+时间: 2026/09/21 23:42:54
+时间戳: 1790005374390
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crt 大小=1892字节 类型=crt
+
+时间: 2026/09/21 23:42:54
+时间戳: 1790005374396
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/66ef152dc259591fc0b9f15ae02e1af8.crt
+
+时间: 2026/09/21 23:42:54
+时间戳: 1790005374402
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crt 大小=1892字节 类型=crt
+
+时间: 2026/09/21 23:42:54
+时间戳: 1790005374405
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=116字节
+
+时间: 2026/09/21 23:42:54
+时间戳: 1790005374407
+操作: OCSP请求解析
+命令: 
+结果: 序列号=66ef152dc259591fc0b9f15ae02e1af8 哈希=1.3.14.3.2.26 Nonce=fd32fbcfaa7079ab9aaafb35836adeeb
+
+时间: 2026/09/21 23:42:54
+时间戳: 1790005374434
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=RSA测试根 By OCSP, OU=Only OCSP Signing, C=CN, O=MODPKICA 请求序列号=66ef152dc259591fc0b9f15ae02e1af8
+
+时间: 2026/09/21 23:42:54
+时间戳: 1790005374449
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"66ef152dc259591fc0b9f15ae02e1af8"}
+结果:         版本： 3\r\n      序列号： 66ef152dc259591fc0b9f15ae02e1af8\r\n    签名算法： SHA256-RSA (1.2.840.113549.1.1.11)\r\n签名哈希算法： SHA256\n\r\n颁发者： CN=RSA测试根, OU=ChinaITBoys, O=MODPKICA, C=CN\r\n有效期从： Thu Jul 19 15:30:00 CST 2001\r\n有效期到： Sun Jul 19 15:30:00 CST 2099\n\r\n使用者： CN=RSA测试根, OU=ChinaITBoys, O=MODPKICA, C=CN\r\n    公钥： RSA 2048\r\n授权密钥标识符  ： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\r\n使用者密钥标识符： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\n\r\n增强型密钥用法：\n\r\n授权信息访问：\r\n              OCSP   URL=http://localhost/ocsp\r\n              颁发者 URL=http://localhost/crt/66ef152dc259591fc0b9f15ae02e1af8.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost/crl/66ef152dc259591fc0b9f15ae02e1af8.crl\r\n              CRL分发点 = http://localhost/crl/66ef152dc259591fc0b9f15ae02e1af8.der.crl\r\ndigitalSignature, nonRepudiation, keyCertSign, cRLSign\r\n基本约束(关键)：\n              Subject Type=CA  Path Length Constraint = 2147483647\r\n证书策略：\r\n              证书颁发策略(Statement Identifier) OID = 1.3.6.1.4.1.4146.1.95\r\n              所有颁发策略 OID = 2.5.29.32.0\r\n              所有应用程序策略 OID = 1.3.6.1.4.1.311.10.12.1\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\n\n\n\r\n证书签名：\n        7ae5b7afbfae9072fc9b54d3fee478d66381b5302d3515da119027e5e35cac08b34adf5f5afae3acbc17b7a4d0b8e6535b0f9fe80cd9e305335cea18ea10f15d9b7c112828f1e2c0f82ff770f96cd35f07f50f9d745fa5c1b117825493ad9c1368bb69bcad80f5721435f3b8ee6e144c9e8c64555f6fdb2d6e093a6eeaa036ee2da410488d35e99ae85f4affc7b698902310786c49014b52d77ec34f163236f0a74d40ba5bb3272075079ded28a8353a62d3461eedc9981b6401cc8564e234d3b9ff7492a487fffc19a7394e21d0def63f4bc897d94d6d63986e81951617167044638ee96f7f09a3d68d21ba3f915e21f5ad4738460d095077c0667eb18d53a3\n\r\n证书类别： 根证书\n\r\n验证签名： 成功（根证书自验证通过）\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n证书状态：          此证书已被颁发机构吊销。（CRL） 吊销时间：Fri Sep 18 23:42:51 CST 2026\r\n2026/09/21 23:42:54 OCSP:已吊销,序列号 66ef152dc259591fc0b9f15ae02e1af8\r\n          此证书已被颁发机构吊销。（OCSP）吊销时间：Fri Sep 18 23:42:51 CST 2026 原因:0\r\n\r\n密钥 Id 哈希(SHA1)          ： 17b57835f575c0cc3f0ce0466423d110ea033ac7\r\n密钥 Id 哈希(RFC-SHA1)      ： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\r\n密钥 Id 哈希(Pin-SHA256)    ： G6i323ZAlHZzxrNTJI23xy817ozgcW1zPzOlBD6Ru34=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 1ba8b7db7640947673c6b353248db7c72f35ee8ce0716d733f33a5043e91bb7e\r\n\n\r\n证书哈希(SHA1)              ： 3e527e8eaa670ac7af0d53d345ebf76715e131f2\r\n证书哈希(SHA256)            ： 9bf33a2c80426adc07c7f67c844bf2eb149df40502724f494dc003560e5e8621\r\n签名哈希                    ： 8cdb5e42965c8a513eabacbce3529edac950e84f3cc2273ee75cfe572eb40f59\r\n
+
+时间: 2026/09/21 23:42:54
+时间戳: 1790005374454
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1966字节
+
+时间: 2026/09/21 23:42:59
+时间戳: 1790005379728
+操作: ADMIN RestoreCERT
+命令: restorecert 66ef152dc259591fc0b9f15ae02e1af8
+结果: 恢复证书 66ef152dc259591fc0b9f15ae02e1af8（状态 R→V，原因置 0）
+
+时间: 2026/09/21 23:42:59
+时间戳: 1790005379729
+操作: WebAdmin /api/restore
+命令: POST /api/restore 提交数据={"serial":"66ef152dc259591fc0b9f15ae02e1af8"}
+结果: 已恢复证书 66ef152dc259591fc0b9f15ae02e1af8（状态 V，原因 0），CRL 已刷新。\nCRL 已生成: 66ef152dc259591fc0b9f15ae02e1af8 (算法 RSA/sha256, 吊销 0 条)\r\nCRL 已生成: 904c5cb2cbef8317a1fb6b06744fea69 (算法 SM2/sm3, 吊销 0 条)\r\nCRL 已生成: 613077af29b3beddef72620948bf6453 (算法 ECC/sha256, 吊销 0 条)\r\nCRL 已生成: 1bbafe9733ea1d09dd26a18e8f3b6 (算法 RSA/sha256, 吊销 1 条)\r\nCRL 已生成: 1fe5611df74dcf1d51d48a1be40592a6 (算法 ECC/sha256, 吊销 1 条)\r\nCRL 已生成: 7d33a265e4442fd4810e3ca75ea35fcc (算法 SM2/sm3, 吊销 1 条)\r\nCRL 生成完成，共处理颁发者 6 个\r\n
+
+时间: 2026/09/21 23:43:01
+时间戳: 1790005381395
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crl/66ef152dc259591fc0b9f15ae02e1af8.crl
+
+时间: 2026/09/21 23:43:01
+时间戳: 1790005381399
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crl 大小=616字节 类型=crl
+
+时间: 2026/09/21 23:43:01
+时间戳: 1790005381449
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/66ef152dc259591fc0b9f15ae02e1af8.crt
+
+时间: 2026/09/21 23:43:01
+时间戳: 1790005381451
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crt 大小=1892字节 类型=crt
+
+时间: 2026/09/21 23:43:01
+时间戳: 1790005381501
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/66ef152dc259591fc0b9f15ae02e1af8.crt
+
+时间: 2026/09/21 23:43:01
+时间戳: 1790005381504
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crt 大小=1892字节 类型=crt
+
+时间: 2026/09/21 23:43:01
+时间戳: 1790005381519
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=116字节
+
+时间: 2026/09/21 23:43:01
+时间戳: 1790005381526
+操作: OCSP请求解析
+命令: 
+结果: 序列号=66ef152dc259591fc0b9f15ae02e1af8 哈希=1.3.14.3.2.26 Nonce=896ab946044c3351d599950dbe9f02d0
+
+时间: 2026/09/21 23:43:01
+时间戳: 1790005381575
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=RSA测试根 By OCSP, OU=Only OCSP Signing, C=CN, O=MODPKICA 请求序列号=66ef152dc259591fc0b9f15ae02e1af8
+
+时间: 2026/09/21 23:43:01
+时间戳: 1790005381587
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1942字节
+
+时间: 2026/09/21 23:43:01
+时间戳: 1790005381588
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"66ef152dc259591fc0b9f15ae02e1af8"}
+结果:         版本： 3\r\n      序列号： 66ef152dc259591fc0b9f15ae02e1af8\r\n    签名算法： SHA256-RSA (1.2.840.113549.1.1.11)\r\n签名哈希算法： SHA256\n\r\n颁发者： CN=RSA测试根, OU=ChinaITBoys, O=MODPKICA, C=CN\r\n有效期从： Thu Jul 19 15:30:00 CST 2001\r\n有效期到： Sun Jul 19 15:30:00 CST 2099\n\r\n使用者： CN=RSA测试根, OU=ChinaITBoys, O=MODPKICA, C=CN\r\n    公钥： RSA 2048\r\n授权密钥标识符  ： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\r\n使用者密钥标识符： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\n\r\n增强型密钥用法：\n\r\n授权信息访问：\r\n              OCSP   URL=http://localhost/ocsp\r\n              颁发者 URL=http://localhost/crt/66ef152dc259591fc0b9f15ae02e1af8.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost/crl/66ef152dc259591fc0b9f15ae02e1af8.crl\r\n              CRL分发点 = http://localhost/crl/66ef152dc259591fc0b9f15ae02e1af8.der.crl\r\ndigitalSignature, nonRepudiation, keyCertSign, cRLSign\r\n基本约束(关键)：\n              Subject Type=CA  Path Length Constraint = 2147483647\r\n证书策略：\r\n              证书颁发策略(Statement Identifier) OID = 1.3.6.1.4.1.4146.1.95\r\n              所有颁发策略 OID = 2.5.29.32.0\r\n              所有应用程序策略 OID = 1.3.6.1.4.1.311.10.12.1\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\n\n\n\r\n证书签名：\n        7ae5b7afbfae9072fc9b54d3fee478d66381b5302d3515da119027e5e35cac08b34adf5f5afae3acbc17b7a4d0b8e6535b0f9fe80cd9e305335cea18ea10f15d9b7c112828f1e2c0f82ff770f96cd35f07f50f9d745fa5c1b117825493ad9c1368bb69bcad80f5721435f3b8ee6e144c9e8c64555f6fdb2d6e093a6eeaa036ee2da410488d35e99ae85f4affc7b698902310786c49014b52d77ec34f163236f0a74d40ba5bb3272075079ded28a8353a62d3461eedc9981b6401cc8564e234d3b9ff7492a487fffc19a7394e21d0def63f4bc897d94d6d63986e81951617167044638ee96f7f09a3d68d21ba3f915e21f5ad4738460d095077c0667eb18d53a3\n\r\n证书类别： 根证书\n\r\n验证签名： 成功（根证书自验证通过）\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n证书状态：证书正常。（CRL）\r\n2026/09/21 23:43:01 OCSP:正常,序列号 66ef152dc259591fc0b9f15ae02e1af8\r\n          证书正常。（OCSP）\r\n\r\n密钥 Id 哈希(SHA1)          ： 17b57835f575c0cc3f0ce0466423d110ea033ac7\r\n密钥 Id 哈希(RFC-SHA1)      ： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\r\n密钥 Id 哈希(Pin-SHA256)    ： G6i323ZAlHZzxrNTJI23xy817ozgcW1zPzOlBD6Ru34=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 1ba8b7db7640947673c6b353248db7c72f35ee8ce0716d733f33a5043e91bb7e\r\n\n\r\n证书哈希(SHA1)              ： 3e527e8eaa670ac7af0d53d345ebf76715e131f2\r\n证书哈希(SHA256)            ： 9bf33a2c80426adc07c7f67c844bf2eb149df40502724f494dc003560e5e8621\r\n签名哈希                    ： 8cdb5e42965c8a513eabacbce3529edac950e84f3cc2273ee75cfe572eb40f59\r\n
+
+时间: 2026/09/21 23:43:21
+时间戳: 1790005401202
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crl/66ef152dc259591fc0b9f15ae02e1af8.crl
+
+时间: 2026/09/21 23:43:21
+时间戳: 1790005401212
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crl 大小=616字节 类型=crl
+
+时间: 2026/09/21 23:43:21
+时间戳: 1790005401215
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/66ef152dc259591fc0b9f15ae02e1af8.crt
+
+时间: 2026/09/21 23:43:21
+时间戳: 1790005401218
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crt 大小=1892字节 类型=crt
+
+时间: 2026/09/21 23:43:21
+时间戳: 1790005401221
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/66ef152dc259591fc0b9f15ae02e1af8.crt
+
+时间: 2026/09/21 23:43:21
+时间戳: 1790005401226
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crt 大小=1892字节 类型=crt
+
+时间: 2026/09/21 23:43:21
+时间戳: 1790005401230
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=116字节
+
+时间: 2026/09/21 23:43:21
+时间戳: 1790005401232
+操作: OCSP请求解析
+命令: 
+结果: 序列号=66ef152dc259591fc0b9f15ae02e1af8 哈希=1.3.14.3.2.26 Nonce=5e6a6a3613e71d93ae2fbcde5c803ec2
+
+时间: 2026/09/21 23:43:21
+时间戳: 1790005401247
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=RSA测试根 By OCSP, OU=Only OCSP Signing, C=CN, O=MODPKICA 请求序列号=66ef152dc259591fc0b9f15ae02e1af8
+
+时间: 2026/09/21 23:43:21
+时间戳: 1790005401258
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1942字节
+
+时间: 2026/09/21 23:43:21
+时间戳: 1790005401260
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"66ef152dc259591fc0b9f15ae02e1af8"}
+结果:         版本： 3\r\n      序列号： 66ef152dc259591fc0b9f15ae02e1af8\r\n    签名算法： SHA256-RSA (1.2.840.113549.1.1.11)\r\n签名哈希算法： SHA256\n\r\n颁发者： CN=RSA测试根, OU=ChinaITBoys, O=MODPKICA, C=CN\r\n有效期从： Thu Jul 19 15:30:00 CST 2001\r\n有效期到： Sun Jul 19 15:30:00 CST 2099\n\r\n使用者： CN=RSA测试根, OU=ChinaITBoys, O=MODPKICA, C=CN\r\n    公钥： RSA 2048\r\n授权密钥标识符  ： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\r\n使用者密钥标识符： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\n\r\n增强型密钥用法：\n\r\n授权信息访问：\r\n              OCSP   URL=http://localhost/ocsp\r\n              颁发者 URL=http://localhost/crt/66ef152dc259591fc0b9f15ae02e1af8.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost/crl/66ef152dc259591fc0b9f15ae02e1af8.crl\r\n              CRL分发点 = http://localhost/crl/66ef152dc259591fc0b9f15ae02e1af8.der.crl\r\ndigitalSignature, nonRepudiation, keyCertSign, cRLSign\r\n基本约束(关键)：\n              Subject Type=CA  Path Length Constraint = 2147483647\r\n证书策略：\r\n              证书颁发策略(Statement Identifier) OID = 1.3.6.1.4.1.4146.1.95\r\n              所有颁发策略 OID = 2.5.29.32.0\r\n              所有应用程序策略 OID = 1.3.6.1.4.1.311.10.12.1\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\n\n\n\r\n证书签名：\n        7ae5b7afbfae9072fc9b54d3fee478d66381b5302d3515da119027e5e35cac08b34adf5f5afae3acbc17b7a4d0b8e6535b0f9fe80cd9e305335cea18ea10f15d9b7c112828f1e2c0f82ff770f96cd35f07f50f9d745fa5c1b117825493ad9c1368bb69bcad80f5721435f3b8ee6e144c9e8c64555f6fdb2d6e093a6eeaa036ee2da410488d35e99ae85f4affc7b698902310786c49014b52d77ec34f163236f0a74d40ba5bb3272075079ded28a8353a62d3461eedc9981b6401cc8564e234d3b9ff7492a487fffc19a7394e21d0def63f4bc897d94d6d63986e81951617167044638ee96f7f09a3d68d21ba3f915e21f5ad4738460d095077c0667eb18d53a3\n\r\n证书类别： 根证书\n\r\n验证签名： 成功（根证书自验证通过）\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n证书状态：证书正常。（CRL）\r\n2026/09/21 23:43:21 OCSP:正常,序列号 66ef152dc259591fc0b9f15ae02e1af8\r\n          证书正常。（OCSP）\r\n\r\n密钥 Id 哈希(SHA1)          ： 17b57835f575c0cc3f0ce0466423d110ea033ac7\r\n密钥 Id 哈希(RFC-SHA1)      ： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\r\n密钥 Id 哈希(Pin-SHA256)    ： G6i323ZAlHZzxrNTJI23xy817ozgcW1zPzOlBD6Ru34=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 1ba8b7db7640947673c6b353248db7c72f35ee8ce0716d733f33a5043e91bb7e\r\n\n\r\n证书哈希(SHA1)              ： 3e527e8eaa670ac7af0d53d345ebf76715e131f2\r\n证书哈希(SHA256)            ： 9bf33a2c80426adc07c7f67c844bf2eb149df40502724f494dc003560e5e8621\r\n签名哈希                    ： 8cdb5e42965c8a513eabacbce3529edac950e84f3cc2273ee75cfe572eb40f59\r\n
+
+时间: 2026/09/21 23:43:26
+时间戳: 1790005406177
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crl/66ef152dc259591fc0b9f15ae02e1af8.crl
+
+时间: 2026/09/21 23:43:26
+时间戳: 1790005406181
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crl 大小=616字节 类型=crl
+
+时间: 2026/09/21 23:43:26
+时间戳: 1790005406189
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/66ef152dc259591fc0b9f15ae02e1af8.crt
+
+时间: 2026/09/21 23:43:26
+时间戳: 1790005406200
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crt 大小=1892字节 类型=crt
+
+时间: 2026/09/21 23:43:26
+时间戳: 1790005406205
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/66ef152dc259591fc0b9f15ae02e1af8.crt
+
+时间: 2026/09/21 23:43:26
+时间戳: 1790005406209
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crt 大小=1892字节 类型=crt
+
+时间: 2026/09/21 23:43:26
+时间戳: 1790005406219
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=116字节
+
+时间: 2026/09/21 23:43:26
+时间戳: 1790005406221
+操作: OCSP请求解析
+命令: 
+结果: 序列号=66ef152dc259591fc0b9f15ae02e1af8 哈希=1.3.14.3.2.26 Nonce=e40d7c51e829469b9c27ae128c405afc
+
+时间: 2026/09/21 23:43:26
+时间戳: 1790005406252
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=RSA测试根 By OCSP, OU=Only OCSP Signing, C=CN, O=MODPKICA 请求序列号=66ef152dc259591fc0b9f15ae02e1af8
+
+时间: 2026/09/21 23:43:26
+时间戳: 1790005406255
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1942字节
+
+时间: 2026/09/21 23:43:26
+时间戳: 1790005406258
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"66ef152dc259591fc0b9f15ae02e1af8"}
+结果:         版本： 3\r\n      序列号： 66ef152dc259591fc0b9f15ae02e1af8\r\n    签名算法： SHA256-RSA (1.2.840.113549.1.1.11)\r\n签名哈希算法： SHA256\n\r\n颁发者： CN=RSA测试根, OU=ChinaITBoys, O=MODPKICA, C=CN\r\n有效期从： Thu Jul 19 15:30:00 CST 2001\r\n有效期到： Sun Jul 19 15:30:00 CST 2099\n\r\n使用者： CN=RSA测试根, OU=ChinaITBoys, O=MODPKICA, C=CN\r\n    公钥： RSA 2048\r\n授权密钥标识符  ： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\r\n使用者密钥标识符： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\n\r\n增强型密钥用法：\n\r\n授权信息访问：\r\n              OCSP   URL=http://localhost/ocsp\r\n              颁发者 URL=http://localhost/crt/66ef152dc259591fc0b9f15ae02e1af8.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost/crl/66ef152dc259591fc0b9f15ae02e1af8.crl\r\n              CRL分发点 = http://localhost/crl/66ef152dc259591fc0b9f15ae02e1af8.der.crl\r\ndigitalSignature, nonRepudiation, keyCertSign, cRLSign\r\n基本约束(关键)：\n              Subject Type=CA  Path Length Constraint = 2147483647\r\n证书策略：\r\n              证书颁发策略(Statement Identifier) OID = 1.3.6.1.4.1.4146.1.95\r\n              所有颁发策略 OID = 2.5.29.32.0\r\n              所有应用程序策略 OID = 1.3.6.1.4.1.311.10.12.1\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\n\n\n\r\n证书签名：\n        7ae5b7afbfae9072fc9b54d3fee478d66381b5302d3515da119027e5e35cac08b34adf5f5afae3acbc17b7a4d0b8e6535b0f9fe80cd9e305335cea18ea10f15d9b7c112828f1e2c0f82ff770f96cd35f07f50f9d745fa5c1b117825493ad9c1368bb69bcad80f5721435f3b8ee6e144c9e8c64555f6fdb2d6e093a6eeaa036ee2da410488d35e99ae85f4affc7b698902310786c49014b52d77ec34f163236f0a74d40ba5bb3272075079ded28a8353a62d3461eedc9981b6401cc8564e234d3b9ff7492a487fffc19a7394e21d0def63f4bc897d94d6d63986e81951617167044638ee96f7f09a3d68d21ba3f915e21f5ad4738460d095077c0667eb18d53a3\n\r\n证书类别： 根证书\n\r\n验证签名： 成功（根证书自验证通过）\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n证书状态：证书正常。（CRL）\r\n2026/09/21 23:43:26 OCSP:正常,序列号 66ef152dc259591fc0b9f15ae02e1af8\r\n          证书正常。（OCSP）\r\n\r\n密钥 Id 哈希(SHA1)          ： 17b57835f575c0cc3f0ce0466423d110ea033ac7\r\n密钥 Id 哈希(RFC-SHA1)      ： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\r\n密钥 Id 哈希(Pin-SHA256)    ： G6i323ZAlHZzxrNTJI23xy817ozgcW1zPzOlBD6Ru34=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 1ba8b7db7640947673c6b353248db7c72f35ee8ce0716d733f33a5043e91bb7e\r\n\n\r\n证书哈希(SHA1)              ： 3e527e8eaa670ac7af0d53d345ebf76715e131f2\r\n证书哈希(SHA256)            ： 9bf33a2c80426adc07c7f67c844bf2eb149df40502724f494dc003560e5e8621\r\n签名哈希                    ： 8cdb5e42965c8a513eabacbce3529edac950e84f3cc2273ee75cfe572eb40f59\r\n
+
+时间: 2026/09/21 23:48:38
+时间戳: 1790005718289
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crl/66ef152dc259591fc0b9f15ae02e1af8.crl
+
+时间: 2026/09/21 23:48:38
+时间戳: 1790005718321
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crl 大小=616字节 类型=crl
+
+时间: 2026/09/21 23:48:38
+时间戳: 1790005718323
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/66ef152dc259591fc0b9f15ae02e1af8.crt
+
+时间: 2026/09/21 23:48:38
+时间戳: 1790005718327
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crt 大小=1892字节 类型=crt
+
+时间: 2026/09/21 23:48:38
+时间戳: 1790005718344
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/66ef152dc259591fc0b9f15ae02e1af8.crt
+
+时间: 2026/09/21 23:48:38
+时间戳: 1790005718346
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crt 大小=1892字节 类型=crt
+
+时间: 2026/09/21 23:48:38
+时间戳: 1790005718368
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=116字节
+
+时间: 2026/09/21 23:48:38
+时间戳: 1790005718376
+操作: OCSP请求解析
+命令: 
+结果: 序列号=66ef152dc259591fc0b9f15ae02e1af8 哈希=1.3.14.3.2.26 Nonce=0f11a61737cbe0b1de6c213b15fd1cf9
+
+时间: 2026/09/21 23:48:38
+时间戳: 1790005718414
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=RSA测试根 By OCSP, OU=Only OCSP Signing, C=CN, O=MODPKICA 请求序列号=66ef152dc259591fc0b9f15ae02e1af8
+
+时间: 2026/09/21 23:48:38
+时间戳: 1790005718425
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1942字节
+
+时间: 2026/09/21 23:48:38
+时间戳: 1790005718441
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"66ef152dc259591fc0b9f15ae02e1af8"}
+结果:         版本： 3\r\n      序列号： 66ef152dc259591fc0b9f15ae02e1af8\r\n    签名算法： SHA256-RSA (1.2.840.113549.1.1.11)\r\n签名哈希算法： SHA256\n\r\n颁发者： CN=RSA测试根, OU=ChinaITBoys, O=MODPKICA, C=CN\r\n有效期从： Thu Jul 19 15:30:00 CST 2001\r\n有效期到： Sun Jul 19 15:30:00 CST 2099\n\r\n使用者： CN=RSA测试根, OU=ChinaITBoys, O=MODPKICA, C=CN\r\n    公钥： RSA 2048\r\n授权密钥标识符  ： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\r\n使用者密钥标识符： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\n\r\n增强型密钥用法：\n\r\n授权信息访问：\r\n              OCSP   URL=http://localhost/ocsp\r\n              颁发者 URL=http://localhost/crt/66ef152dc259591fc0b9f15ae02e1af8.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost/crl/66ef152dc259591fc0b9f15ae02e1af8.crl\r\n              CRL分发点 = http://localhost/crl/66ef152dc259591fc0b9f15ae02e1af8.der.crl\r\ndigitalSignature, nonRepudiation, keyCertSign, cRLSign\r\n基本约束(关键)：\n              Subject Type=CA  Path Length Constraint = 2147483647\r\n证书策略：\r\n              证书颁发策略(Statement Identifier) OID = 1.3.6.1.4.1.4146.1.95\r\n              所有颁发策略 OID = 2.5.29.32.0\r\n              所有应用程序策略 OID = 1.3.6.1.4.1.311.10.12.1\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\n\n\n\r\n证书签名：\n        7ae5b7afbfae9072fc9b54d3fee478d66381b5302d3515da119027e5e35cac08b34adf5f5afae3acbc17b7a4d0b8e6535b0f9fe80cd9e305335cea18ea10f15d9b7c112828f1e2c0f82ff770f96cd35f07f50f9d745fa5c1b117825493ad9c1368bb69bcad80f5721435f3b8ee6e144c9e8c64555f6fdb2d6e093a6eeaa036ee2da410488d35e99ae85f4affc7b698902310786c49014b52d77ec34f163236f0a74d40ba5bb3272075079ded28a8353a62d3461eedc9981b6401cc8564e234d3b9ff7492a487fffc19a7394e21d0def63f4bc897d94d6d63986e81951617167044638ee96f7f09a3d68d21ba3f915e21f5ad4738460d095077c0667eb18d53a3\n\r\n证书类别： 根证书\n\r\n验证签名： 成功（根证书自验证通过）\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n证书状态：证书正常。（CRL）\r\n2026/09/21 23:48:38 OCSP:正常,序列号 66ef152dc259591fc0b9f15ae02e1af8\r\n          证书正常。（OCSP）\r\n\r\n密钥 Id 哈希(SHA1)          ： 17b57835f575c0cc3f0ce0466423d110ea033ac7\r\n密钥 Id 哈希(RFC-SHA1)      ： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\r\n密钥 Id 哈希(Pin-SHA256)    ： G6i323ZAlHZzxrNTJI23xy817ozgcW1zPzOlBD6Ru34=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 1ba8b7db7640947673c6b353248db7c72f35ee8ce0716d733f33a5043e91bb7e\r\n\n\r\n证书哈希(SHA1)              ： 3e527e8eaa670ac7af0d53d345ebf76715e131f2\r\n证书哈希(SHA256)            ： 9bf33a2c80426adc07c7f67c844bf2eb149df40502724f494dc003560e5e8621\r\n签名哈希                    ： 8cdb5e42965c8a513eabacbce3529edac950e84f3cc2273ee75cfe572eb40f59\r\n
+
+时间: 2026/09/21 23:48:43
+时间戳: 1790005723437
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crl/66ef152dc259591fc0b9f15ae02e1af8.crl
+
+时间: 2026/09/21 23:48:43
+时间戳: 1790005723454
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crl 大小=616字节 类型=crl
+
+时间: 2026/09/21 23:48:43
+时间戳: 1790005723458
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/66ef152dc259591fc0b9f15ae02e1af8.crt
+
+时间: 2026/09/21 23:48:43
+时间戳: 1790005723461
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crt 大小=1892字节 类型=crt
+
+时间: 2026/09/21 23:48:43
+时间戳: 1790005723465
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/66ef152dc259591fc0b9f15ae02e1af8.crt
+
+时间: 2026/09/21 23:48:43
+时间戳: 1790005723467
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crt 大小=1892字节 类型=crt
+
+时间: 2026/09/21 23:48:43
+时间戳: 1790005723471
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=116字节
+
+时间: 2026/09/21 23:48:43
+时间戳: 1790005723481
+操作: OCSP请求解析
+命令: 
+结果: 序列号=66ef152dc259591fc0b9f15ae02e1af8 哈希=1.3.14.3.2.26 Nonce=ac3d84c7f5e878f0eeddccc9c802cd64
+
+时间: 2026/09/21 23:48:43
+时间戳: 1790005723538
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=RSA测试根 By OCSP, OU=Only OCSP Signing, C=CN, O=MODPKICA 请求序列号=66ef152dc259591fc0b9f15ae02e1af8
+
+时间: 2026/09/21 23:48:43
+时间戳: 1790005723576
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1942字节
+
+时间: 2026/09/21 23:48:43
+时间戳: 1790005723580
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"66ef152dc259591fc0b9f15ae02e1af8"}
+结果:         版本： 3\r\n      序列号： 66ef152dc259591fc0b9f15ae02e1af8\r\n    签名算法： SHA256-RSA (1.2.840.113549.1.1.11)\r\n签名哈希算法： SHA256\n\r\n颁发者： CN=RSA测试根, OU=ChinaITBoys, O=MODPKICA, C=CN\r\n有效期从： Thu Jul 19 15:30:00 CST 2001\r\n有效期到： Sun Jul 19 15:30:00 CST 2099\n\r\n使用者： CN=RSA测试根, OU=ChinaITBoys, O=MODPKICA, C=CN\r\n    公钥： RSA 2048\r\n授权密钥标识符  ： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\r\n使用者密钥标识符： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\n\r\n增强型密钥用法：\n\r\n授权信息访问：\r\n              OCSP   URL=http://localhost/ocsp\r\n              颁发者 URL=http://localhost/crt/66ef152dc259591fc0b9f15ae02e1af8.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost/crl/66ef152dc259591fc0b9f15ae02e1af8.crl\r\n              CRL分发点 = http://localhost/crl/66ef152dc259591fc0b9f15ae02e1af8.der.crl\r\ndigitalSignature, nonRepudiation, keyCertSign, cRLSign\r\n基本约束(关键)：\n              Subject Type=CA  Path Length Constraint = 2147483647\r\n证书策略：\r\n              证书颁发策略(Statement Identifier) OID = 1.3.6.1.4.1.4146.1.95\r\n              所有颁发策略 OID = 2.5.29.32.0\r\n              所有应用程序策略 OID = 1.3.6.1.4.1.311.10.12.1\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\n\n\n\r\n证书签名：\n        7ae5b7afbfae9072fc9b54d3fee478d66381b5302d3515da119027e5e35cac08b34adf5f5afae3acbc17b7a4d0b8e6535b0f9fe80cd9e305335cea18ea10f15d9b7c112828f1e2c0f82ff770f96cd35f07f50f9d745fa5c1b117825493ad9c1368bb69bcad80f5721435f3b8ee6e144c9e8c64555f6fdb2d6e093a6eeaa036ee2da410488d35e99ae85f4affc7b698902310786c49014b52d77ec34f163236f0a74d40ba5bb3272075079ded28a8353a62d3461eedc9981b6401cc8564e234d3b9ff7492a487fffc19a7394e21d0def63f4bc897d94d6d63986e81951617167044638ee96f7f09a3d68d21ba3f915e21f5ad4738460d095077c0667eb18d53a3\n\r\n证书类别： 根证书\n\r\n验证签名： 成功（根证书自验证通过）\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n证书状态：证书正常。（CRL）\r\n2026/09/21 23:48:43 OCSP:正常,序列号 66ef152dc259591fc0b9f15ae02e1af8\r\n          证书正常。（OCSP）\r\n\r\n密钥 Id 哈希(SHA1)          ： 17b57835f575c0cc3f0ce0466423d110ea033ac7\r\n密钥 Id 哈希(RFC-SHA1)      ： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\r\n密钥 Id 哈希(Pin-SHA256)    ： G6i323ZAlHZzxrNTJI23xy817ozgcW1zPzOlBD6Ru34=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 1ba8b7db7640947673c6b353248db7c72f35ee8ce0716d733f33a5043e91bb7e\r\n\n\r\n证书哈希(SHA1)              ： 3e527e8eaa670ac7af0d53d345ebf76715e131f2\r\n证书哈希(SHA256)            ： 9bf33a2c80426adc07c7f67c844bf2eb149df40502724f494dc003560e5e8621\r\n签名哈希                    ： 8cdb5e42965c8a513eabacbce3529edac950e84f3cc2273ee75cfe572eb40f59\r\n
+
+时间: 2026/09/21 23:49:26
+时间戳: 1790005766570
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/7d33a265e4442fd4810e3ca75ea35fcc.crt
+
+时间: 2026/09/21 23:49:26
+时间戳: 1790005766583
+操作: 文件响应
+命令: 
+结果: 文件=7d33a265e4442fd4810e3ca75ea35fcc.crt 大小=1526字节 类型=crt
+
+时间: 2026/09/21 23:49:26
+时间戳: 1790005766619
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/7d33a265e4442fd4810e3ca75ea35fcc.crt
+
+时间: 2026/09/21 23:49:26
+时间戳: 1790005766621
+操作: 文件响应
+命令: 
+结果: 文件=7d33a265e4442fd4810e3ca75ea35fcc.crt 大小=1526字节 类型=crt
+
+时间: 2026/09/21 23:49:26
+时间戳: 1790005766628
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/904c5cb2cbef8317a1fb6b06744fea69.crt
+
+时间: 2026/09/21 23:49:26
+时间戳: 1790005766629
+操作: 文件响应
+命令: 
+结果: 文件=904c5cb2cbef8317a1fb6b06744fea69.crt 大小=1320字节 类型=crt
+
+时间: 2026/09/21 23:49:26
+时间戳: 1790005766647
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crl/7d33a265e4442fd4810e3ca75ea35fcc.crl
+
+时间: 2026/09/21 23:49:26
+时间戳: 1790005766651
+操作: 文件响应
+命令: 
+结果: 文件=7d33a265e4442fd4810e3ca75ea35fcc.crl 大小=414字节 类型=crl
+
+时间: 2026/09/21 23:49:26
+时间戳: 1790005766666
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/7d33a265e4442fd4810e3ca75ea35fcc.crt
+
+时间: 2026/09/21 23:49:26
+时间戳: 1790005766678
+操作: 文件响应
+命令: 
+结果: 文件=7d33a265e4442fd4810e3ca75ea35fcc.crt 大小=1526字节 类型=crt
+
+时间: 2026/09/21 23:49:26
+时间戳: 1790005766707
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/7d33a265e4442fd4810e3ca75ea35fcc.crt
+
+时间: 2026/09/21 23:49:26
+时间戳: 1790005766714
+操作: 文件响应
+命令: 
+结果: 文件=7d33a265e4442fd4810e3ca75ea35fcc.crt 大小=1526字节 类型=crt
+
+时间: 2026/09/21 23:49:26
+时间戳: 1790005766722
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=116字节
+
+时间: 2026/09/21 23:49:26
+时间戳: 1790005766724
+操作: OCSP请求解析
+命令: 
+结果: 序列号=2d0417da39fcfdfd76028b62fcaa0b66 哈希=1.3.14.3.2.26 Nonce=58eb22fed778432fe0e813e6ac6ad7d7
+
+时间: 2026/09/21 23:49:26
+时间戳: 1790005766739
+操作: OCSP签名
+命令: 
+结果: 算法=SM2WithSM3 响应者=CN=SM2测试中间CA By OCSP, OU=Only OCSP Signing, O=MODPKICA 请求序列号=2d0417da39fcfdfd76028b62fcaa0b66
+
+时间: 2026/09/21 23:49:26
+时间戳: 1790005766744
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1364字节
+
+时间: 2026/09/21 23:49:26
+时间戳: 1790005766752
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"2d0417da39fcfdfd76028b62fcaa0b66"}
+结果:         版本： 3\r\n      序列号： 2d0417da39fcfdfd76028b62fcaa0b66\r\n    签名算法： SM3-SM2 (1.2.156.10197.1.501)\r\n签名哈希算法： SM3\n\r\n颁发者： CN=SM2测试中间CA, OU=ChinaITBoys, O=MODPKICA\r\n有效期从： Mon Sep 21 00:14:15 CST 2026\r\n有效期到： Tue Sep 21 00:14:15 CST 2027\n\r\n使用者： CN=SM2吊销的样本\r\n    公钥： ECC 256\r\n授权密钥标识符  ： 19e131f80666a98eccd343def5455ea87cf29c0f\r\n使用者密钥标识符： c87789fe18806db71214d1e648670b019a5cb898\n\r\n增强型密钥用法：\n\r\n              服务器身份验证 (1.3.6.1.5.5.7.3.1)\r\n授权信息访问：\r\n              OCSP   URL=http://localhost/ocsp\r\n              颁发者 URL=http://localhost/crt/7d33a265e4442fd4810e3ca75ea35fcc.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost/crl/7d33a265e4442fd4810e3ca75ea35fcc.crl\r\n              CRL分发点 = http://localhost/crl/7d33a265e4442fd4810e3ca75ea35fcc.der.crl\r\ndigitalSignature, nonRepudiation, keyEncipherment, dataEncipherment, keyAgreement\r\n证书策略：\r\n              证书颁发策略(Statement Identifier) OID = 1.3.6.1.4.1.4146.1.95\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\nSCT列表:\r\n      第 1 条 SCT:\r\n        日志版本:  V1\r\n        日志名称:  MODPKICA CT Log SM2\r\n      日志标识符:  e76531a0ca637bdf37162ac371a35efdd6cde92e0cd851ce0c2b98d9b24d010f\r\n          时间戳:  Mon Sep 21 00:14:15 CST 2026\r\n        签名类型:  SM2-SM3\r\n            签名:  3044022030feef02d8e81d89d66fe68ce49083aee623201431a70a16a14f67c83909f17c022011bddccc629c7a7c2b1c9d564516f646e675eb8e6d39ceb884866a84982a5a13\r\n            状态:  签名有效\r\n\r\n      第 2 条 SCT:\r\n        日志版本:  V1\r\n        日志名称:  MODPKICA CT Log SM2\r\n      日志标识符:  e309197a9e289f53a831d2d36e6dc86951b2f454439f14b3dedadbc85a7d435c\r\n          时间戳:  Mon Sep 21 00:14:15 CST 2026\r\n        签名类型:  SM2-SM3\r\n            签名:  304502202c78bfa84c29a0b943e5eb368a59af17042681bb3c939c7305b986e5ca02fbc7022100acab500e45ccf3d830d89a6a479a977ed7bd01006b52e07b023f685ff6efdd92\r\n            状态:  签名有效\r\n\r\n      第 3 条 SCT:\r\n        日志版本:  V1\r\n        日志名称:  MODPKICA CT Log SM2\r\n      日志标识符:  187ae2422d38f0f829f9373204d856a0bc1908934bb1ee61ef9266695f5701e5\r\n          时间戳:  Mon Sep 21 00:14:15 CST 2026\r\n        签名类型:  SM2-SM3\r\n            签名:  3044022041277aee2490b12501a56e19a88601d068118dfbe688be673dce6cf8c174d991022038e116b98b3de465f523bf7a11e3bbe4ec61066c4fb841ca3c07bb0420fa89d2\r\n            状态:  签名有效\r\n\r\n\n\n\r\n证书签名：\n        3045022100d18a3fb7d7f07a5a8dde43d98211681fbbaeb813f2ab47a50dd4a91adf4688fa02200ce25d6c6474e94bb4e0a290992e3ace559cf437bc9b99efba2ba515f7335085\n\r\n证书类别： 非根证书\n\r\n证书链： \r\n       CA   --> 19e131f80666a98eccd343def5455ea87cf29c0f\r\n       Root --> 28dcd7e0b84f0066fa82b72aee663b49ac825cee\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n验证签名： 通过、签名有效 颁发者=CN=SM2测试中间CA, OU=ChinaITBoys, O=MODPKICA\r\n证书状态：          此证书已被颁发机构吊销。（CRL） 吊销时间：Fri Sep 18 00:15:36 CST 2026\r\n2026/09/21 23:49:26 OCSP:已吊销,序列号 2d0417da39fcfdfd76028b62fcaa0b66\r\n          此证书已被颁发机构吊销。（OCSP）吊销时间：Fri Sep 18 00:15:36 CST 2026 原因:2\r\n\r\n密钥 Id 哈希(SHA1)          ： 9a7e5f79c5951935aeca7f6a61c7254a6efc6006\r\n密钥 Id 哈希(RFC-SHA1)      ： c87789fe18806db71214d1e648670b019a5cb898\r\n密钥 Id 哈希(Pin-SHA256)    ： PL0Nxj8XUvQE+X+WmK5GN6myv6k4TYuDig5qs4k2O9k=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 3cbd0dc63f1752f404f97f9698ae4637a9b2bfa9384d8b838a0e6ab389363bd9\r\n\n\r\n证书哈希(SHA1)              ： 0c9d640a81cbb40ce8f6710f6c920df61978af9b\r\n证书哈希(SHA256)            ： e480ff262d80a15152f7b2b4cbc6f80673a5024a620ed49744770346776b2801\r\n签名哈希                    ： 0cb6fe6a4183431813456ee7c2ac98efb0a57eb03a28592359a82deaee93e3c6\r\n
+
+时间: 2026/09/21 23:55:52
+时间戳: 1790006152550
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/7d33a265e4442fd4810e3ca75ea35fcc.crt
+
+时间: 2026/09/21 23:55:52
+时间戳: 1790006152552
+操作: 文件响应
+命令: 
+结果: 文件=7d33a265e4442fd4810e3ca75ea35fcc.crt 大小=1526字节 类型=crt
+
+时间: 2026/09/21 23:55:52
+时间戳: 1790006152588
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/7d33a265e4442fd4810e3ca75ea35fcc.crt
+
+时间: 2026/09/21 23:55:52
+时间戳: 1790006152596
+操作: 文件响应
+命令: 
+结果: 文件=7d33a265e4442fd4810e3ca75ea35fcc.crt 大小=1526字节 类型=crt
+
+时间: 2026/09/21 23:55:52
+时间戳: 1790006152598
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/904c5cb2cbef8317a1fb6b06744fea69.crt
+
+时间: 2026/09/21 23:55:52
+时间戳: 1790006152612
+操作: 文件响应
+命令: 
+结果: 文件=904c5cb2cbef8317a1fb6b06744fea69.crt 大小=1320字节 类型=crt
+
+时间: 2026/09/21 23:55:52
+时间戳: 1790006152633
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crl/7d33a265e4442fd4810e3ca75ea35fcc.crl
+
+时间: 2026/09/21 23:55:52
+时间戳: 1790006152638
+操作: 文件响应
+命令: 
+结果: 文件=7d33a265e4442fd4810e3ca75ea35fcc.crl 大小=414字节 类型=crl
+
+时间: 2026/09/21 23:55:52
+时间戳: 1790006152655
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/7d33a265e4442fd4810e3ca75ea35fcc.crt
+
+时间: 2026/09/21 23:55:52
+时间戳: 1790006152661
+操作: 文件响应
+命令: 
+结果: 文件=7d33a265e4442fd4810e3ca75ea35fcc.crt 大小=1526字节 类型=crt
+
+时间: 2026/09/21 23:55:52
+时间戳: 1790006152666
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/7d33a265e4442fd4810e3ca75ea35fcc.crt
+
+时间: 2026/09/21 23:55:52
+时间戳: 1790006152671
+操作: 文件响应
+命令: 
+结果: 文件=7d33a265e4442fd4810e3ca75ea35fcc.crt 大小=1526字节 类型=crt
+
+时间: 2026/09/21 23:55:52
+时间戳: 1790006152676
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=116字节
+
+时间: 2026/09/21 23:55:52
+时间戳: 1790006152679
+操作: OCSP请求解析
+命令: 
+结果: 序列号=2d0417da39fcfdfd76028b62fcaa0b66 哈希=1.3.14.3.2.26 Nonce=85437df2b1abff15079175f51eb22fc8
+
+时间: 2026/09/21 23:55:52
+时间戳: 1790006152687
+操作: OCSP签名
+命令: 
+结果: 算法=SM2WithSM3 响应者=CN=SM2测试中间CA By OCSP, OU=Only OCSP Signing, O=MODPKICA 请求序列号=2d0417da39fcfdfd76028b62fcaa0b66
+
+时间: 2026/09/21 23:55:52
+时间戳: 1790006152696
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1364字节
+
+时间: 2026/09/21 23:55:52
+时间戳: 1790006152699
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"2d0417da39fcfdfd76028b62fcaa0b66"}
+结果:         版本： 3\r\n      序列号： 2d0417da39fcfdfd76028b62fcaa0b66\r\n    签名算法： SM3-SM2 (1.2.156.10197.1.501)\r\n签名哈希算法： SM3\n\r\n颁发者： CN=SM2测试中间CA, OU=ChinaITBoys, O=MODPKICA\r\n有效期从： Mon Sep 21 00:14:15 CST 2026\r\n有效期到： Tue Sep 21 00:14:15 CST 2027\n\r\n使用者： CN=SM2吊销的样本\r\n    公钥： ECC 256\r\n授权密钥标识符  ： 19e131f80666a98eccd343def5455ea87cf29c0f\r\n使用者密钥标识符： c87789fe18806db71214d1e648670b019a5cb898\n\r\n增强型密钥用法：\n\r\n              服务器身份验证 (1.3.6.1.5.5.7.3.1)\r\n授权信息访问：\r\n              OCSP   URL=http://localhost/ocsp\r\n              颁发者 URL=http://localhost/crt/7d33a265e4442fd4810e3ca75ea35fcc.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost/crl/7d33a265e4442fd4810e3ca75ea35fcc.crl\r\n              CRL分发点 = http://localhost/crl/7d33a265e4442fd4810e3ca75ea35fcc.der.crl\r\ndigitalSignature, nonRepudiation, keyEncipherment, dataEncipherment, keyAgreement\r\n证书策略：\r\n              证书颁发策略(Statement Identifier) OID = 1.3.6.1.4.1.4146.1.95\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\nSCT列表:\r\n      第 1 条 SCT:\r\n        日志版本:  V1\r\n        日志名称:  MODPKICA CT Log SM2\r\n      日志标识符:  e76531a0ca637bdf37162ac371a35efdd6cde92e0cd851ce0c2b98d9b24d010f\r\n          时间戳:  Mon Sep 21 00:14:15 CST 2026\r\n        签名类型:  SM2-SM3\r\n            签名:  3044022030feef02d8e81d89d66fe68ce49083aee623201431a70a16a14f67c83909f17c022011bddccc629c7a7c2b1c9d564516f646e675eb8e6d39ceb884866a84982a5a13\r\n            状态:  签名有效\r\n\r\n      第 2 条 SCT:\r\n        日志版本:  V1\r\n        日志名称:  MODPKICA CT Log SM2\r\n      日志标识符:  e309197a9e289f53a831d2d36e6dc86951b2f454439f14b3dedadbc85a7d435c\r\n          时间戳:  Mon Sep 21 00:14:15 CST 2026\r\n        签名类型:  SM2-SM3\r\n            签名:  304502202c78bfa84c29a0b943e5eb368a59af17042681bb3c939c7305b986e5ca02fbc7022100acab500e45ccf3d830d89a6a479a977ed7bd01006b52e07b023f685ff6efdd92\r\n            状态:  签名有效\r\n\r\n      第 3 条 SCT:\r\n        日志版本:  V1\r\n        日志名称:  MODPKICA CT Log SM2\r\n      日志标识符:  187ae2422d38f0f829f9373204d856a0bc1908934bb1ee61ef9266695f5701e5\r\n          时间戳:  Mon Sep 21 00:14:15 CST 2026\r\n        签名类型:  SM2-SM3\r\n            签名:  3044022041277aee2490b12501a56e19a88601d068118dfbe688be673dce6cf8c174d991022038e116b98b3de465f523bf7a11e3bbe4ec61066c4fb841ca3c07bb0420fa89d2\r\n            状态:  签名有效\r\n\r\n\n\n\r\n证书签名：\n        3045022100d18a3fb7d7f07a5a8dde43d98211681fbbaeb813f2ab47a50dd4a91adf4688fa02200ce25d6c6474e94bb4e0a290992e3ace559cf437bc9b99efba2ba515f7335085\n\r\n证书类别： 非根证书\n\r\n证书链： \r\n       CA   --> 19e131f80666a98eccd343def5455ea87cf29c0f\r\n       Root --> 28dcd7e0b84f0066fa82b72aee663b49ac825cee\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n验证签名： 通过、签名有效 颁发者=CN=SM2测试中间CA, OU=ChinaITBoys, O=MODPKICA\r\n证书状态：          此证书已被颁发机构吊销。（CRL） 吊销时间：Fri Sep 18 00:15:36 CST 2026\r\n2026/09/21 23:55:52 OCSP:已吊销,序列号 2d0417da39fcfdfd76028b62fcaa0b66\r\n          此证书已被颁发机构吊销。（OCSP）吊销时间：Fri Sep 18 00:15:36 CST 2026 原因:2\r\n\r\n密钥 Id 哈希(SHA1)          ： 9a7e5f79c5951935aeca7f6a61c7254a6efc6006\r\n密钥 Id 哈希(RFC-SHA1)      ： c87789fe18806db71214d1e648670b019a5cb898\r\n密钥 Id 哈希(Pin-SHA256)    ： PL0Nxj8XUvQE+X+WmK5GN6myv6k4TYuDig5qs4k2O9k=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 3cbd0dc63f1752f404f97f9698ae4637a9b2bfa9384d8b838a0e6ab389363bd9\r\n\n\r\n证书哈希(SHA1)              ： 0c9d640a81cbb40ce8f6710f6c920df61978af9b\r\n证书哈希(SHA256)            ： e480ff262d80a15152f7b2b4cbc6f80673a5024a620ed49744770346776b2801\r\n签名哈希                    ： 0cb6fe6a4183431813456ee7c2ac98efb0a57eb03a28592359a82deaee93e3c6\r\n
+
+时间: 2026/09/21 23:56:06
+时间戳: 1790006166205
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/66ef152dc259591fc0b9f15ae02e1af8.crt
+
+时间: 2026/09/21 23:56:06
+时间戳: 1790006166213
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crt 大小=1892字节 类型=crt
+
+时间: 2026/09/21 23:56:06
+时间戳: 1790006166253
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crl/66ef152dc259591fc0b9f15ae02e1af8.crl
+
+时间: 2026/09/21 23:56:06
+时间戳: 1790006166259
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crl 大小=616字节 类型=crl
+
+时间: 2026/09/21 23:56:06
+时间戳: 1790006166263
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/66ef152dc259591fc0b9f15ae02e1af8.crt
+
+时间: 2026/09/21 23:56:06
+时间戳: 1790006166266
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crt 大小=1892字节 类型=crt
+
+时间: 2026/09/21 23:56:06
+时间戳: 1790006166282
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/66ef152dc259591fc0b9f15ae02e1af8.crt
+
+时间: 2026/09/21 23:56:06
+时间戳: 1790006166317
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crt 大小=1892字节 类型=crt
+
+时间: 2026/09/21 23:56:06
+时间戳: 1790006166353
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=117字节
+
+时间: 2026/09/21 23:56:06
+时间戳: 1790006166433
+操作: OCSP请求解析
+命令: 
+结果: 序列号=e74040996de2d117a00e2b5b1c8ae9c3 哈希=1.3.14.3.2.26 Nonce=49f8e0ed00c29aa4279bf08c799ab194
+
+时间: 2026/09/21 23:56:06
+时间戳: 1790006166521
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=RSA测试根 By OCSP, OU=Only OCSP Signing, C=CN, O=MODPKICA 请求序列号=e74040996de2d117a00e2b5b1c8ae9c3
+
+时间: 2026/09/21 23:56:06
+时间戳: 1790006166602
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"e74040996de2d117a00e2b5b1c8ae9c3"}
+结果:         版本： 3\r\n      序列号： e74040996de2d117a00e2b5b1c8ae9c3\r\n    签名算法： SHA256-RSA (1.2.840.113549.1.1.11)\r\n签名哈希算法： SHA256\n\r\n颁发者： CN=RSA测试根, OU=ChinaITBoys, O=MODPKICA, C=CN\r\n有效期从： Mon Sep 21 22:53:20 CST 2026\r\n有效期到： Tue Sep 21 22:53:20 CST 2027\n\r\n使用者： CN=RSA测试根 By OCSP, OU=Only OCSP Signing, C=CN, O=MODPKICA\r\n    公钥： RSA 2048\r\n授权密钥标识符  ： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\r\n使用者密钥标识符： 36fe9333aa568c55b81c22111ffc805a0565602f\n\r\n增强型密钥用法：\n\r\n              OCSP 签名 (1.3.6.1.5.5.7.3.9)\r\n授权信息访问：\r\n              OCSP   URL=http://localhost/ocsp\r\n              颁发者 URL=http://localhost/crt/66ef152dc259591fc0b9f15ae02e1af8.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost/crl/66ef152dc259591fc0b9f15ae02e1af8.crl\r\n              CRL分发点 = http://localhost/crl/66ef152dc259591fc0b9f15ae02e1af8.der.crl\r\ndigitalSignature\r\n证书策略：\r\n              证书颁发策略(Statement Identifier) OID = 1.3.6.1.4.1.4146.1.95\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\n1.3.6.1.5.5.7.48.1.5:\n        04020500\n\r\n\n\n\r\n证书签名：\n        4f0a77e4a4653a02fbf02cf48d1b040e189dc884a5c254c4a00a65a23bcc6c280b07a114f78d2ae6dc4680a4ac63d7c2c50ef521754d7bfade2862f1c363d5b9684f496aa6af6392834764416cfe266ca415e4452cb450bc7c2e28f02046afb91ebe0d12b47a2147477d261de01807dbc3332c13d30f60df9b01235e3bb57a8c5531f76c0023cf5ba0acec0458eb1bde536401795f880773ab156c16b80f69db4b2973a26e4a539bf466e65c6ce818bea0458ede7a0e1e80feae4474102410a5840dea5e8dd9278f2b70f64e8c4d54d02c788c7020f48e1a51eb5942b5672fb7d9a2784b22c204674d5a707f48d6b06cc0a8b04f253483312dc55990f5beac4a\n\r\n证书类别： 非根证书\n\r\n证书链： \r\n       Root --> ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n验证签名： 通过、签名有效 颁发者=CN=RSA测试根, OU=ChinaITBoys, O=MODPKICA, C=CN\r\n证书状态：证书正常。（CRL）\r\n2026/09/21 23:56:06 OCSP:正常,序列号 e74040996de2d117a00e2b5b1c8ae9c3\r\n          证书正常。（OCSP）\r\n\r\n密钥 Id 哈希(SHA1)          ： 630702ea72db266be9d518d767d1052229f0cb2d\r\n密钥 Id 哈希(RFC-SHA1)      ： 36fe9333aa568c55b81c22111ffc805a0565602f\r\n密钥 Id 哈希(Pin-SHA256)    ： H/pfJWN4cvKkO4T4bgWWaLKv6JQA5S6Lcr11DTMLiI0=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 1ffa5f25637872f2a43b84f86e059668b2afe89400e52e8b72bd750d330b888d\r\n\n\r\n证书哈希(SHA1)              ： 0a92e14276d4895197ac3b5bbdf37f4c39976e62\r\n证书哈希(SHA256)            ： cbf43013eb558174438815b1dc3f4aa4e0857f98b9379a001c7b48fc7d98358e\r\n签名哈希                    ： 803173096a6f934414c811f60e6248a12eee44f7d5f587a842403ffb3326cd47\r\n
+
+时间: 2026/09/21 23:56:06
+时间戳: 1790006166648
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1943字节
+
+时间: 2026/09/21 23:56:44
+时间戳: 1790006204480
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/7d33a265e4442fd4810e3ca75ea35fcc.crt
+
+时间: 2026/09/21 23:56:44
+时间戳: 1790006204498
+操作: 文件响应
+命令: 
+结果: 文件=7d33a265e4442fd4810e3ca75ea35fcc.crt 大小=1526字节 类型=crt
+
+时间: 2026/09/21 23:56:44
+时间戳: 1790006204520
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/7d33a265e4442fd4810e3ca75ea35fcc.crt
+
+时间: 2026/09/21 23:56:44
+时间戳: 1790006204532
+操作: 文件响应
+命令: 
+结果: 文件=7d33a265e4442fd4810e3ca75ea35fcc.crt 大小=1526字节 类型=crt
+
+时间: 2026/09/21 23:56:44
+时间戳: 1790006204533
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/904c5cb2cbef8317a1fb6b06744fea69.crt
+
+时间: 2026/09/21 23:56:44
+时间戳: 1790006204537
+操作: 文件响应
+命令: 
+结果: 文件=904c5cb2cbef8317a1fb6b06744fea69.crt 大小=1320字节 类型=crt
+
+时间: 2026/09/21 23:56:44
+时间戳: 1790006204547
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crl/7d33a265e4442fd4810e3ca75ea35fcc.crl
+
+时间: 2026/09/21 23:56:44
+时间戳: 1790006204550
+操作: 文件响应
+命令: 
+结果: 文件=7d33a265e4442fd4810e3ca75ea35fcc.crl 大小=414字节 类型=crl
+
+时间: 2026/09/21 23:56:44
+时间戳: 1790006204553
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/7d33a265e4442fd4810e3ca75ea35fcc.crt
+
+时间: 2026/09/21 23:56:44
+时间戳: 1790006204555
+操作: 文件响应
+命令: 
+结果: 文件=7d33a265e4442fd4810e3ca75ea35fcc.crt 大小=1526字节 类型=crt
+
+时间: 2026/09/21 23:56:44
+时间戳: 1790006204561
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/7d33a265e4442fd4810e3ca75ea35fcc.crt
+
+时间: 2026/09/21 23:56:44
+时间戳: 1790006204563
+操作: 文件响应
+命令: 
+结果: 文件=7d33a265e4442fd4810e3ca75ea35fcc.crt 大小=1526字节 类型=crt
+
+时间: 2026/09/21 23:56:44
+时间戳: 1790006204568
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=116字节
+
+时间: 2026/09/21 23:56:44
+时间戳: 1790006204569
+操作: OCSP请求解析
+命令: 
+结果: 序列号=2d0417da39fcfdfd76028b62fcaa0b66 哈希=1.3.14.3.2.26 Nonce=8e8e6c33817ea5eb881b231835286abf
+
+时间: 2026/09/21 23:56:44
+时间戳: 1790006204583
+操作: OCSP签名
+命令: 
+结果: 算法=SM2WithSM3 响应者=CN=SM2测试中间CA By OCSP, OU=Only OCSP Signing, O=MODPKICA 请求序列号=2d0417da39fcfdfd76028b62fcaa0b66
+
+时间: 2026/09/21 23:56:44
+时间戳: 1790006204596
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"2d0417da39fcfdfd76028b62fcaa0b66"}
+结果:         版本： 3\r\n      序列号： 2d0417da39fcfdfd76028b62fcaa0b66\r\n    签名算法： SM3-SM2 (1.2.156.10197.1.501)\r\n签名哈希算法： SM3\n\r\n颁发者： CN=SM2测试中间CA, OU=ChinaITBoys, O=MODPKICA\r\n有效期从： Mon Sep 21 00:14:15 CST 2026\r\n有效期到： Tue Sep 21 00:14:15 CST 2027\n\r\n使用者： CN=SM2吊销的样本\r\n    公钥： ECC 256\r\n授权密钥标识符  ： 19e131f80666a98eccd343def5455ea87cf29c0f\r\n使用者密钥标识符： c87789fe18806db71214d1e648670b019a5cb898\n\r\n增强型密钥用法：\n\r\n              服务器身份验证 (1.3.6.1.5.5.7.3.1)\r\n授权信息访问：\r\n              OCSP   URL=http://localhost/ocsp\r\n              颁发者 URL=http://localhost/crt/7d33a265e4442fd4810e3ca75ea35fcc.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost/crl/7d33a265e4442fd4810e3ca75ea35fcc.crl\r\n              CRL分发点 = http://localhost/crl/7d33a265e4442fd4810e3ca75ea35fcc.der.crl\r\ndigitalSignature, nonRepudiation, keyEncipherment, dataEncipherment, keyAgreement\r\n证书策略：\r\n              证书颁发策略(Statement Identifier) OID = 1.3.6.1.4.1.4146.1.95\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\nSCT列表:\r\n      第 1 条 SCT:\r\n        日志版本:  V1\r\n        日志名称:  MODPKICA CT Log SM2\r\n      日志标识符:  e76531a0ca637bdf37162ac371a35efdd6cde92e0cd851ce0c2b98d9b24d010f\r\n          时间戳:  Mon Sep 21 00:14:15 CST 2026\r\n        签名类型:  SM2-SM3\r\n            签名:  3044022030feef02d8e81d89d66fe68ce49083aee623201431a70a16a14f67c83909f17c022011bddccc629c7a7c2b1c9d564516f646e675eb8e6d39ceb884866a84982a5a13\r\n            状态:  签名有效\r\n\r\n      第 2 条 SCT:\r\n        日志版本:  V1\r\n        日志名称:  MODPKICA CT Log SM2\r\n      日志标识符:  e309197a9e289f53a831d2d36e6dc86951b2f454439f14b3dedadbc85a7d435c\r\n          时间戳:  Mon Sep 21 00:14:15 CST 2026\r\n        签名类型:  SM2-SM3\r\n            签名:  304502202c78bfa84c29a0b943e5eb368a59af17042681bb3c939c7305b986e5ca02fbc7022100acab500e45ccf3d830d89a6a479a977ed7bd01006b52e07b023f685ff6efdd92\r\n            状态:  签名有效\r\n\r\n      第 3 条 SCT:\r\n        日志版本:  V1\r\n        日志名称:  MODPKICA CT Log SM2\r\n      日志标识符:  187ae2422d38f0f829f9373204d856a0bc1908934bb1ee61ef9266695f5701e5\r\n          时间戳:  Mon Sep 21 00:14:15 CST 2026\r\n        签名类型:  SM2-SM3\r\n            签名:  3044022041277aee2490b12501a56e19a88601d068118dfbe688be673dce6cf8c174d991022038e116b98b3de465f523bf7a11e3bbe4ec61066c4fb841ca3c07bb0420fa89d2\r\n            状态:  签名有效\r\n\r\n\n\n\r\n证书签名：\n        3045022100d18a3fb7d7f07a5a8dde43d98211681fbbaeb813f2ab47a50dd4a91adf4688fa02200ce25d6c6474e94bb4e0a290992e3ace559cf437bc9b99efba2ba515f7335085\n\r\n证书类别： 非根证书\n\r\n证书链： \r\n       CA   --> 19e131f80666a98eccd343def5455ea87cf29c0f\r\n       Root --> 28dcd7e0b84f0066fa82b72aee663b49ac825cee\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n验证签名： 通过、签名有效 颁发者=CN=SM2测试中间CA, OU=ChinaITBoys, O=MODPKICA\r\n证书状态：          此证书已被颁发机构吊销。（CRL） 吊销时间：Fri Sep 18 00:15:36 CST 2026\r\n2026/09/21 23:56:44 OCSP:已吊销,序列号 2d0417da39fcfdfd76028b62fcaa0b66\r\n          此证书已被颁发机构吊销。（OCSP）吊销时间：Fri Sep 18 00:15:36 CST 2026 原因:2\r\n\r\n密钥 Id 哈希(SHA1)          ： 9a7e5f79c5951935aeca7f6a61c7254a6efc6006\r\n密钥 Id 哈希(RFC-SHA1)      ： c87789fe18806db71214d1e648670b019a5cb898\r\n密钥 Id 哈希(Pin-SHA256)    ： PL0Nxj8XUvQE+X+WmK5GN6myv6k4TYuDig5qs4k2O9k=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 3cbd0dc63f1752f404f97f9698ae4637a9b2bfa9384d8b838a0e6ab389363bd9\r\n\n\r\n证书哈希(SHA1)              ： 0c9d640a81cbb40ce8f6710f6c920df61978af9b\r\n证书哈希(SHA256)            ： e480ff262d80a15152f7b2b4cbc6f80673a5024a620ed49744770346776b2801\r\n签名哈希                    ： 0cb6fe6a4183431813456ee7c2ac98efb0a57eb03a28592359a82deaee93e3c6\r\n
+
+时间: 2026/09/21 23:56:44
+时间戳: 1790006204597
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1364字节
+
+时间: 2026/09/21 23:58:50
+时间戳: 1790006330334
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"01bbafe9733ea1d09dd26a18e8f3b6"}
+结果: 文件 C:\Users\28299\Desktop\modpkica4JAVA/PKI/WebPublic/CRT/01bbafe9733ea1d09dd26a18e8f3b6.crt 不存在（如输入的是序列号，请确认 WebPublic/CRT/序列号.crt 存在）\r\n
+
+时间: 2026/09/22 00:03:26
+时间戳: 1790006606107
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crl/904c5cb2cbef8317a1fb6b06744fea69.crl
+
+时间: 2026/09/22 00:03:26
+时间戳: 1790006606117
+操作: 文件响应
+命令: 
+结果: 文件=904c5cb2cbef8317a1fb6b06744fea69.crl 大小=336字节 类型=crl
+
+时间: 2026/09/22 00:03:26
+时间戳: 1790006606125
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/904c5cb2cbef8317a1fb6b06744fea69.crt
+
+时间: 2026/09/22 00:03:26
+时间戳: 1790006606130
+操作: 文件响应
+命令: 
+结果: 文件=904c5cb2cbef8317a1fb6b06744fea69.crt 大小=1320字节 类型=crt
+
+时间: 2026/09/22 00:03:26
+时间戳: 1790006606144
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/904c5cb2cbef8317a1fb6b06744fea69.crt
+
+时间: 2026/09/22 00:03:26
+时间戳: 1790006606147
+操作: 文件响应
+命令: 
+结果: 文件=904c5cb2cbef8317a1fb6b06744fea69.crt 大小=1320字节 类型=crt
+
+时间: 2026/09/22 00:03:26
+时间戳: 1790006606182
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=117字节
+
+时间: 2026/09/22 00:03:26
+时间戳: 1790006606195
+操作: OCSP请求解析
+命令: 
+结果: 序列号=904c5cb2cbef8317a1fb6b06744fea69 哈希=1.3.14.3.2.26 Nonce=94cce22319345bb659651853680a5b93
+
+时间: 2026/09/22 00:03:26
+时间戳: 1790006606215
+操作: OCSP签名
+命令: 
+结果: 算法=SM2WithSM3 响应者=CN=SM2测试根 By OCSP, OU=Only OCSP Signing, O=MODPKICA 请求序列号=904c5cb2cbef8317a1fb6b06744fea69
+
+时间: 2026/09/22 00:03:26
+时间戳: 1790006606227
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1325字节
+
+时间: 2026/09/22 00:03:26
+时间戳: 1790006606261
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"904c5cb2cbef8317a1fb6b06744fea69"}
+结果:         版本： 3\r\n      序列号： 904c5cb2cbef8317a1fb6b06744fea69\r\n    签名算法： SM3-SM2 (1.2.156.10197.1.501)\r\n签名哈希算法： SM3\n\r\n颁发者： CN=SM2测试根, OU=ChinaITBoys, O=MODPKICA\r\n有效期从： Thu Jul 19 15:30:00 CST 2001\r\n有效期到： Sun Jul 19 15:30:00 CST 2099\n\r\n使用者： CN=SM2测试根, OU=ChinaITBoys, O=MODPKICA\r\n    公钥： ECC 256\r\n授权密钥标识符  ： 28dcd7e0b84f0066fa82b72aee663b49ac825cee\r\n使用者密钥标识符： 28dcd7e0b84f0066fa82b72aee663b49ac825cee\n\r\n增强型密钥用法：\n\r\n授权信息访问：\r\n              OCSP   URL=http://localhost/ocsp\r\n              颁发者 URL=http://localhost/crt/904c5cb2cbef8317a1fb6b06744fea69.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost/crl/904c5cb2cbef8317a1fb6b06744fea69.crl\r\n              CRL分发点 = http://localhost/crl/904c5cb2cbef8317a1fb6b06744fea69.der.crl\r\ndigitalSignature, nonRepudiation, keyCertSign, cRLSign\r\n基本约束(关键)：\n              Subject Type=CA  Path Length Constraint = 2147483647\r\n证书策略：\r\n              证书颁发策略(Statement Identifier) OID = 1.3.6.1.4.1.4146.1.95\r\n              所有颁发策略 OID = 2.5.29.32.0\r\n              所有应用程序策略 OID = 1.3.6.1.4.1.311.10.12.1\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\n\n\n\r\n证书签名：\n        3045022003eb59bc0a219724b7873b2074c1fe8629b88db3597902beb11f2ce2453090bc0221009e7ba044f2f7ea1f8c88e3d95acb44ffa3e63c0119e9ce33925a967df7873740\n\r\n证书类别： 根证书\n\r\n验证签名： 成功（根证书自验证通过）\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n证书状态：证书正常。（CRL）\r\n2026/09/22 00:03:26 OCSP:正常,序列号 904c5cb2cbef8317a1fb6b06744fea69\r\n          证书正常。（OCSP）\r\n\r\n密钥 Id 哈希(SHA1)          ： a88480127b47d36074a0d1a8939d0778511abcae\r\n密钥 Id 哈希(RFC-SHA1)      ： 28dcd7e0b84f0066fa82b72aee663b49ac825cee\r\n密钥 Id 哈希(Pin-SHA256)    ： SerMwdQSecIuRkczuqLw5q8Tj53TG74jO0Ha1s5LlvU=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 49eaccc1d41279c22e464733baa2f0e6af138f9dd31bbe233b41dad6ce4b96f5\r\n\n\r\n证书哈希(SHA1)              ： 93859bba75133844f2cb710182409a6eee86d982\r\n证书哈希(SHA256)            ： 0865077d20726d1a058596637c6b0f1192ad9c623d4c95e88df79aefe67657a6\r\n签名哈希                    ： 3138c45ba03ecf7dfcb6898b2d290a42d6c738d00cedb6ff6485d453e4a3df89\r\n
+
+时间: 2026/09/22 00:06:38
+时间戳: 1790006798780
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crl/66ef152dc259591fc0b9f15ae02e1af8.crl
+
+时间: 2026/09/22 00:06:38
+时间戳: 1790006798790
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crl 大小=616字节 类型=crl
+
+时间: 2026/09/22 00:06:38
+时间戳: 1790006798792
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/66ef152dc259591fc0b9f15ae02e1af8.crt
+
+时间: 2026/09/22 00:06:38
+时间戳: 1790006798797
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crt 大小=1892字节 类型=crt
+
+时间: 2026/09/22 00:06:38
+时间戳: 1790006798803
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/66ef152dc259591fc0b9f15ae02e1af8.crt
+
+时间: 2026/09/22 00:06:38
+时间戳: 1790006798805
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crt 大小=1892字节 类型=crt
+
+时间: 2026/09/22 00:06:38
+时间戳: 1790006798828
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=116字节
+
+时间: 2026/09/22 00:06:38
+时间戳: 1790006798835
+操作: OCSP请求解析
+命令: 
+结果: 序列号=66ef152dc259591fc0b9f15ae02e1af8 哈希=1.3.14.3.2.26 Nonce=97bba5c270263ec061220fc4f184e9b3
+
+时间: 2026/09/22 00:06:38
+时间戳: 1790006798868
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=RSA测试根 By OCSP, OU=Only OCSP Signing, C=CN, O=MODPKICA 请求序列号=66ef152dc259591fc0b9f15ae02e1af8
+
+时间: 2026/09/22 00:06:38
+时间戳: 1790006798874
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1942字节
+
+时间: 2026/09/22 00:06:38
+时间戳: 1790006798890
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"66ef152dc259591fc0b9f15ae02e1af8"}
+结果:         版本： 3\r\n      序列号： 66ef152dc259591fc0b9f15ae02e1af8\r\n    签名算法： SHA256-RSA (1.2.840.113549.1.1.11)\r\n签名哈希算法： SHA256\n\r\n颁发者： CN=RSA测试根, OU=ChinaITBoys, O=MODPKICA, C=CN\r\n有效期从： Thu Jul 19 15:30:00 CST 2001\r\n有效期到： Sun Jul 19 15:30:00 CST 2099\n\r\n使用者： CN=RSA测试根, OU=ChinaITBoys, O=MODPKICA, C=CN\r\n    公钥： RSA 2048\r\n授权密钥标识符  ： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\r\n使用者密钥标识符： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\n\r\n增强型密钥用法：\n\r\n授权信息访问：\r\n              OCSP   URL=http://localhost/ocsp\r\n              颁发者 URL=http://localhost/crt/66ef152dc259591fc0b9f15ae02e1af8.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost/crl/66ef152dc259591fc0b9f15ae02e1af8.crl\r\n              CRL分发点 = http://localhost/crl/66ef152dc259591fc0b9f15ae02e1af8.der.crl\r\ndigitalSignature, nonRepudiation, keyCertSign, cRLSign\r\n基本约束(关键)：\n              Subject Type=CA  Path Length Constraint = 2147483647\r\n证书策略：\r\n              证书颁发策略(Statement Identifier) OID = 1.3.6.1.4.1.4146.1.95\r\n              所有颁发策略 OID = 2.5.29.32.0\r\n              所有应用程序策略 OID = 1.3.6.1.4.1.311.10.12.1\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\n\n\n\r\n证书签名：\n        7ae5b7afbfae9072fc9b54d3fee478d66381b5302d3515da119027e5e35cac08b34adf5f5afae3acbc17b7a4d0b8e6535b0f9fe80cd9e305335cea18ea10f15d9b7c112828f1e2c0f82ff770f96cd35f07f50f9d745fa5c1b117825493ad9c1368bb69bcad80f5721435f3b8ee6e144c9e8c64555f6fdb2d6e093a6eeaa036ee2da410488d35e99ae85f4affc7b698902310786c49014b52d77ec34f163236f0a74d40ba5bb3272075079ded28a8353a62d3461eedc9981b6401cc8564e234d3b9ff7492a487fffc19a7394e21d0def63f4bc897d94d6d63986e81951617167044638ee96f7f09a3d68d21ba3f915e21f5ad4738460d095077c0667eb18d53a3\n\r\n证书类别： 根证书\n\r\n验证签名： 成功（根证书自验证通过）\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n证书状态：证书正常。（CRL）\r\n2026/09/22 00:06:38 OCSP:正常,序列号 66ef152dc259591fc0b9f15ae02e1af8\r\n          证书正常。（OCSP）\r\n\r\n密钥 Id 哈希(SHA1)          ： 17b57835f575c0cc3f0ce0466423d110ea033ac7\r\n密钥 Id 哈希(RFC-SHA1)      ： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\r\n密钥 Id 哈希(Pin-SHA256)    ： G6i323ZAlHZzxrNTJI23xy817ozgcW1zPzOlBD6Ru34=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 1ba8b7db7640947673c6b353248db7c72f35ee8ce0716d733f33a5043e91bb7e\r\n\n\r\n证书哈希(SHA1)              ： 3e527e8eaa670ac7af0d53d345ebf76715e131f2\r\n证书哈希(SHA256)            ： 9bf33a2c80426adc07c7f67c844bf2eb149df40502724f494dc003560e5e8621\r\n签名哈希                    ： 8cdb5e42965c8a513eabacbce3529edac950e84f3cc2273ee75cfe572eb40f59\r\n
+
+时间: 2026/09/22 00:07:05
+时间戳: 1790006825636
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crl/66ef152dc259591fc0b9f15ae02e1af8.crl
+
+时间: 2026/09/22 00:07:05
+时间戳: 1790006825640
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crl 大小=616字节 类型=crl
+
+时间: 2026/09/22 00:07:05
+时间戳: 1790006825643
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/66ef152dc259591fc0b9f15ae02e1af8.crt
+
+时间: 2026/09/22 00:07:05
+时间戳: 1790006825652
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crt 大小=1892字节 类型=crt
+
+时间: 2026/09/22 00:07:05
+时间戳: 1790006825654
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/66ef152dc259591fc0b9f15ae02e1af8.crt
+
+时间: 2026/09/22 00:07:05
+时间戳: 1790006825664
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crt 大小=1892字节 类型=crt
+
+时间: 2026/09/22 00:07:05
+时间戳: 1790006825666
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=116字节
+
+时间: 2026/09/22 00:07:05
+时间戳: 1790006825668
+操作: OCSP请求解析
+命令: 
+结果: 序列号=66ef152dc259591fc0b9f15ae02e1af8 哈希=1.3.14.3.2.26 Nonce=3f279629edaa8b7c3a865b0719e73dd9
+
+时间: 2026/09/22 00:07:05
+时间戳: 1790006825688
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=RSA测试根 By OCSP, OU=Only OCSP Signing, C=CN, O=MODPKICA 请求序列号=66ef152dc259591fc0b9f15ae02e1af8
+
+时间: 2026/09/22 00:07:05
+时间戳: 1790006825700
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1942字节
+
+时间: 2026/09/22 00:07:05
+时间戳: 1790006825704
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"66ef152dc259591fc0b9f15ae02e1af8"}
+结果:         版本： 3\r\n      序列号： 66ef152dc259591fc0b9f15ae02e1af8\r\n    签名算法： SHA256-RSA (1.2.840.113549.1.1.11)\r\n签名哈希算法： SHA256\n\r\n颁发者： CN=RSA测试根, OU=ChinaITBoys, O=MODPKICA, C=CN\r\n有效期从： Thu Jul 19 15:30:00 CST 2001\r\n有效期到： Sun Jul 19 15:30:00 CST 2099\n\r\n使用者： CN=RSA测试根, OU=ChinaITBoys, O=MODPKICA, C=CN\r\n    公钥： RSA 2048\r\n授权密钥标识符  ： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\r\n使用者密钥标识符： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\n\r\n增强型密钥用法：\n\r\n授权信息访问：\r\n              OCSP   URL=http://localhost/ocsp\r\n              颁发者 URL=http://localhost/crt/66ef152dc259591fc0b9f15ae02e1af8.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost/crl/66ef152dc259591fc0b9f15ae02e1af8.crl\r\n              CRL分发点 = http://localhost/crl/66ef152dc259591fc0b9f15ae02e1af8.der.crl\r\ndigitalSignature, nonRepudiation, keyCertSign, cRLSign\r\n基本约束(关键)：\n              Subject Type=CA  Path Length Constraint = 2147483647\r\n证书策略：\r\n              证书颁发策略(Statement Identifier) OID = 1.3.6.1.4.1.4146.1.95\r\n              所有颁发策略 OID = 2.5.29.32.0\r\n              所有应用程序策略 OID = 1.3.6.1.4.1.311.10.12.1\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\n\n\n\r\n证书签名：\n        7ae5b7afbfae9072fc9b54d3fee478d66381b5302d3515da119027e5e35cac08b34adf5f5afae3acbc17b7a4d0b8e6535b0f9fe80cd9e305335cea18ea10f15d9b7c112828f1e2c0f82ff770f96cd35f07f50f9d745fa5c1b117825493ad9c1368bb69bcad80f5721435f3b8ee6e144c9e8c64555f6fdb2d6e093a6eeaa036ee2da410488d35e99ae85f4affc7b698902310786c49014b52d77ec34f163236f0a74d40ba5bb3272075079ded28a8353a62d3461eedc9981b6401cc8564e234d3b9ff7492a487fffc19a7394e21d0def63f4bc897d94d6d63986e81951617167044638ee96f7f09a3d68d21ba3f915e21f5ad4738460d095077c0667eb18d53a3\n\r\n证书类别： 根证书\n\r\n验证签名： 成功（根证书自验证通过）\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n证书状态：证书正常。（CRL）\r\n2026/09/22 00:07:05 OCSP:正常,序列号 66ef152dc259591fc0b9f15ae02e1af8\r\n          证书正常。（OCSP）\r\n\r\n密钥 Id 哈希(SHA1)          ： 17b57835f575c0cc3f0ce0466423d110ea033ac7\r\n密钥 Id 哈希(RFC-SHA1)      ： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\r\n密钥 Id 哈希(Pin-SHA256)    ： G6i323ZAlHZzxrNTJI23xy817ozgcW1zPzOlBD6Ru34=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 1ba8b7db7640947673c6b353248db7c72f35ee8ce0716d733f33a5043e91bb7e\r\n\n\r\n证书哈希(SHA1)              ： 3e527e8eaa670ac7af0d53d345ebf76715e131f2\r\n证书哈希(SHA256)            ： 9bf33a2c80426adc07c7f67c844bf2eb149df40502724f494dc003560e5e8621\r\n签名哈希                    ： 8cdb5e42965c8a513eabacbce3529edac950e84f3cc2273ee75cfe572eb40f59\r\n
+
+时间: 2026/09/22 00:07:12
+时间戳: 1790006832870
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/7d33a265e4442fd4810e3ca75ea35fcc.crt
+
+时间: 2026/09/22 00:07:12
+时间戳: 1790006832872
+操作: 文件响应
+命令: 
+结果: 文件=7d33a265e4442fd4810e3ca75ea35fcc.crt 大小=1526字节 类型=crt
+
+时间: 2026/09/22 00:07:12
+时间戳: 1790006832954
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/7d33a265e4442fd4810e3ca75ea35fcc.crt
+
+时间: 2026/09/22 00:07:12
+时间戳: 1790006832961
+操作: 文件响应
+命令: 
+结果: 文件=7d33a265e4442fd4810e3ca75ea35fcc.crt 大小=1526字节 类型=crt
+
+时间: 2026/09/22 00:07:12
+时间戳: 1790006832965
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/904c5cb2cbef8317a1fb6b06744fea69.crt
+
+时间: 2026/09/22 00:07:12
+时间戳: 1790006832968
+操作: 文件响应
+命令: 
+结果: 文件=904c5cb2cbef8317a1fb6b06744fea69.crt 大小=1320字节 类型=crt
+
+时间: 2026/09/22 00:07:12
+时间戳: 1790006832982
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crl/7d33a265e4442fd4810e3ca75ea35fcc.crl
+
+时间: 2026/09/22 00:07:12
+时间戳: 1790006832984
+操作: 文件响应
+命令: 
+结果: 文件=7d33a265e4442fd4810e3ca75ea35fcc.crl 大小=418字节 类型=crl
+
+时间: 2026/09/22 00:07:12
+时间戳: 1790006832986
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/7d33a265e4442fd4810e3ca75ea35fcc.crt
+
+时间: 2026/09/22 00:07:12
+时间戳: 1790006832987
+操作: 文件响应
+命令: 
+结果: 文件=7d33a265e4442fd4810e3ca75ea35fcc.crt 大小=1526字节 类型=crt
+
+时间: 2026/09/22 00:07:13
+时间戳: 1790006833010
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/7d33a265e4442fd4810e3ca75ea35fcc.crt
+
+时间: 2026/09/22 00:07:13
+时间戳: 1790006833011
+操作: 文件响应
+命令: 
+结果: 文件=7d33a265e4442fd4810e3ca75ea35fcc.crt 大小=1526字节 类型=crt
+
+时间: 2026/09/22 00:07:13
+时间戳: 1790006833013
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=116字节
+
+时间: 2026/09/22 00:07:13
+时间戳: 1790006833016
+操作: OCSP请求解析
+命令: 
+结果: 序列号=2d0417da39fcfdfd76028b62fcaa0b66 哈希=1.3.14.3.2.26 Nonce=04ba6566621412fcefd7d40c818f9fe2
+
+时间: 2026/09/22 00:07:13
+时间戳: 1790006833027
+操作: OCSP签名
+命令: 
+结果: 算法=SM2WithSM3 响应者=CN=SM2测试中间CA By OCSP, OU=Only OCSP Signing, O=MODPKICA 请求序列号=2d0417da39fcfdfd76028b62fcaa0b66
+
+时间: 2026/09/22 00:07:13
+时间戳: 1790006833029
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1364字节
+
+时间: 2026/09/22 00:07:13
+时间戳: 1790006833046
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"2d0417da39fcfdfd76028b62fcaa0b66"}
+结果:         版本： 3\r\n      序列号： 2d0417da39fcfdfd76028b62fcaa0b66\r\n    签名算法： SM3-SM2 (1.2.156.10197.1.501)\r\n签名哈希算法： SM3\n\r\n颁发者： CN=SM2测试中间CA, OU=ChinaITBoys, O=MODPKICA\r\n有效期从： Mon Sep 21 00:14:15 CST 2026\r\n有效期到： Tue Sep 21 00:14:15 CST 2027\n\r\n使用者： CN=SM2吊销的样本\r\n    公钥： ECC 256\r\n授权密钥标识符  ： 19e131f80666a98eccd343def5455ea87cf29c0f\r\n使用者密钥标识符： c87789fe18806db71214d1e648670b019a5cb898\n\r\n增强型密钥用法：\n\r\n              服务器身份验证 (1.3.6.1.5.5.7.3.1)\r\n授权信息访问：\r\n              OCSP   URL=http://localhost/ocsp\r\n              颁发者 URL=http://localhost/crt/7d33a265e4442fd4810e3ca75ea35fcc.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost/crl/7d33a265e4442fd4810e3ca75ea35fcc.crl\r\n              CRL分发点 = http://localhost/crl/7d33a265e4442fd4810e3ca75ea35fcc.der.crl\r\ndigitalSignature, nonRepudiation, keyEncipherment, dataEncipherment, keyAgreement\r\n证书策略：\r\n              证书颁发策略(Statement Identifier) OID = 1.3.6.1.4.1.4146.1.95\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\nSCT列表:\r\n      第 1 条 SCT:\r\n        日志版本:  V1\r\n        日志名称:  MODPKICA CT Log SM2\r\n      日志标识符:  e76531a0ca637bdf37162ac371a35efdd6cde92e0cd851ce0c2b98d9b24d010f\r\n          时间戳:  Mon Sep 21 00:14:15 CST 2026\r\n        签名类型:  SM2-SM3\r\n            签名:  3044022030feef02d8e81d89d66fe68ce49083aee623201431a70a16a14f67c83909f17c022011bddccc629c7a7c2b1c9d564516f646e675eb8e6d39ceb884866a84982a5a13\r\n            状态:  签名有效\r\n\r\n      第 2 条 SCT:\r\n        日志版本:  V1\r\n        日志名称:  MODPKICA CT Log SM2\r\n      日志标识符:  e309197a9e289f53a831d2d36e6dc86951b2f454439f14b3dedadbc85a7d435c\r\n          时间戳:  Mon Sep 21 00:14:15 CST 2026\r\n        签名类型:  SM2-SM3\r\n            签名:  304502202c78bfa84c29a0b943e5eb368a59af17042681bb3c939c7305b986e5ca02fbc7022100acab500e45ccf3d830d89a6a479a977ed7bd01006b52e07b023f685ff6efdd92\r\n            状态:  签名有效\r\n\r\n      第 3 条 SCT:\r\n        日志版本:  V1\r\n        日志名称:  MODPKICA CT Log SM2\r\n      日志标识符:  187ae2422d38f0f829f9373204d856a0bc1908934bb1ee61ef9266695f5701e5\r\n          时间戳:  Mon Sep 21 00:14:15 CST 2026\r\n        签名类型:  SM2-SM3\r\n            签名:  3044022041277aee2490b12501a56e19a88601d068118dfbe688be673dce6cf8c174d991022038e116b98b3de465f523bf7a11e3bbe4ec61066c4fb841ca3c07bb0420fa89d2\r\n            状态:  签名有效\r\n\r\n\n\n\r\n证书签名：\n        3045022100d18a3fb7d7f07a5a8dde43d98211681fbbaeb813f2ab47a50dd4a91adf4688fa02200ce25d6c6474e94bb4e0a290992e3ace559cf437bc9b99efba2ba515f7335085\n\r\n证书类别： 非根证书\n\r\n证书链： \r\n       CA   --> 19e131f80666a98eccd343def5455ea87cf29c0f\r\n       Root --> 28dcd7e0b84f0066fa82b72aee663b49ac825cee\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n验证签名： 通过、签名有效 颁发者=CN=SM2测试中间CA, OU=ChinaITBoys, O=MODPKICA\r\n证书状态：          此证书已被颁发机构吊销。（CRL） 吊销时间：Fri Sep 18 00:15:36 CST 2026\r\n2026/09/22 00:07:13 OCSP:已吊销,序列号 2d0417da39fcfdfd76028b62fcaa0b66\r\n          此证书已被颁发机构吊销。（OCSP）吊销时间：Fri Sep 18 00:15:36 CST 2026 原因:2\r\n\r\n密钥 Id 哈希(SHA1)          ： 9a7e5f79c5951935aeca7f6a61c7254a6efc6006\r\n密钥 Id 哈希(RFC-SHA1)      ： c87789fe18806db71214d1e648670b019a5cb898\r\n密钥 Id 哈希(Pin-SHA256)    ： PL0Nxj8XUvQE+X+WmK5GN6myv6k4TYuDig5qs4k2O9k=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 3cbd0dc63f1752f404f97f9698ae4637a9b2bfa9384d8b838a0e6ab389363bd9\r\n\n\r\n证书哈希(SHA1)              ： 0c9d640a81cbb40ce8f6710f6c920df61978af9b\r\n证书哈希(SHA256)            ： e480ff262d80a15152f7b2b4cbc6f80673a5024a620ed49744770346776b2801\r\n签名哈希                    ： 0cb6fe6a4183431813456ee7c2ac98efb0a57eb03a28592359a82deaee93e3c6\r\n
+
+时间: 2026/09/22 00:09:23
+时间戳: 1790006963776
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crl/66ef152dc259591fc0b9f15ae02e1af8.crl
+
+时间: 2026/09/22 00:09:23
+时间戳: 1790006963785
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crl 大小=616字节 类型=crl
+
+时间: 2026/09/22 00:09:23
+时间戳: 1790006963793
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/66ef152dc259591fc0b9f15ae02e1af8.crt
+
+时间: 2026/09/22 00:09:23
+时间戳: 1790006963800
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crt 大小=1892字节 类型=crt
+
+时间: 2026/09/22 00:09:23
+时间戳: 1790006963806
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/66ef152dc259591fc0b9f15ae02e1af8.crt
+
+时间: 2026/09/22 00:09:23
+时间戳: 1790006963813
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crt 大小=1892字节 类型=crt
+
+时间: 2026/09/22 00:09:23
+时间戳: 1790006963835
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=116字节
+
+时间: 2026/09/22 00:09:23
+时间戳: 1790006963844
+操作: OCSP请求解析
+命令: 
+结果: 序列号=66ef152dc259591fc0b9f15ae02e1af8 哈希=1.3.14.3.2.26 Nonce=117ca125c6cab97c93a684d3f17539b6
+
+时间: 2026/09/22 00:09:23
+时间戳: 1790006963881
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=RSA测试根 By OCSP, OU=Only OCSP Signing, C=CN, O=MODPKICA 请求序列号=66ef152dc259591fc0b9f15ae02e1af8
+
+时间: 2026/09/22 00:09:23
+时间戳: 1790006963885
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1942字节
+
+时间: 2026/09/22 00:09:23
+时间戳: 1790006963900
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"66ef152dc259591fc0b9f15ae02e1af8"}
+结果:         版本： 3\r\n      序列号： 66ef152dc259591fc0b9f15ae02e1af8\r\n    签名算法： SHA256-RSA (1.2.840.113549.1.1.11)\r\n签名哈希算法： SHA256\n\r\n颁发者： CN=RSA测试根, OU=ChinaITBoys, O=MODPKICA, C=CN\r\n有效期从： Thu Jul 19 15:30:00 CST 2001\r\n有效期到： Sun Jul 19 15:30:00 CST 2099\n\r\n使用者： CN=RSA测试根, OU=ChinaITBoys, O=MODPKICA, C=CN\r\n    公钥： RSA 2048\r\n授权密钥标识符  ： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\r\n使用者密钥标识符： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\n\r\n增强型密钥用法：\n\r\n授权信息访问：\r\n              OCSP   URL=http://localhost/ocsp\r\n              颁发者 URL=http://localhost/crt/66ef152dc259591fc0b9f15ae02e1af8.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost/crl/66ef152dc259591fc0b9f15ae02e1af8.crl\r\n              CRL分发点 = http://localhost/crl/66ef152dc259591fc0b9f15ae02e1af8.der.crl\r\ndigitalSignature, nonRepudiation, keyCertSign, cRLSign\r\n基本约束(关键)：\n              Subject Type=CA  Path Length Constraint = 2147483647\r\n证书策略：\r\n              证书颁发策略(Statement Identifier) OID = 1.3.6.1.4.1.4146.1.95\r\n              所有颁发策略 OID = 2.5.29.32.0\r\n              所有应用程序策略 OID = 1.3.6.1.4.1.311.10.12.1\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\n\n\n\r\n证书签名：\n        7ae5b7afbfae9072fc9b54d3fee478d66381b5302d3515da119027e5e35cac08b34adf5f5afae3acbc17b7a4d0b8e6535b0f9fe80cd9e305335cea18ea10f15d9b7c112828f1e2c0f82ff770f96cd35f07f50f9d745fa5c1b117825493ad9c1368bb69bcad80f5721435f3b8ee6e144c9e8c64555f6fdb2d6e093a6eeaa036ee2da410488d35e99ae85f4affc7b698902310786c49014b52d77ec34f163236f0a74d40ba5bb3272075079ded28a8353a62d3461eedc9981b6401cc8564e234d3b9ff7492a487fffc19a7394e21d0def63f4bc897d94d6d63986e81951617167044638ee96f7f09a3d68d21ba3f915e21f5ad4738460d095077c0667eb18d53a3\n\r\n证书类别： 根证书\n\r\n验证签名： 成功（根证书自验证通过）\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n证书状态：证书正常。（CRL）\r\n2026/09/22 00:09:23 OCSP:正常,序列号 66ef152dc259591fc0b9f15ae02e1af8\r\n          证书正常。（OCSP）\r\n\r\n密钥 Id 哈希(SHA1)          ： 17b57835f575c0cc3f0ce0466423d110ea033ac7\r\n密钥 Id 哈希(RFC-SHA1)      ： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\r\n密钥 Id 哈希(Pin-SHA256)    ： G6i323ZAlHZzxrNTJI23xy817ozgcW1zPzOlBD6Ru34=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 1ba8b7db7640947673c6b353248db7c72f35ee8ce0716d733f33a5043e91bb7e\r\n\n\r\n证书哈希(SHA1)              ： 3e527e8eaa670ac7af0d53d345ebf76715e131f2\r\n证书哈希(SHA256)            ： 9bf33a2c80426adc07c7f67c844bf2eb149df40502724f494dc003560e5e8621\r\n签名哈希                    ： 8cdb5e42965c8a513eabacbce3529edac950e84f3cc2273ee75cfe572eb40f59\r\n
+
+时间: 2026/09/22 00:11:26
+时间戳: 1790007086975
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/1fe5611df74dcf1d51d48a1be40592a6.crt
+
+时间: 2026/09/22 00:11:26
+时间戳: 1790007086977
+操作: 文件响应
+命令: 
+结果: 文件=1fe5611df74dcf1d51d48a1be40592a6.crt 大小=1522字节 类型=crt
+
+时间: 2026/09/22 00:11:27
+时间戳: 1790007087019
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/1fe5611df74dcf1d51d48a1be40592a6.crt
+
+时间: 2026/09/22 00:11:27
+时间戳: 1790007087021
+操作: 文件响应
+命令: 
+结果: 文件=1fe5611df74dcf1d51d48a1be40592a6.crt 大小=1522字节 类型=crt
+
+时间: 2026/09/22 00:11:27
+时间戳: 1790007087022
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/613077af29b3beddef72620948bf6453.crt
+
+时间: 2026/09/22 00:11:27
+时间戳: 1790007087024
+操作: 文件响应
+命令: 
+结果: 文件=613077af29b3beddef72620948bf6453.crt 大小=1310字节 类型=crt
+
+时间: 2026/09/22 00:11:27
+时间戳: 1790007087040
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crl/1fe5611df74dcf1d51d48a1be40592a6.crl
+
+时间: 2026/09/22 00:11:27
+时间戳: 1790007087042
+操作: 文件响应
+命令: 
+结果: 文件=1fe5611df74dcf1d51d48a1be40592a6.crl 大小=410字节 类型=crl
+
+时间: 2026/09/22 00:11:27
+时间戳: 1790007087044
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/1fe5611df74dcf1d51d48a1be40592a6.crt
+
+时间: 2026/09/22 00:11:27
+时间戳: 1790007087051
+操作: 文件响应
+命令: 
+结果: 文件=1fe5611df74dcf1d51d48a1be40592a6.crt 大小=1522字节 类型=crt
+
+时间: 2026/09/22 00:11:27
+时间戳: 1790007087054
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/1fe5611df74dcf1d51d48a1be40592a6.crt
+
+时间: 2026/09/22 00:11:27
+时间戳: 1790007087059
+操作: 文件响应
+命令: 
+结果: 文件=1fe5611df74dcf1d51d48a1be40592a6.crt 大小=1522字节 类型=crt
+
+时间: 2026/09/22 00:11:27
+时间戳: 1790007087062
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=116字节
+
+时间: 2026/09/22 00:11:27
+时间戳: 1790007087064
+操作: OCSP请求解析
+命令: 
+结果: 序列号=3f9706c937c0fea8700ed657bc734979 哈希=1.3.14.3.2.26 Nonce=ac24f646722556be07e6ef92ee5b8cbb
+
+时间: 2026/09/22 00:11:27
+时间戳: 1790007087084
+操作: OCSP签名
+命令: 
+结果: 算法=ECC(sha1) 响应者=CN=ECC测试中间CA By OCSP, OU=Only OCSP Signing, O=MODPKICA 请求序列号=3f9706c937c0fea8700ed657bc734979
+
+时间: 2026/09/22 00:11:27
+时间戳: 1790007087086
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1353字节
+
+时间: 2026/09/22 00:11:27
+时间戳: 1790007087100
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"3f9706c937c0fea8700ed657bc734979"}
+结果:         版本： 3\r\n      序列号： 3f9706c937c0fea8700ed657bc734979\r\n    签名算法： SHA256-ECDSA (1.2.840.10045.4.3.2)\r\n签名哈希算法： SHA256\n\r\n颁发者： CN=ECC测试中间CA, OU=ChinaITBoys, O=MODPKICA\r\n有效期从： Mon Sep 21 00:14:00 CST 2026\r\n有效期到： Tue Sep 21 00:14:00 CST 2027\n\r\n使用者： CN=ECC吊销的样本\r\n    公钥： ECC 256\r\n授权密钥标识符  ： 5398251ed829a9e9910712b362f1561709a95453\r\n使用者密钥标识符： 8fddcc8994e1fbd30e74c0a6d832f393126b8a5e\n\r\n增强型密钥用法：\n\r\n              服务器身份验证 (1.3.6.1.5.5.7.3.1)\r\n授权信息访问：\r\n              OCSP   URL=http://localhost/ocsp\r\n              颁发者 URL=http://localhost/crt/1fe5611df74dcf1d51d48a1be40592a6.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost/crl/1fe5611df74dcf1d51d48a1be40592a6.crl\r\n              CRL分发点 = http://localhost/crl/1fe5611df74dcf1d51d48a1be40592a6.der.crl\r\ndigitalSignature, nonRepudiation, keyEncipherment, dataEncipherment, keyAgreement\r\n证书策略：\r\n              证书颁发策略(Statement Identifier) OID = 1.3.6.1.4.1.4146.1.95\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\nSCT列表:\r\n      第 1 条 SCT:\r\n        日志版本:  V1\r\n        日志名称:  MODPKICA CT Log RSA\r\n      日志标识符:  a27f74a6e509622a347ec2fce3ad374570d94d69062cc55b921a548ad46c300c\r\n          时间戳:  Mon Sep 21 00:14:00 CST 2026\r\n        签名类型:  RSA-SHA256\r\n            签名:  76a6e973a4a96d2ea876689795de4bacc84e2ab787a2588b6270eeeb25a4e6e4b1d7ab342f88ad3b1cb4f01c580ff4e80b0985b91727436c0ce0f6d75e5e05c89692d16c86b5c74a351860dba2d921914895cb08cfcdc59138a6518cf46d5557ddb5e11ce47517e2500560d10c8325fb6ee10670a36a971724a0d196a38cc0158c12d37729a4c2c152794be53468c05edcfbea844ed49d4508f1eb297e3ae61a258984591231137ca9dac8b2235b65ddff423c1d57aae38666c4b2cbdb6fd60364116fbb27eba0ff339a37e5a12b8bb98c60f43b652ee8b4e526c1b9c2a10ec3b9ef05b7676deedc87eb33bebc22d764add529d6b82f1472f20a5e23fd81880b\r\n            状态:  签名有效\r\n\r\n      第 2 条 SCT:\r\n        日志版本:  V1\r\n        日志名称:  MODPKICA CT Log RSA\r\n      日志标识符:  09690e3801caf77fb71d72636dd9a274ac894447ea40ed1ef6dd65fc7251c82b\r\n          时间戳:  Mon Sep 21 00:14:00 CST 2026\r\n        签名类型:  RSA-SHA256\r\n            签名:  168df12f8fd8cf76260bc9c2793e0f4db8f2165a607ddab7e5bcca8aa5af74b9f70f3fc79e811641c789246af38aab8a406362dbd3ac594aaeed28d032d3d40bccd6bc23f866db6857391b1b33cb94131515ee1ecae12a7a52916576ea98f8facfb6a551e72b2b4aa869d47444ee2cfc0727791674de2b59850ecddf356c0dcda032713d65b6b492b01c46b6c0bcfaab3ddd838427bc45a4444ec8ae567c120d3759da14fb3433785e0d67197f1bb6cc55a3ecfd4e4a8fb16c49dfb9df0ffe4ab9cc1631e8cb1c8cbd039dc868c7888f872000057660ebe39e20fb397fd5ba5df4bf1445b58496d54f8a625a34e9b558db2ed938cff70c588119c5a224f01d7d\r\n            状态:  签名有效\r\n\r\n      第 3 条 SCT:\r\n        日志版本:  V1\r\n        日志名称:  MODPKICA CT Log RSA\r\n      日志标识符:  90cc21ee226524a0e54bd351193b32d668654a88c249357418ec298d58321ca6\r\n          时间戳:  Mon Sep 21 00:14:00 CST 2026\r\n        签名类型:  RSA-SHA256\r\n            签名:  22d62dab585cf01782cd9a619434ff5671f1da46d467951394b32c23c4a6f931a8cf6ed84aa05d1822d21a5497d9a8c772841c05ac8a99c043688c352dad71691bfbf6e86d936aa77443238a36f291a2a5761e9924e91637adfc8ed2e7e7dc9253f4d53fd7af6e3e3ee6f48cd608f4143ae27218144a215c6d20041f8d8f7ed09b13e1a3d64c1017b37439a851ab00a233b49b826df8dda2ca26f2bab0bdfe29343c69cb27af90b391ad37fb34bf2b4e262026d93dc89b397f694bb55b0ce0e47382e0c4ac9ecf541a94e7c32babe54a41d246f6579ecb8c069f6942f919ea50adfb68438536093d4dd8ed4a56339254886a82cc2ad962c9ffec89a5b07aa520\r\n            状态:  签名有效\r\n\r\n\n\n\r\n证书签名：\n        3045022022f23d10226fda66fa96cdfd6e68e7f3151544bccc1ef4550746b4b60ba710fc022100c64806a0e49300e4076969882222fadea3f06dbbb336a9775bfa5605e39b381b\n\r\n证书类别： 非根证书\n\r\n证书链： \r\n       CA   --> 5398251ed829a9e9910712b362f1561709a95453\r\n       Root --> dea43964b016c949715e679427a82905d8789cfe\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n验证签名： 通过、签名有效 颁发者=CN=ECC测试中间CA, OU=ChinaITBoys, O=MODPKICA\r\n证书状态：          此证书已被颁发机构吊销。（CRL） 吊销时间：Fri Sep 18 00:15:26 CST 2026\r\n2026/09/22 00:11:27 OCSP:已吊销,序列号 3f9706c937c0fea8700ed657bc734979\r\n          此证书已被颁发机构吊销。（OCSP）吊销时间：Fri Sep 18 00:15:26 CST 2026 原因:5\r\n\r\n密钥 Id 哈希(SHA1)          ： dcf3181b025a8641481e511c6779578be02918e6\r\n密钥 Id 哈希(RFC-SHA1)      ： 8fddcc8994e1fbd30e74c0a6d832f393126b8a5e\r\n密钥 Id 哈希(Pin-SHA256)    ： DDjKpiZoTuauOOA6Q6EbpNAb552odIee9jCDtmWMeBk=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 0c38caa626684ee6ae38e03a43a11ba4d01be79da874879ef63083b6658c7819\r\n\n\r\n证书哈希(SHA1)              ： 81487d7d5458b37195e8835c20eaae13f1e29eb0\r\n证书哈希(SHA256)            ： b13d5294f7b15099ebc04d135e53a330b281a89cf49a7e4c39a265c9b83c3e95\r\n签名哈希                    ： a9e51a2b718111f5a612792d671eb7ad6134f20d2b7177f43af41efd7b2987ef\r\n
+
+时间: 2026/09/22 00:11:40
+时间戳: 1790007100652
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"01bbafe9733ea1d09dd26a18e8f3b6"}
+结果: 文件 C:\Users\28299\Desktop\modpkica4JAVA/PKI/WebPublic/CRT/01bbafe9733ea1d09dd26a18e8f3b6.crt 不存在（如输入的是序列号，请确认 WebPublic/CRT/序列号.crt 存在）\r\n
+
+时间: 2026/09/22 00:11:49
+时间戳: 1790007109448
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crl/66ef152dc259591fc0b9f15ae02e1af8.crl
+
+时间: 2026/09/22 00:11:49
+时间戳: 1790007109452
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crl 大小=616字节 类型=crl
+
+时间: 2026/09/22 00:11:49
+时间戳: 1790007109460
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/66ef152dc259591fc0b9f15ae02e1af8.crt
+
+时间: 2026/09/22 00:11:49
+时间戳: 1790007109464
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crt 大小=1892字节 类型=crt
+
+时间: 2026/09/22 00:11:49
+时间戳: 1790007109488
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/66ef152dc259591fc0b9f15ae02e1af8.crt
+
+时间: 2026/09/22 00:11:49
+时间戳: 1790007109494
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crt 大小=1892字节 类型=crt
+
+时间: 2026/09/22 00:11:49
+时间戳: 1790007109504
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=116字节
+
+时间: 2026/09/22 00:11:49
+时间戳: 1790007109507
+操作: OCSP请求解析
+命令: 
+结果: 序列号=66ef152dc259591fc0b9f15ae02e1af8 哈希=1.3.14.3.2.26 Nonce=ae28bd09ef5594e19736ce4c0d9181c6
+
+时间: 2026/09/22 00:11:49
+时间戳: 1790007109522
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=RSA测试根 By OCSP, OU=Only OCSP Signing, C=CN, O=MODPKICA 请求序列号=66ef152dc259591fc0b9f15ae02e1af8
+
+时间: 2026/09/22 00:11:49
+时间戳: 1790007109526
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1942字节
+
+时间: 2026/09/22 00:11:49
+时间戳: 1790007109530
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"66ef152dc259591fc0b9f15ae02e1af8"}
+结果:         版本： 3\r\n      序列号： 66ef152dc259591fc0b9f15ae02e1af8\r\n    签名算法： SHA256-RSA (1.2.840.113549.1.1.11)\r\n签名哈希算法： SHA256\n\r\n颁发者： CN=RSA测试根, OU=ChinaITBoys, O=MODPKICA, C=CN\r\n有效期从： Thu Jul 19 15:30:00 CST 2001\r\n有效期到： Sun Jul 19 15:30:00 CST 2099\n\r\n使用者： CN=RSA测试根, OU=ChinaITBoys, O=MODPKICA, C=CN\r\n    公钥： RSA 2048\r\n授权密钥标识符  ： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\r\n使用者密钥标识符： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\n\r\n增强型密钥用法：\n\r\n授权信息访问：\r\n              OCSP   URL=http://localhost/ocsp\r\n              颁发者 URL=http://localhost/crt/66ef152dc259591fc0b9f15ae02e1af8.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost/crl/66ef152dc259591fc0b9f15ae02e1af8.crl\r\n              CRL分发点 = http://localhost/crl/66ef152dc259591fc0b9f15ae02e1af8.der.crl\r\ndigitalSignature, nonRepudiation, keyCertSign, cRLSign\r\n基本约束(关键)：\n              Subject Type=CA  Path Length Constraint = 2147483647\r\n证书策略：\r\n              证书颁发策略(Statement Identifier) OID = 1.3.6.1.4.1.4146.1.95\r\n              所有颁发策略 OID = 2.5.29.32.0\r\n              所有应用程序策略 OID = 1.3.6.1.4.1.311.10.12.1\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\n\n\n\r\n证书签名：\n        7ae5b7afbfae9072fc9b54d3fee478d66381b5302d3515da119027e5e35cac08b34adf5f5afae3acbc17b7a4d0b8e6535b0f9fe80cd9e305335cea18ea10f15d9b7c112828f1e2c0f82ff770f96cd35f07f50f9d745fa5c1b117825493ad9c1368bb69bcad80f5721435f3b8ee6e144c9e8c64555f6fdb2d6e093a6eeaa036ee2da410488d35e99ae85f4affc7b698902310786c49014b52d77ec34f163236f0a74d40ba5bb3272075079ded28a8353a62d3461eedc9981b6401cc8564e234d3b9ff7492a487fffc19a7394e21d0def63f4bc897d94d6d63986e81951617167044638ee96f7f09a3d68d21ba3f915e21f5ad4738460d095077c0667eb18d53a3\n\r\n证书类别： 根证书\n\r\n验证签名： 成功（根证书自验证通过）\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n证书状态：证书正常。（CRL）\r\n2026/09/22 00:11:49 OCSP:正常,序列号 66ef152dc259591fc0b9f15ae02e1af8\r\n          证书正常。（OCSP）\r\n\r\n密钥 Id 哈希(SHA1)          ： 17b57835f575c0cc3f0ce0466423d110ea033ac7\r\n密钥 Id 哈希(RFC-SHA1)      ： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\r\n密钥 Id 哈希(Pin-SHA256)    ： G6i323ZAlHZzxrNTJI23xy817ozgcW1zPzOlBD6Ru34=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 1ba8b7db7640947673c6b353248db7c72f35ee8ce0716d733f33a5043e91bb7e\r\n\n\r\n证书哈希(SHA1)              ： 3e527e8eaa670ac7af0d53d345ebf76715e131f2\r\n证书哈希(SHA256)            ： 9bf33a2c80426adc07c7f67c844bf2eb149df40502724f494dc003560e5e8621\r\n签名哈希                    ： 8cdb5e42965c8a513eabacbce3529edac950e84f3cc2273ee75cfe572eb40f59\r\n
+
+时间: 2026/09/22 00:11:52
+时间戳: 1790007112687
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/1bbafe9733ea1d09dd26a18e8f3b6.crt
+
+时间: 2026/09/22 00:11:52
+时间戳: 1790007112691
+操作: 文件响应
+命令: 
+结果: 文件=1bbafe9733ea1d09dd26a18e8f3b6.crt 大小=2082字节 类型=crt
+
+时间: 2026/09/22 00:11:52
+时间戳: 1790007112720
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/1bbafe9733ea1d09dd26a18e8f3b6.crt
+
+时间: 2026/09/22 00:11:52
+时间戳: 1790007112722
+操作: 文件响应
+命令: 
+结果: 文件=1bbafe9733ea1d09dd26a18e8f3b6.crt 大小=2082字节 类型=crt
+
+时间: 2026/09/22 00:11:52
+时间戳: 1790007112729
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/66ef152dc259591fc0b9f15ae02e1af8.crt
+
+时间: 2026/09/22 00:11:52
+时间戳: 1790007112731
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crt 大小=1892字节 类型=crt
+
+时间: 2026/09/22 00:11:52
+时间戳: 1790007112738
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crl/1bbafe9733ea1d09dd26a18e8f3b6.crl
+
+时间: 2026/09/22 00:11:52
+时间戳: 1790007112739
+操作: 文件响应
+命令: 
+结果: 文件=1bbafe9733ea1d09dd26a18e8f3b6.crl 大小=674字节 类型=crl
+
+时间: 2026/09/22 00:11:52
+时间戳: 1790007112743
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/1bbafe9733ea1d09dd26a18e8f3b6.crt
+
+时间: 2026/09/22 00:11:52
+时间戳: 1790007112746
+操作: 文件响应
+命令: 
+结果: 文件=1bbafe9733ea1d09dd26a18e8f3b6.crt 大小=2082字节 类型=crt
+
+时间: 2026/09/22 00:11:52
+时间戳: 1790007112748
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/1bbafe9733ea1d09dd26a18e8f3b6.crt
+
+时间: 2026/09/22 00:11:52
+时间戳: 1790007112749
+操作: 文件响应
+命令: 
+结果: 文件=1bbafe9733ea1d09dd26a18e8f3b6.crt 大小=2082字节 类型=crt
+
+时间: 2026/09/22 00:11:52
+时间戳: 1790007112752
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=116字节
+
+时间: 2026/09/22 00:11:52
+时间戳: 1790007112754
+操作: OCSP请求解析
+命令: 
+结果: 序列号=54084a05bcd2585704d2856a3a082cb3 哈希=1.3.14.3.2.26 Nonce=51d1e7e51ab9d6493a6309c86b03eb3f
+
+时间: 2026/09/22 00:11:52
+时间戳: 1790007112813
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=RSA测试中间CA By OCSP, OU=Only OCSP Signing, O=MODPKICA 请求序列号=54084a05bcd2585704d2856a3a082cb3
+
+时间: 2026/09/22 00:11:52
+时间戳: 1790007112821
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1933字节
+
+时间: 2026/09/22 00:11:52
+时间戳: 1790007112822
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"54084a05bcd2585704d2856a3a082cb3"}
+结果:         版本： 3\r\n      序列号： 54084a05bcd2585704d2856a3a082cb3\r\n    签名算法： SHA256-RSA (1.2.840.113549.1.1.11)\r\n签名哈希算法： SHA256\n\r\n颁发者： CN=RSA测试中间CA, OU=ChinaITBoys, O=MODPKICA\r\n有效期从： Mon Sep 21 00:13:50 CST 2026\r\n有效期到： Tue Sep 21 00:13:50 CST 2027\n\r\n使用者： CN=RSA吊销的样本\r\n    公钥： RSA 1024\r\n授权密钥标识符  ： 25c13e635f66bb241c1e8776483db5fb61839b0f\r\n使用者密钥标识符： 91b0a434cc3c6e132ce9745c27a05c6aa7b3bbb6\n\r\n增强型密钥用法：\n\r\n              服务器身份验证 (1.3.6.1.5.5.7.3.1)\r\n授权信息访问：\r\n              OCSP   URL=http://localhost/ocsp\r\n              颁发者 URL=http://localhost/crt/1bbafe9733ea1d09dd26a18e8f3b6.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost/crl/1bbafe9733ea1d09dd26a18e8f3b6.crl\r\n              CRL分发点 = http://localhost/crl/1bbafe9733ea1d09dd26a18e8f3b6.der.crl\r\ndigitalSignature, nonRepudiation, keyEncipherment, dataEncipherment, keyAgreement\r\n证书策略：\r\n              证书颁发策略(Statement Identifier) OID = 1.3.6.1.4.1.4146.1.95\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\nSCT列表:\r\n      第 1 条 SCT:\r\n        日志版本:  V1\r\n        日志名称:  MODPKICA CT Log RSA\r\n      日志标识符:  90cc21ee226524a0e54bd351193b32d668654a88c249357418ec298d58321ca6\r\n          时间戳:  Mon Sep 21 00:13:50 CST 2026\r\n        签名类型:  RSA-SHA256\r\n            签名:  39648045f0a1b60b077b1c933599a9c7f84252f2ecec7f61536360bfb42922b0898d4590aaad2730982815ba97142d9883428b889ff3057878a099e9eb06b27084c00d8b0686929dbb58ce508434e91b3ed1d765d36a3814a53f758a9e1ca00961ed84eae8f2d9edf9ee060cf9461e3d34bcd1de5815bfb8150861149f323155aa969d7b516738eea35014f0ffdd96f1305143ef5a06dda92b9947f66f7f2257aaf2d3a177b0c67b435db0dcb5e023628dc0002831b9520676747640161f474d731e2b593a64848615645cbffdbcff03024a6c16c8aeaa570e25cf619948da3a22125565f4806bf90856d3946b74087c9e2157e534652093a485d0eea5ce7a35\r\n            状态:  签名有效\r\n\r\n      第 2 条 SCT:\r\n        日志版本:  V1\r\n        日志名称:  MODPKICA CT Log ECDSA\r\n      日志标识符:  9a1bb0c17324f2c23c32c01b558c154a7b629cbd0167fd1a498cd302c1d17bb9\r\n          时间戳:  Mon Sep 21 00:13:50 CST 2026\r\n        签名类型:  ECDSA-SHA256\r\n            签名:  3045022100a919ef2a60cd7bbf505a30cd6f0bc60985723f33c26de8195b9aa7c0a6822c0c022049db56f45687afef772fc40011a9e22c3d72fb9a1a17c8e9a5bed97f4f972efc\r\n            状态:  签名有效\r\n\r\n      第 3 条 SCT:\r\n        日志版本:  V1\r\n        日志名称:  MODPKICA CT Log RSA\r\n      日志标识符:  a27f74a6e509622a347ec2fce3ad374570d94d69062cc55b921a548ad46c300c\r\n          时间戳:  Mon Sep 21 00:13:50 CST 2026\r\n        签名类型:  RSA-SHA256\r\n            签名:  6ab8ec30c1e87b090137c8cf3f948eb95ecc60f7bb27a16cade6e65693d4d5c65abe584e9b1fee1ab86280bd2ab4456cbeaa102085c2db3eb288f82b34b7b17f2f56bc6e8ac054bd2b5f01651630a042894d50d9ea01111748c8708204115dd0f9893a2b43b9a10ab57aa6ed3cf54bd557dd58b46f10be61a9d4d14ce6c62b8f0d93d2bdf565820923c9eb908204e4dbe3ef52ee3913a07635340f6a3a27339247ab55171a231207f9401e57ef4f10dcc23e73d80962693f9ca9248354d133c54a351ec8a55c34af5de7dbe25a6c2c9af242bdad845b0c88f2503fab5fc3d86fda21e6170b17884455b8d354a1c0b6471e9ec9fdc915cd54d3f2f61a824b27b9\r\n            状态:  签名有效\r\n\r\n\n\n\r\n证书签名：\n        12f349482e4378586884914947de6c7b220063086bfecf5dac2208c263c36eff27eb61079c1b4dbd3a925305406112e1d964c180d5f761c122d211ce575c08b0123fdb07a89b58c23f596f20e357c032ca14b09bb2243dac77033f9c4ce590eec2f958d26893e1387300886b6a22d14b91cc4e6d75c32a227d97879483a162708962f75a3d28285c907a116cf2d116e89efb3b0889d1aff7f6c9a05319a7d608a400d7bbd54eea27372bcfbc26148db6955f80a237250f25e2b39134a78125e3fda8aab9ba2aa8bf2c5c3906e621f9ed8c6237db9e78ecea0fa00feb329dcf1b16b44d87b2ee215c45de6b0d833b6f950206d96f7fd52f654c47cd6210aa4d05\n\r\n证书类别： 非根证书\n\r\n证书链： \r\n       CA   --> 25c13e635f66bb241c1e8776483db5fb61839b0f\r\n       Root --> ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n验证签名： 通过、签名有效 颁发者=CN=RSA测试中间CA, OU=ChinaITBoys, O=MODPKICA\r\n证书状态：          此证书已被颁发机构吊销。（CRL） 吊销时间：Fri Sep 18 00:15:18 CST 2026\r\n2026/09/22 00:11:52 OCSP:已吊销,序列号 54084a05bcd2585704d2856a3a082cb3\r\n          此证书已被颁发机构吊销。（OCSP）吊销时间：Fri Sep 18 00:15:18 CST 2026 原因:1\r\n\r\n密钥 Id 哈希(SHA1)          ： 852b41b1faa5edc07db537316d8ac41c3c8f6510\r\n密钥 Id 哈希(RFC-SHA1)      ： 91b0a434cc3c6e132ce9745c27a05c6aa7b3bbb6\r\n密钥 Id 哈希(Pin-SHA256)    ： hJyUR0Hz1qozeaEth54xvj8exCVwzUq+pUJgi4gUTL4=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 849c944741f3d6aa3379a12d879e31be3f1ec42570cd4abea542608b88144cbe\r\n\n\r\n证书哈希(SHA1)              ： 4b5641b8c2d3c34d89a819fec6aaec26f8ec2f07\r\n证书哈希(SHA256)            ： 4aa47aabdbbe0ed17bf6d6596bf5ad0121e9f8b3bca00f54b0cb5d805aed5033\r\n签名哈希                    ： 3c679fc19a847c5996b85dafbe79516b1da7ed33935ed1696a8afa7b78db52a4\r\n
+
+时间: 2026/09/22 00:12:54
+时间戳: 1790007174865
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/904c5cb2cbef8317a1fb6b06744fea69.crt
+
+时间: 2026/09/22 00:12:54
+时间戳: 1790007174867
+操作: 文件响应
+命令: 
+结果: 文件=904c5cb2cbef8317a1fb6b06744fea69.crt 大小=1320字节 类型=crt
+
+时间: 2026/09/22 00:12:54
+时间戳: 1790007174890
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crl/904c5cb2cbef8317a1fb6b06744fea69.crl
+
+时间: 2026/09/22 00:12:54
+时间戳: 1790007174895
+操作: 文件响应
+命令: 
+结果: 文件=904c5cb2cbef8317a1fb6b06744fea69.crl 大小=336字节 类型=crl
+
+时间: 2026/09/22 00:12:54
+时间戳: 1790007174898
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/904c5cb2cbef8317a1fb6b06744fea69.crt
+
+时间: 2026/09/22 00:12:54
+时间戳: 1790007174900
+操作: 文件响应
+命令: 
+结果: 文件=904c5cb2cbef8317a1fb6b06744fea69.crt 大小=1320字节 类型=crt
+
+时间: 2026/09/22 00:12:54
+时间戳: 1790007174905
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/904c5cb2cbef8317a1fb6b06744fea69.crt
+
+时间: 2026/09/22 00:12:54
+时间戳: 1790007174907
+操作: 文件响应
+命令: 
+结果: 文件=904c5cb2cbef8317a1fb6b06744fea69.crt 大小=1320字节 类型=crt
+
+时间: 2026/09/22 00:12:54
+时间戳: 1790007174911
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=116字节
+
+时间: 2026/09/22 00:12:54
+时间戳: 1790007174913
+操作: OCSP请求解析
+命令: 
+结果: 序列号=7d33a265e4442fd4810e3ca75ea35fcc 哈希=1.3.14.3.2.26 Nonce=2c56f84907992f049a36c37cb143856c
+
+时间: 2026/09/22 00:12:54
+时间戳: 1790007174921
+操作: OCSP签名
+命令: 
+结果: 算法=SM2WithSM3 响应者=CN=SM2测试根 By OCSP, OU=Only OCSP Signing, O=MODPKICA 请求序列号=7d33a265e4442fd4810e3ca75ea35fcc
+
+时间: 2026/09/22 00:12:54
+时间戳: 1790007174927
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1324字节
+
+时间: 2026/09/22 00:12:54
+时间戳: 1790007174932
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"7d33a265e4442fd4810e3ca75ea35fcc"}
+结果:         版本： 3\r\n      序列号： 7d33a265e4442fd4810e3ca75ea35fcc\r\n    签名算法： SM3-SM2 (1.2.156.10197.1.501)\r\n签名哈希算法： SM3\n\r\n颁发者： CN=SM2测试根, OU=ChinaITBoys, O=MODPKICA\r\n有效期从： Mon Sep 21 00:09:24 CST 2026\r\n有效期到： Tue Sep 17 00:09:24 CST 2041\n\r\n使用者： CN=SM2测试中间CA, OU=ChinaITBoys, O=MODPKICA\r\n    公钥： ECC 256\r\n授权密钥标识符  ： 28dcd7e0b84f0066fa82b72aee663b49ac825cee\r\n使用者密钥标识符： 19e131f80666a98eccd343def5455ea87cf29c0f\n\r\n增强型密钥用法：\n\r\n              服务器身份验证 (1.3.6.1.5.5.7.3.1)\r\n              客户端身份验证 (1.3.6.1.5.5.7.3.2)\r\n              代码签名 (1.3.6.1.5.5.7.3.3)\r\n              安全电子邮件 (1.3.6.1.5.5.7.3.4)\r\n              OCSP 签名 (1.3.6.1.5.5.7.3.9)\r\n              内核模式代码签名 (1.3.6.1.4.1.311.61.1.1)\r\n              Windows 硬件驱动程序验证 (1.3.6.1.4.1.311.10.3.5)\r\n              Windows 系统组件验证 (1.3.6.1.4.1.311.10.3.6)\r\n              OEM Windows 系统组件验证 (1.3.6.1.4.1.311.10.3.7)\r\n              内嵌 Windows 系统组件验证 (1.3.6.1.4.1.311.10.3.8)\r\n              1.3.6.1.5.5.7.3.36 (1.3.6.1.5.5.7.3.36)\r\n              文档签名 (1.3.6.1.4.1.311.10.3.12)\r\n              加密文件系统 (1.3.6.1.4.1.311.10.3.4)\r\n              数字权利 (1.3.6.1.4.1.311.10.5.1)\r\n授权信息访问：\r\n              OCSP   URL=http://localhost/ocsp\r\n              颁发者 URL=http://localhost/crt/904c5cb2cbef8317a1fb6b06744fea69.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost/crl/904c5cb2cbef8317a1fb6b06744fea69.crl\r\n              CRL分发点 = http://localhost/crl/904c5cb2cbef8317a1fb6b06744fea69.der.crl\r\ndigitalSignature, nonRepudiation, keyCertSign, cRLSign\r\n基本约束(关键)：\n              Subject Type=CA  Path Length Constraint = 2147483647\r\n证书策略：\r\n              证书颁发策略(Statement Identifier) OID = 1.3.6.1.4.1.4146.1.95\r\n              所有颁发策略 OID = 2.5.29.32.0\r\n              所有应用程序策略 OID = 1.3.6.1.4.1.311.10.12.1\r\n\n\n\r\n证书签名：\n        3045022100ae3104ca84b8bd4c3dc0c35fcd02ab818629909b67257ff8f03bc9f939767e3902200ce85336878892488d0ef6b0e596a880ee1b87797a74074bb3a085a6657c1b92\n\r\n证书类别： 非根证书\n\r\n证书链： \r\n       Root --> 28dcd7e0b84f0066fa82b72aee663b49ac825cee\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n验证签名： 通过、签名有效 颁发者=CN=SM2测试根, OU=ChinaITBoys, O=MODPKICA\r\n证书状态：证书正常。（CRL）\r\n2026/09/22 00:12:54 OCSP:正常,序列号 7d33a265e4442fd4810e3ca75ea35fcc\r\n          证书正常。（OCSP）\r\n\r\n密钥 Id 哈希(SHA1)          ： 4233e6d788475015e80d63ea3fbd2a40aa855203\r\n密钥 Id 哈希(RFC-SHA1)      ： 19e131f80666a98eccd343def5455ea87cf29c0f\r\n密钥 Id 哈希(Pin-SHA256)    ： Iov8Y2p5MH9d+D4s7hY1FH6rbScOWGvVHQLWWz8wgI4=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 228bfc636a79307f5df83e2cee1635147eab6d270e586bd51d02d65b3f30808e\r\n\n\r\n证书哈希(SHA1)              ： 4f685bb3028b7aff7d0e27456e75d2f672bca222\r\n证书哈希(SHA256)            ： 3d300a4b9d383c35f8daad7beff5d8abb04f5bb2e71540edadee7a2a0e73ebde\r\n签名哈希                    ： c1b16b9a9e80dd9413498295ba4e5414e51b47e28a1f4191054f7339ee17dbca\r\n
+
+时间: 2026/09/22 00:13:04
+时间戳: 1790007184182
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/1bbafe9733ea1d09dd26a18e8f3b6.crt
+
+时间: 2026/09/22 00:13:04
+时间戳: 1790007184186
+操作: 文件响应
+命令: 
+结果: 文件=1bbafe9733ea1d09dd26a18e8f3b6.crt 大小=2082字节 类型=crt
+
+时间: 2026/09/22 00:13:04
+时间戳: 1790007184225
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/1bbafe9733ea1d09dd26a18e8f3b6.crt
+
+时间: 2026/09/22 00:13:04
+时间戳: 1790007184230
+操作: 文件响应
+命令: 
+结果: 文件=1bbafe9733ea1d09dd26a18e8f3b6.crt 大小=2082字节 类型=crt
+
+时间: 2026/09/22 00:13:04
+时间戳: 1790007184232
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/66ef152dc259591fc0b9f15ae02e1af8.crt
+
+时间: 2026/09/22 00:13:04
+时间戳: 1790007184236
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crt 大小=1892字节 类型=crt
+
+时间: 2026/09/22 00:13:04
+时间戳: 1790007184292
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crl/1bbafe9733ea1d09dd26a18e8f3b6.crl
+
+时间: 2026/09/22 00:13:04
+时间戳: 1790007184300
+操作: 文件响应
+命令: 
+结果: 文件=1bbafe9733ea1d09dd26a18e8f3b6.crl 大小=674字节 类型=crl
+
+时间: 2026/09/22 00:13:04
+时间戳: 1790007184301
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/1bbafe9733ea1d09dd26a18e8f3b6.crt
+
+时间: 2026/09/22 00:13:04
+时间戳: 1790007184306
+操作: 文件响应
+命令: 
+结果: 文件=1bbafe9733ea1d09dd26a18e8f3b6.crt 大小=2082字节 类型=crt
+
+时间: 2026/09/22 00:13:04
+时间戳: 1790007184308
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/1bbafe9733ea1d09dd26a18e8f3b6.crt
+
+时间: 2026/09/22 00:13:04
+时间戳: 1790007184314
+操作: 文件响应
+命令: 
+结果: 文件=1bbafe9733ea1d09dd26a18e8f3b6.crt 大小=2082字节 类型=crt
+
+时间: 2026/09/22 00:13:04
+时间戳: 1790007184315
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=116字节
+
+时间: 2026/09/22 00:13:04
+时间戳: 1790007184317
+操作: OCSP请求解析
+命令: 
+结果: 序列号=3782291217fa5b99952288b4c6b9e680 哈希=1.3.14.3.2.26 Nonce=f889d0173873b11119847f56aa622e18
+
+时间: 2026/09/22 00:13:04
+时间戳: 1790007184341
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=RSA测试中间CA By OCSP, OU=Only OCSP Signing, O=MODPKICA 请求序列号=3782291217fa5b99952288b4c6b9e680
+
+时间: 2026/09/22 00:13:04
+时间戳: 1790007184343
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1908字节
+
+时间: 2026/09/22 00:13:04
+时间戳: 1790007184347
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"3782291217fa5b99952288b4c6b9e680"}
+结果:         版本： 3\r\n      序列号： 3782291217fa5b99952288b4c6b9e680\r\n    签名算法： SHA256-RSA (1.2.840.113549.1.1.11)\r\n签名哈希算法： SHA256\n\r\n颁发者： CN=RSA测试中间CA, OU=ChinaITBoys, O=MODPKICA\r\n有效期从： Mon Sep 21 00:10:44 CST 2026\r\n有效期到： Tue Sep 21 00:10:44 CST 2027\n\r\n使用者： CN=RSA测试代码签名, OU=ChinaITBoys, O=MODPKICA\r\n    公钥： RSA 2048\r\n授权密钥标识符  ： 25c13e635f66bb241c1e8776483db5fb61839b0f\r\n使用者密钥标识符： 5ef9adeaf80ee0e6d7ef6d1ac7c58862ab4eb24f\n\r\n增强型密钥用法：\n\r\n              服务器身份验证 (1.3.6.1.5.5.7.3.1)\r\n              代码签名 (1.3.6.1.5.5.7.3.3)\r\n              内核模式代码签名 (1.3.6.1.4.1.311.61.1.1)\r\n              Windows 硬件驱动程序验证 (1.3.6.1.4.1.311.10.3.5)\r\n              Windows 系统组件验证 (1.3.6.1.4.1.311.10.3.6)\r\n              OEM Windows 系统组件验证 (1.3.6.1.4.1.311.10.3.7)\r\n              内嵌 Windows 系统组件验证 (1.3.6.1.4.1.311.10.3.8)\r\n              数字权利 (1.3.6.1.4.1.311.10.5.1)\r\n授权信息访问：\r\n              OCSP   URL=http://localhost/ocsp\r\n              颁发者 URL=http://localhost/crt/1bbafe9733ea1d09dd26a18e8f3b6.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost/crl/1bbafe9733ea1d09dd26a18e8f3b6.crl\r\n              CRL分发点 = http://localhost/crl/1bbafe9733ea1d09dd26a18e8f3b6.der.crl\r\ndigitalSignature, nonRepudiation, keyEncipherment, dataEncipherment, keyAgreement\r\n证书策略：\r\n              证书颁发策略(Statement Identifier) OID = 1.3.6.1.4.1.4146.1.95\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\nSCT列表:\r\n      第 1 条 SCT:\r\n        日志版本:  V1\r\n        日志名称:  MODPKICA CT Log ECDSA\r\n      日志标识符:  9a1bb0c17324f2c23c32c01b558c154a7b629cbd0167fd1a498cd302c1d17bb9\r\n          时间戳:  Mon Sep 21 00:10:44 CST 2026\r\n        签名类型:  ECDSA-SHA256\r\n            签名:  3046022100d07761fd2f5ccfe344069cf2d00c49bc76a5bd93bbd6da892c25f183c8d7f562022100c81317d83eb65c639eb3f9a212403c47a47ecd29a2df21ea90bb431b5263fccf\r\n            状态:  签名有效\r\n\r\n      第 2 条 SCT:\r\n        日志版本:  V1\r\n        日志名称:  MODPKICA CT Log ECDSA\r\n      日志标识符:  280b8458b32b2fa115f245555ea427bf8695c252f1c4428eb3c4d23922e68f76\r\n          时间戳:  Mon Sep 21 00:10:44 CST 2026\r\n        签名类型:  ECDSA-SHA256\r\n            签名:  3044022017e2863bfaa416754644942ffa1d0a441d66a084eac2680ea5763b981286006302200f36e7ed7e29209ba741ea4b25ad7bf2972eb09e8ab711cf34e7e5b4d7ba9419\r\n            状态:  签名有效\r\n\r\n      第 3 条 SCT:\r\n        日志版本:  V1\r\n        日志名称:  MODPKICA CT Log RSA\r\n      日志标识符:  a27f74a6e509622a347ec2fce3ad374570d94d69062cc55b921a548ad46c300c\r\n          时间戳:  Mon Sep 21 00:10:44 CST 2026\r\n        签名类型:  RSA-SHA256\r\n            签名:  2a1b5c0de161c3b07d0e0e529ca23fc55f14931ab9795845cb4f9f79e55982d8952e0dd7524e2f97638824ed3b30d51d11a354846b812b5b92bfe97ae6fc9594898854e2c1ebc2bda694a05786c42576d0d6724f7d57575810ec957aa503d37becaddea5909814a38c43e782ab74da1d1f5ca6e4f230035e81c2a1fb6a2c635d02d442a442e87a092958e733005f1e04936077657d3863fe6eea28ba1eb69fc13aea65293575658a9111d8d5e95fbfeddba3d950abebfe590ea4c572778f98269bf3c592043a4434a050c9d0600665b2b660011f3288ba74e0d065da41dcdf7c90c14960d3681d44e188cc6f7886c8322de3f0582c412399f7197fb88f075028\r\n            状态:  签名有效\r\n\r\n\n\n\r\n证书签名：\n        750a7275cb5c7b5795a518a9e1225428cc736a7fec2be3d34ded18cb6f19e5da068305b9417c927538cda830e5a6afd72660ca6320fdad3395bc74b61ec579c3eb300592c7a0e326daf325821aeef06cf8af451060dac36e0ac7a503e01a5be83c1844e3a5c6101ac1079004c18cfc649fb8ee1f006ee954bc9fd1893af0d99ace5ff8c34747d596051452cbc7355a66c0bd7b320720ce929caa0589afc8a09d25158d62e280bed4c0506c9b20dcc0629e906762c4845e835311a49db86278d292a8befd68cf6f55572ff6739f4a6a838a3f22bcbefb316e5e860ef4d93743f07aa5c53a4df7012fba2b865f59c56b38fe3b3c773cc160ac3475e1e2ef63a399\n\r\n证书类别： 非根证书\n\r\n证书链： \r\n       CA   --> 25c13e635f66bb241c1e8776483db5fb61839b0f\r\n       Root --> ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n验证签名： 通过、签名有效 颁发者=CN=RSA测试中间CA, OU=ChinaITBoys, O=MODPKICA\r\n证书状态：证书正常。（CRL）\r\n2026/09/22 00:13:04 OCSP:正常,序列号 3782291217fa5b99952288b4c6b9e680\r\n          证书正常。（OCSP）\r\n\r\n密钥 Id 哈希(SHA1)          ： 5a312e19198c7dec94517e306003057901adf32f\r\n密钥 Id 哈希(RFC-SHA1)      ： 5ef9adeaf80ee0e6d7ef6d1ac7c58862ab4eb24f\r\n密钥 Id 哈希(Pin-SHA256)    ： HEV8gsiXIUkmTcpMF7o99bCzrzCPFlLP/WiXuUBwJ98=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 1c457c82c8972149264dca4c17ba3df5b0b3af308f1652cffd6897b9407027df\r\n\n\r\n证书哈希(SHA1)              ： 04402e42dc869a824cde38bd4a088b9f1f494b92\r\n证书哈希(SHA256)            ： adf389a9757641b7837723fd65a7620da3881b65cb32a48a313e3739ff0c4ae1\r\n签名哈希                    ： c34ae2187a96df07d8a0331470348f915dc2f489bc362bd04a670b38673b4ccd\r\n
+
+时间: 2026/09/22 00:13:30
+时间戳: 1790007210326
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/1bbafe9733ea1d09dd26a18e8f3b6.crt
+
+时间: 2026/09/22 00:13:30
+时间戳: 1790007210338
+操作: 文件响应
+命令: 
+结果: 文件=1bbafe9733ea1d09dd26a18e8f3b6.crt 大小=2082字节 类型=crt
+
+时间: 2026/09/22 00:13:30
+时间戳: 1790007210354
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/1bbafe9733ea1d09dd26a18e8f3b6.crt
+
+时间: 2026/09/22 00:13:30
+时间戳: 1790007210374
+操作: 文件响应
+命令: 
+结果: 文件=1bbafe9733ea1d09dd26a18e8f3b6.crt 大小=2082字节 类型=crt
+
+时间: 2026/09/22 00:13:30
+时间戳: 1790007210375
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/66ef152dc259591fc0b9f15ae02e1af8.crt
+
+时间: 2026/09/22 00:13:30
+时间戳: 1790007210382
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crt 大小=1892字节 类型=crt
+
+时间: 2026/09/22 00:13:30
+时间戳: 1790007210387
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crl/1bbafe9733ea1d09dd26a18e8f3b6.crl
+
+时间: 2026/09/22 00:13:30
+时间戳: 1790007210389
+操作: 文件响应
+命令: 
+结果: 文件=1bbafe9733ea1d09dd26a18e8f3b6.crl 大小=674字节 类型=crl
+
+时间: 2026/09/22 00:13:30
+时间戳: 1790007210390
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/1bbafe9733ea1d09dd26a18e8f3b6.crt
+
+时间: 2026/09/22 00:13:30
+时间戳: 1790007210391
+操作: 文件响应
+命令: 
+结果: 文件=1bbafe9733ea1d09dd26a18e8f3b6.crt 大小=2082字节 类型=crt
+
+时间: 2026/09/22 00:13:30
+时间戳: 1790007210400
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/1bbafe9733ea1d09dd26a18e8f3b6.crt
+
+时间: 2026/09/22 00:13:30
+时间戳: 1790007210402
+操作: 文件响应
+命令: 
+结果: 文件=1bbafe9733ea1d09dd26a18e8f3b6.crt 大小=2082字节 类型=crt
+
+时间: 2026/09/22 00:13:30
+时间戳: 1790007210405
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=116字节
+
+时间: 2026/09/22 00:13:30
+时间戳: 1790007210406
+操作: OCSP请求解析
+命令: 
+结果: 序列号=3782291217fa5b99952288b4c6b9e680 哈希=1.3.14.3.2.26 Nonce=28bd20415001f354e55a9bd88e24323b
+
+时间: 2026/09/22 00:13:30
+时间戳: 1790007210418
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=RSA测试中间CA By OCSP, OU=Only OCSP Signing, O=MODPKICA 请求序列号=3782291217fa5b99952288b4c6b9e680
+
+时间: 2026/09/22 00:13:30
+时间戳: 1790007210420
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1908字节
+
+时间: 2026/09/22 00:13:30
+时间戳: 1790007210422
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"3782291217fa5b99952288b4c6b9e680"}
+结果:         版本： 3\r\n      序列号： 3782291217fa5b99952288b4c6b9e680\r\n    签名算法： SHA256-RSA (1.2.840.113549.1.1.11)\r\n签名哈希算法： SHA256\n\r\n颁发者： CN=RSA测试中间CA, OU=ChinaITBoys, O=MODPKICA\r\n有效期从： Mon Sep 21 00:10:44 CST 2026\r\n有效期到： Tue Sep 21 00:10:44 CST 2027\n\r\n使用者： CN=RSA测试代码签名, OU=ChinaITBoys, O=MODPKICA\r\n    公钥： RSA 2048\r\n授权密钥标识符  ： 25c13e635f66bb241c1e8776483db5fb61839b0f\r\n使用者密钥标识符： 5ef9adeaf80ee0e6d7ef6d1ac7c58862ab4eb24f\n\r\n增强型密钥用法：\n\r\n              服务器身份验证 (1.3.6.1.5.5.7.3.1)\r\n              代码签名 (1.3.6.1.5.5.7.3.3)\r\n              内核模式代码签名 (1.3.6.1.4.1.311.61.1.1)\r\n              Windows 硬件驱动程序验证 (1.3.6.1.4.1.311.10.3.5)\r\n              Windows 系统组件验证 (1.3.6.1.4.1.311.10.3.6)\r\n              OEM Windows 系统组件验证 (1.3.6.1.4.1.311.10.3.7)\r\n              内嵌 Windows 系统组件验证 (1.3.6.1.4.1.311.10.3.8)\r\n              数字权利 (1.3.6.1.4.1.311.10.5.1)\r\n授权信息访问：\r\n              OCSP   URL=http://localhost/ocsp\r\n              颁发者 URL=http://localhost/crt/1bbafe9733ea1d09dd26a18e8f3b6.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost/crl/1bbafe9733ea1d09dd26a18e8f3b6.crl\r\n              CRL分发点 = http://localhost/crl/1bbafe9733ea1d09dd26a18e8f3b6.der.crl\r\ndigitalSignature, nonRepudiation, keyEncipherment, dataEncipherment, keyAgreement\r\n证书策略：\r\n              证书颁发策略(Statement Identifier) OID = 1.3.6.1.4.1.4146.1.95\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\nSCT列表:\r\n      第 1 条 SCT:\r\n        日志版本:  V1\r\n        日志名称:  MODPKICA CT Log ECDSA\r\n      日志标识符:  9a1bb0c17324f2c23c32c01b558c154a7b629cbd0167fd1a498cd302c1d17bb9\r\n          时间戳:  Mon Sep 21 00:10:44 CST 2026\r\n        签名类型:  ECDSA-SHA256\r\n            签名:  3046022100d07761fd2f5ccfe344069cf2d00c49bc76a5bd93bbd6da892c25f183c8d7f562022100c81317d83eb65c639eb3f9a212403c47a47ecd29a2df21ea90bb431b5263fccf\r\n            状态:  签名有效\r\n\r\n      第 2 条 SCT:\r\n        日志版本:  V1\r\n        日志名称:  MODPKICA CT Log ECDSA\r\n      日志标识符:  280b8458b32b2fa115f245555ea427bf8695c252f1c4428eb3c4d23922e68f76\r\n          时间戳:  Mon Sep 21 00:10:44 CST 2026\r\n        签名类型:  ECDSA-SHA256\r\n            签名:  3044022017e2863bfaa416754644942ffa1d0a441d66a084eac2680ea5763b981286006302200f36e7ed7e29209ba741ea4b25ad7bf2972eb09e8ab711cf34e7e5b4d7ba9419\r\n            状态:  签名有效\r\n\r\n      第 3 条 SCT:\r\n        日志版本:  V1\r\n        日志名称:  MODPKICA CT Log RSA\r\n      日志标识符:  a27f74a6e509622a347ec2fce3ad374570d94d69062cc55b921a548ad46c300c\r\n          时间戳:  Mon Sep 21 00:10:44 CST 2026\r\n        签名类型:  RSA-SHA256\r\n            签名:  2a1b5c0de161c3b07d0e0e529ca23fc55f14931ab9795845cb4f9f79e55982d8952e0dd7524e2f97638824ed3b30d51d11a354846b812b5b92bfe97ae6fc9594898854e2c1ebc2bda694a05786c42576d0d6724f7d57575810ec957aa503d37becaddea5909814a38c43e782ab74da1d1f5ca6e4f230035e81c2a1fb6a2c635d02d442a442e87a092958e733005f1e04936077657d3863fe6eea28ba1eb69fc13aea65293575658a9111d8d5e95fbfeddba3d950abebfe590ea4c572778f98269bf3c592043a4434a050c9d0600665b2b660011f3288ba74e0d065da41dcdf7c90c14960d3681d44e188cc6f7886c8322de3f0582c412399f7197fb88f075028\r\n            状态:  签名有效\r\n\r\n\n\n\r\n证书签名：\n        750a7275cb5c7b5795a518a9e1225428cc736a7fec2be3d34ded18cb6f19e5da068305b9417c927538cda830e5a6afd72660ca6320fdad3395bc74b61ec579c3eb300592c7a0e326daf325821aeef06cf8af451060dac36e0ac7a503e01a5be83c1844e3a5c6101ac1079004c18cfc649fb8ee1f006ee954bc9fd1893af0d99ace5ff8c34747d596051452cbc7355a66c0bd7b320720ce929caa0589afc8a09d25158d62e280bed4c0506c9b20dcc0629e906762c4845e835311a49db86278d292a8befd68cf6f55572ff6739f4a6a838a3f22bcbefb316e5e860ef4d93743f07aa5c53a4df7012fba2b865f59c56b38fe3b3c773cc160ac3475e1e2ef63a399\n\r\n证书类别： 非根证书\n\r\n证书链： \r\n       CA   --> 25c13e635f66bb241c1e8776483db5fb61839b0f\r\n       Root --> ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n验证签名： 通过、签名有效 颁发者=CN=RSA测试中间CA, OU=ChinaITBoys, O=MODPKICA\r\n证书状态：证书正常。（CRL）\r\n2026/09/22 00:13:30 OCSP:正常,序列号 3782291217fa5b99952288b4c6b9e680\r\n          证书正常。（OCSP）\r\n\r\n密钥 Id 哈希(SHA1)          ： 5a312e19198c7dec94517e306003057901adf32f\r\n密钥 Id 哈希(RFC-SHA1)      ： 5ef9adeaf80ee0e6d7ef6d1ac7c58862ab4eb24f\r\n密钥 Id 哈希(Pin-SHA256)    ： HEV8gsiXIUkmTcpMF7o99bCzrzCPFlLP/WiXuUBwJ98=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 1c457c82c8972149264dca4c17ba3df5b0b3af308f1652cffd6897b9407027df\r\n\n\r\n证书哈希(SHA1)              ： 04402e42dc869a824cde38bd4a088b9f1f494b92\r\n证书哈希(SHA256)            ： adf389a9757641b7837723fd65a7620da3881b65cb32a48a313e3739ff0c4ae1\r\n签名哈希                    ： c34ae2187a96df07d8a0331470348f915dc2f489bc362bd04a670b38673b4ccd\r\n
+
+时间: 2026/09/22 00:17:41
+时间戳: 1790007461209
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crl/66ef152dc259591fc0b9f15ae02e1af8.crl
+
+时间: 2026/09/22 00:17:41
+时间戳: 1790007461221
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crl 大小=616字节 类型=crl
+
+时间: 2026/09/22 00:17:41
+时间戳: 1790007461225
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/66ef152dc259591fc0b9f15ae02e1af8.crt
+
+时间: 2026/09/22 00:17:41
+时间戳: 1790007461231
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crt 大小=1892字节 类型=crt
+
+时间: 2026/09/22 00:17:41
+时间戳: 1790007461233
+操作: 收到文件请求
+命令: 
+结果: 来源=127.0.0.1 路径=/crt/66ef152dc259591fc0b9f15ae02e1af8.crt
+
+时间: 2026/09/22 00:17:41
+时间戳: 1790007461237
+操作: 文件响应
+命令: 
+结果: 文件=66ef152dc259591fc0b9f15ae02e1af8.crt 大小=1892字节 类型=crt
+
+时间: 2026/09/22 00:17:41
+时间戳: 1790007461240
+操作: 收到OCSP请求
+命令: 
+结果: 来源=127.0.0.1 路径=/ocsp 长度=116字节
+
+时间: 2026/09/22 00:17:41
+时间戳: 1790007461244
+操作: OCSP请求解析
+命令: 
+结果: 序列号=66ef152dc259591fc0b9f15ae02e1af8 哈希=1.3.14.3.2.26 Nonce=64762838025c16118c69f3b1450cf749
+
+时间: 2026/09/22 00:17:41
+时间戳: 1790007461295
+操作: OCSP签名
+命令: 
+结果: 算法=RSA(sha1) 响应者=CN=RSA测试根 By OCSP, OU=Only OCSP Signing, C=CN, O=MODPKICA 请求序列号=66ef152dc259591fc0b9f15ae02e1af8
+
+时间: 2026/09/22 00:17:41
+时间戳: 1790007461304
+操作: WebAdmin /api/verify
+命令: POST /api/verify 提交数据={"target":"66ef152dc259591fc0b9f15ae02e1af8"}
+结果:         版本： 3\r\n      序列号： 66ef152dc259591fc0b9f15ae02e1af8\r\n    签名算法： SHA256-RSA (1.2.840.113549.1.1.11)\r\n签名哈希算法： SHA256\n\r\n颁发者： CN=RSA测试根, OU=ChinaITBoys, O=MODPKICA, C=CN\r\n有效期从： Thu Jul 19 15:30:00 CST 2001\r\n有效期到： Sun Jul 19 15:30:00 CST 2099\n\r\n使用者： CN=RSA测试根, OU=ChinaITBoys, O=MODPKICA, C=CN\r\n    公钥： RSA 2048\r\n授权密钥标识符  ： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\r\n使用者密钥标识符： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\n\r\n增强型密钥用法：\n\r\n授权信息访问：\r\n              OCSP   URL=http://localhost/ocsp\r\n              颁发者 URL=http://localhost/crt/66ef152dc259591fc0b9f15ae02e1af8.crt\r\n证书吊销列表：\r\n              CRL分发点 = http://localhost/crl/66ef152dc259591fc0b9f15ae02e1af8.crl\r\n              CRL分发点 = http://localhost/crl/66ef152dc259591fc0b9f15ae02e1af8.der.crl\r\ndigitalSignature, nonRepudiation, keyCertSign, cRLSign\r\n基本约束(关键)：\n              Subject Type=CA  Path Length Constraint = 2147483647\r\n证书策略：\r\n              证书颁发策略(Statement Identifier) OID = 1.3.6.1.4.1.4146.1.95\r\n              所有颁发策略 OID = 2.5.29.32.0\r\n              所有应用程序策略 OID = 1.3.6.1.4.1.311.10.12.1\r\n              Extended Validation(扩展验证，SSL) OID = 2.23.140.1.1\r\n              Extended Validation(扩展验证，代码签名) OID = 2.23.140.1.3\r\n\n\n\r\n证书签名：\n        7ae5b7afbfae9072fc9b54d3fee478d66381b5302d3515da119027e5e35cac08b34adf5f5afae3acbc17b7a4d0b8e6535b0f9fe80cd9e305335cea18ea10f15d9b7c112828f1e2c0f82ff770f96cd35f07f50f9d745fa5c1b117825493ad9c1368bb69bcad80f5721435f3b8ee6e144c9e8c64555f6fdb2d6e093a6eeaa036ee2da410488d35e99ae85f4affc7b698902310786c49014b52d77ec34f163236f0a74d40ba5bb3272075079ded28a8353a62d3461eedc9981b6401cc8564e234d3b9ff7492a487fffc19a7394e21d0def63f4bc897d94d6d63986e81951617167044638ee96f7f09a3d68d21ba3f915e21f5ad4738460d095077c0667eb18d53a3\n\r\n证书类别： 根证书\n\r\n验证签名： 成功（根证书自验证通过）\r\n信任状态： 可信 (此证书已通过信任锚[Root根证书]的验证)\n\r\n证书状态：证书正常。（CRL）\r\n2026/09/22 00:17:41 OCSP:正常,序列号 66ef152dc259591fc0b9f15ae02e1af8\r\n          证书正常。（OCSP）\r\n\r\n密钥 Id 哈希(SHA1)          ： 17b57835f575c0cc3f0ce0466423d110ea033ac7\r\n密钥 Id 哈希(RFC-SHA1)      ： ca7143d047dc8bc586d4f08a4cefc5d9c36b0aff\r\n密钥 Id 哈希(Pin-SHA256)    ： G6i323ZAlHZzxrNTJI23xy817ozgcW1zPzOlBD6Ru34=\r\n密钥 Id 哈希(Pin-SHA256-Hex)： 1ba8b7db7640947673c6b353248db7c72f35ee8ce0716d733f33a5043e91bb7e\r\n\n\r\n证书哈希(SHA1)              ： 3e527e8eaa670ac7af0d53d345ebf76715e131f2\r\n证书哈希(SHA256)            ： 9bf33a2c80426adc07c7f67c844bf2eb149df40502724f494dc003560e5e8621\r\n签名哈希                    ： 8cdb5e42965c8a513eabacbce3529edac950e84f3cc2273ee75cfe572eb40f59\r\n
+
+时间: 2026/09/22 00:17:41
+时间戳: 1790007461306
+操作: OCSP响应
+命令: 
+结果: 状态=success(200) 长度=1942字节
+

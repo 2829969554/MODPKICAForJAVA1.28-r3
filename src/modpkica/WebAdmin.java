@@ -401,6 +401,13 @@ public final class WebAdmin {
                         sendJson(ex, 405, Map.of("ok", false, "message", "仅支持 GET"));
                     }
                     return;
+                case "/api/certchainjson":
+                    if ("GET".equalsIgnoreCase(method)) {
+                        sendJson(ex, 200, certChainJson(ex));
+                    } else {
+                        sendJson(ex, 405, Map.of("ok", false, "message", "仅支持 GET"));
+                    }
+                    return;
                 case "/api/version":
                     sendJson(ex, 200, Map.of("ok", true, "message", Admin.VERSION));
                     return;
@@ -1945,6 +1952,42 @@ public final class WebAdmin {
         }
     }
 
+    /** /api/certchainjson?serial=xxx：按颁发者链递归返回每层证书 JSON（[终端, ..., 根]）。 */
+    private static Map<String, Object> certChainJson(HttpExchange ex) throws Exception {
+        String q = ex.getRequestURI().getQuery();
+        String serial = null;
+        if (q != null && q.contains("serial=")) {
+            serial = q.substring(q.indexOf("serial=") + 7).split("&")[0];
+        }
+        if (serial == null || serial.isEmpty()) {
+            return Map.of("ok", false, "message", "缺少参数 serial");
+        }
+        CertsDB db = new CertsDB();
+        db.load(baseDir);
+        java.util.List<String> jsons = new ArrayList<>();
+        Set<String> seen = new LinkedHashSet<>();
+        String cur = serial;
+        while (cur != null && !cur.isEmpty() && !"null".equalsIgnoreCase(cur)
+                && seen.add(cur.toLowerCase())) {
+            String certPath = findCertFile(cur);
+            if (certPath == null) {
+                break;
+            }
+            byte[] pem = Files.readAllBytes(Paths.get(baseDir, certPath));
+            jsons.add(X509JsonConverter.certToJson(pem));
+            String parent = db.findIssuerIdBySerial(cur);
+            if (parent == null || parent.isEmpty() || "null".equalsIgnoreCase(parent)
+                    || parent.equalsIgnoreCase(cur)) {
+                break;
+            }
+            cur = parent;
+        }
+        if (jsons.isEmpty()) {
+            return Map.of("ok", false, "message", "未找到证书文件: " + serial);
+        }
+        return Map.of("ok", true, "serial", serial, "data", jsons);
+    }
+
     // ============================================================
     // 小工具
     // ============================================================
@@ -3401,7 +3444,10 @@ public final class WebAdmin {
           <div class="modal">
             <div class="modal-head">
               <h3 id="modalTitle">证书详情</h3>
-              <button class="ghost" onclick="closeModal()">关闭</button>
+              <div style="display:flex;gap:8px">
+                <button class="ghost" onclick="viewChainCert()">查看证书</button>
+                <button class="ghost" onclick="closeModal()">关闭</button>
+              </div>
             </div>
             <div class="modal-body">
               <div id="modalMeta" style="color:var(--dim);font-size:12px;margin-bottom:10px"></div>
@@ -4271,7 +4317,13 @@ const $ = id => document.getElementById(id);
         }
 
         // ===== 证书 JSON 详情 =====
-        async function showDetail(serial) {
+        let currentDetailSerial = '';
+        let currentDetailJson = '';
+        let currentDetailSource = 'certs';
+        async function showDetail(serial, sourceType) {
+          currentDetailSerial = serial;
+          currentDetailJson = '';
+          currentDetailSource = sourceType || 'certs';
           $('modal').classList.add('show');
           $('modalTitle').textContent = '证书详情 · ' + serial;
           $('modalJson').textContent = '加载中...';
@@ -4281,6 +4333,7 @@ const $ = id => document.getElementById(id);
             if (r.ok) {
               $('modalMeta').textContent = '路径: ' + r.path;
               $('modalJson').textContent = r.data;
+              currentDetailJson = r.data;
             } else {
               $('modalJson').textContent = r.message || '解析失败';
             }
@@ -4289,6 +4342,26 @@ const $ = id => document.getElementById(id);
           }
         }
         function closeModal() { $('modal').classList.remove('show'); }
+        async function viewChainCert(serialOverride) {
+          const s = ((serialOverride || currentDetailSerial) || '').trim();
+          if (!s) { $('modalJson').textContent = '未选择证书'; return; }
+          if (currentDetailSource === 'cacerts' && currentDetailJson) {
+            MODPKICACERTVIERW(currentDetailJson, { noRevokeCheck: true });
+            return;
+          }
+          $('modalJson').textContent = '正在获取证书链...';
+          try {
+            const r = await api('/api/certchainjson?serial=' + encodeURIComponent(s));
+            if (r.ok && Array.isArray(r.data) && r.data.length) {
+              MODPKICACERTVIERW.apply(null, r.data);
+              $('modalJson').textContent = currentDetailJson || '（证书链已在查看器中打开）';
+            } else {
+              $('modalJson').textContent = (r && r.message) || '证书链解析失败';
+            }
+          } catch (e) {
+            $('modalJson').textContent = '证书链请求失败: ' + e;
+          }
+        }
 
         // ===== 证书操作弹窗（吊销证书 / 续签证书 / 密钥更换） =====
         const OP_REASONS = [['0','未指定'],['1','密钥泄露'],['2','CA泄露'],['3','从属关系变更'],['4','证书超期'],['5','停止运营'],['6','证书吊销'],['8','从CRL移除'],['9','其他']];
@@ -4846,11 +4919,29 @@ const $ = id => document.getElementById(id);
           const obtn = ev.target.closest ? ev.target.closest('button[data-op]') : null;
           if (obtn) openOp(obtn.getAttribute('data-op'));
         });
+        // 双击证书库任意行：直接弹出该证书的层次查看器
+        $('certsTable').querySelector('tbody').addEventListener('dblclick', function (ev) {
+          const tr = ev.target.closest ? ev.target.closest('tr') : null;
+          if (!tr) return;
+          const btn = tr.querySelector('button[data-serial]');
+          if (btn) viewChainCert(btn.getAttribute('data-serial'));
+        });
 
         // 可信公网证书库 cacerts 表格：详情按钮事件委托
         $('caTable').querySelector('tbody').addEventListener('click', function (ev) {
           const btn = ev.target.closest ? ev.target.closest('button[data-serial]') : null;
-          if (btn) showDetail(btn.getAttribute('data-serial'));
+          if (btn) showDetail(btn.getAttribute('data-serial'), 'cacerts');
+        });
+        $('caTable').querySelector('tbody').addEventListener('dblclick', async function (ev) {
+          if (ev.target.closest && ev.target.closest('button')) return;
+          const tr = ev.target.closest ? ev.target.closest('tr') : null;
+          if (!tr) return;
+          const btn = tr.querySelector('button[data-serial]');
+          if (!btn) return;
+          try {
+            const r = await api('/api/certjson?serial=' + encodeURIComponent(btn.getAttribute('data-serial')));
+            if (r.ok) MODPKICACERTVIERW(r.data, { noRevokeCheck: true });
+          } catch (e) { /* ignore */ }
         });
         </script>
         </body>
@@ -4993,5 +5084,979 @@ const $ = id => document.getElementById(id);
         </script>
         </html>
     """;
-    private static final String PAGE_HTML = PAGE_P1.concat(PAGE_P1B).concat(PAGE_P2).concat(PAGE_P2B).concat(PAGE_P3);
+    private static final String PAGE_VIEWER = """
+<script>
+/* ============================================================
+ * 证书查看器核心逻辑（cert-viewer.js）
+ * - 纯通用：不硬编码任何固定 JSON 文件名，也没有文件选择框
+ * - 所有证书数据一律通过统一入口 MODPKICACERTVIERW(...) 置入，
+ *   参数为 JSON 结构文本变量（字符串），按证书链顺序传入
+ * - 所有窗口 DOM、CSS、渲染、交互均由本文件动态创建，整体移植即可运行
+ * - 所有 id / class / 自定义 data 属性名均以 MODPKICA 开头，
+ *   后缀为唯一随机值，一一对应，避免与其他文件命名混淆
+ * 用法（唯一入口）：
+ *   <script src="cert-viewer.js"><\\/script>
+ *   <script>
+ *     MODPKICACERTVIERW(终端证书JSON结构文本变量,
+ *                       中间CA证书JSON结构文本变量,
+ *                       根证书JSON结构文本变量);
+ *   <\\/script>
+ *   每个参数为 JSON 结构文本（字符串），第一个为终端证书，最后为根证书，
+ *   支持任意层数；也兼容直接传 JSON 对象。
+ * ============================================================ */
+(function (global) {
+  "use strict";
+
+  /* ---------- 命名空间：所有 class / id 的唯一随机后缀 ---------- */
+  var NS = {
+    overlay: "MODPKICAlV5lHv",
+    win: "MODPKICAA5w0ao",
+    titlebar: "MODPKICAlOPxjj",
+    dragging: "MODPKICAtQSHOu",
+    tIcon: "MODPKICAT0mkwZ",
+    tTitle: "MODPKICAOOsYgo",
+    seg: "MODPKICA9Zia3O",
+    on: "MODPKICAmOBnW5",
+    close: "MODPKICAGJ9PzR",
+    tabs: "MODPKICAr8KOKa",
+    tab: "MODPKICA4gma2F",
+    content: "MODPKICASxUjMn",
+    pane: "MODPKICAH7aU0S",
+    certHead: "MODPKICAU9cj5u",
+    certTitle: "MODPKICAUNawFK",
+    statusLine: "MODPKICA5roPb3",
+    stOk: "MODPKICAODw0D7",
+    stErr: "MODPKICAunzrkA",
+    stWarn: "MODPKICACeNGtk",
+    purpose: "MODPKICAGKu7Qz",
+    pLabel: "MODPKICA1x8Vif",
+    pNote: "MODPKICAGauIVo",
+    kv: "MODPKICA7fUqVz",
+    kvRow: "MODPKICAdhKyz8",
+    k: "MODPKICA4ZVOqA",
+    v: "MODPKICAsXdlIL",
+    filter: "MODPKICAuq4wcj",
+    filterId: "MODPKICAyJeOqF",
+    grid: "MODPKICAg2YmjP",
+    gridHead: "MODPKICAb7CcRf",
+    row: "MODPKICAumLUz9",
+    sel: "MODPKICARyTpUM",
+    val: "MODPKICALF7zSx",
+    gridBody: "MODPKICAxE7LK7",
+    detail: "MODPKICA72wKYB",
+    btnRow: "MODPKICA0FdwiB",
+    btn: "MODPKICAvbUotE",
+    pathHead: "MODPKICA0lXlbb",
+    pathLabel: "MODPKICAmlWmIf",
+    zoom: "MODPKICAsYtJoh",
+    zbtn: "MODPKICAv66WsY",
+    zval: "MODPKICAS1kQm7",
+    pathTree: "MODPKICAdVaCTR",
+    pnode: "MODPKICAfXu5Fk",
+    lvl: "MODPKICAGmhmfq",
+    pathView: "MODPKICA0vBX2C",
+    viewbtn: "MODPKICAVo1kiT",
+    pathStatus: "MODPKICAeo6Siy",
+    psLabel: "MODPKICApOip2e",
+    psText: "MODPKICATcAYaV",
+    toast: "MODPKICA7dvLcV",
+    show: "MODPKICAGKlE9m",
+    infoBox: "MODPKICAi9Xq2p",
+    ibTitle: "MODPKICAq2m8sX",
+    ibBody: "MODPICAbN4cV1",
+    ibLabel: "MODPKICAvW7kR3",
+    ibLine: "MODPKICAwE9tY5",
+    ibText: "MODPKICAzU2iO8",
+    ibFoot: "MODPKICAbR4pL7"
+  };
+  /* 自定义 data 属性名（均以 MODPKICA 开头） */
+  var DA = {
+    tab: "data-MODPKICA-tab",
+    s: "data-MODPKICA-s",
+    z: "data-MODPKICA-z",
+    idx: "data-MODPKICA-idx",
+    key: "data-MODPKICA-key",
+    close: "data-MODPKICA-close",
+    toast: "data-MODPKICA-toast",
+    ibshow: "data-MODPKICA-ibshow",
+    ibclose: "data-MODPKICA-ibclose"
+  };
+
+  /* ---------- 配置 ----------
+   * 不硬编码任何固定 JSON 文件名，也没有文件选择框；
+   * 所有证书数据通过 MODPKICACERTVIERW(...) 以 JSON 结构文本变量置入。
+   */
+  var WIN_W = 420, WIN_H = 500;
+
+  /* ---------- 基础工具 ---------- */
+  function el(tag, cls, html) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (html !== undefined) e.innerHTML = html;
+    return e;
+  }
+  function esc(t) {
+    var d = document.createElement("div");
+    d.textContent = t == null ? "" : String(t);
+    return d.innerHTML;
+  }
+  function pad(n) { return String(n).padStart(2, "0"); }
+
+  /* 本地时间格式化：2026/9/12 或 2026年9月12日 1:01:33 */
+  function fmtDate(iso, withTime) {
+    var d = new Date(iso);
+    if (isNaN(d)) return String(iso);
+    var y = d.getFullYear(), mo = d.getMonth() + 1, da = d.getDate();
+    if (!withTime) return y + "/" + mo + "/" + da;
+    return y + "年" + mo + "月" + da + "日 " + d.getHours() + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
+  }
+
+  /* 公钥位数：从 SPKI hex 解析 RSA modulus 长度 */
+  function rsaBits(hex) {
+    if (!hex) return 0;
+    var m = hex.match(/0282([0-9a-f]{4})/i) || hex.match(/0281([0-9a-f]{2})/i);
+    if (!m) return 0;
+    return (parseInt(m[1], 16) - 1) * 8;
+  }
+
+  /* hex 字符串 -> Windows 公钥风格显示：每 16 字节一行，字节间空格 */
+  function hexBlock(hex) {
+    if (!hex) return "";
+    var b = String(hex).replace(/[^0-9a-fA-F]/g, "");
+    if (!b) return "";
+    var lines = [];
+    for (var i = 0; i < b.length; i += 32) {
+      var chunk = b.slice(i, i + 32);
+      var bytes = [];
+      for (var j = 0; j < chunk.length; j += 2) bytes.push(chunk.substr(j, 2));
+      lines.push(bytes.join(" "));
+    }
+    return lines.join("\\n");
+  }
+
+  /* 通用公钥描述：RSA / ECC(P-256/384/521) / SM2 / Ed25519 等 */
+  function pubKeyDesc(spki) {
+    if (!spki) return "(未提供)";
+    var alg = spki.algorithm || {};
+    var oid = (alg.algorithm || "").toString();
+    var name = (alg.name || "").toString();
+    var hex = (spki.publicKey || "").toString();
+    if (oid === "1.2.840.113549.1.1.1" || /rsa/i.test(name)) {
+      var b = rsaBits(hex);
+      return b ? "RSA (" + b + " Bits)" : "RSA";
+    }
+    if (oid === "1.2.840.10045.2.1" || /ecPublicKey/i.test(name)) {
+      var ph = (alg.parameters || "").toString().toLowerCase();
+      if (ph.indexOf("811ccf5501822d") >= 0) return "SM2 (256 Bits)";
+      if (ph.indexOf("8648ce3d030107") >= 0) return "ECC P-256 (256 Bits)";
+      if (ph.indexOf("81040022") >= 0) return "ECC P-384 (384 Bits)";
+      if (ph.indexOf("81040023") >= 0) return "ECC P-521 (521 Bits)";
+      // 回退：未压缩点 04||X||Y
+      var n = Math.floor(hex.length / 2);
+      var bits = n >= 120 ? 521 : (n >= 50 ? 384 : 256);
+      return "ECC (" + bits + " Bits)";
+    }
+    if (oid === "1.3.101.112") return "Ed25519";
+    if (oid === "1.3.101.113") return "Ed448";
+    if (oid === "1.2.840.10040.4.1") return "DSA";
+    return name || oid || "(未提供)";
+  }
+
+  /* 名称数组（issuer/subject）→ "www.test.com, My Org, CN" */
+  function fmtName(rdns) {
+    if (!rdns || !rdns.length) return "(未提供)";
+    return rdns.map(function (r) { return r[0].value; }).slice().reverse().join(", ");
+  }
+  function findCN(rdns) {
+    if (!rdns) return "(未知)";
+    var hit = rdns.filter(function (r) { return r[0].name === "CN"; });
+    return hit.length ? hit[hit.length - 1][0].value : "(未知)";
+  }
+
+  /* ---------- 扩展字段格式化 ---------- */
+  var KU_MAP = {
+    digitalSignature: "Digital Signature", nonRepudiation: "Non-Repudiation",
+    keyEncipherment: "Key Encipherment", dataEncipherment: "Data Encipherment",
+    keyAgreement: "Key Agreement", keyCertSign: "Key Cert Sign",
+    cRLSign: "CRL Sign", encipherOnly: "Encipher Only", decipherOnly: "Decipher Only"
+  };
+
+  function fmtBasic(ext) {
+    var s = "Subject Type=" + (ext.cA ? "CA" : "End Entity");
+    s += "\\nPath Length Constraint=" + (ext.pathLenConstraint == null ? "None" : ext.pathLenConstraint);
+    return s;
+  }
+  function fmtKeyUsage(ext) {
+    return (ext.keyUsage || []).map(function (k) { return KU_MAP[k] || k; }).join(", ");
+  }
+  /* EKU OID -> 中文名（详细信息页） */
+  var EKU_NAME = {
+    "1.3.6.1.5.5.7.3.1":  "服务器身份验证",
+    "1.3.6.1.5.5.7.3.2":  "客户端身份验证",
+    "1.3.6.1.5.5.7.3.3":  "代码签名",
+    "1.3.6.1.5.5.7.3.4":  "安全电子邮件",
+    "1.3.6.1.5.5.7.3.5":  "IP 安全终端系统",
+    "1.3.6.1.5.5.7.3.6":  "IP 安全隧道终止",
+    "1.3.6.1.5.5.7.3.7":  "IP 安全用户",
+    "1.3.6.1.5.5.7.3.8":  "时间戳",
+    "1.3.6.1.5.5.7.3.9":  "OCSP 签名",
+    "1.3.6.1.4.1.311.61.1.1":    "内核模式代码签名",
+    "1.3.6.1.4.1.311.10.3.5":    "Windows 硬件驱动程序验证",
+    "1.3.6.1.4.1.311.10.3.6":    "Windows 系统组件验证",
+    "1.3.6.1.4.1.311.10.3.7":    "OEM Windows 系统组件验证",
+    "1.3.6.1.4.1.311.10.3.8":    "内嵌 Windows 系统组件验证",
+    "1.3.6.1.4.1.311.64.1.1":    "域名系统(DNS)服务器信任",
+    "1.3.6.1.5.5.7.3.36":        "通用文档签名",
+    "1.3.6.1.4.1.311.10.3.19":   "已吊销列表签名者",
+    "1.3.6.1.5.2.3.5":           "KDC 身份验证",
+    "1.3.6.1.4.1.311.10.3.13":   "生存时间签名",
+    "1.3.6.1.4.1.311.21.5":      "私钥存档",
+    "1.3.6.1.4.1.311.10.3.10":   "合格的部属",
+    "1.3.6.1.4.1.311.10.3.11":   "密钥恢复",
+    "1.3.6.1.4.1.311.10.3.12":   "文档签名",
+    "1.3.6.1.4.1.311.10.3.2":    "Microsoft 时间戳",
+    "1.3.6.1.4.1.311.10.3.4":    "加密文件系统",
+    "1.3.6.1.4.1.311.21.6":      "密钥恢复代理",
+    "1.3.6.1.4.1.311.21.19":    "目录服务电子邮件复制",
+    "1.3.6.1.5.5.8.2.2":         "IP 安全 IKE 中级",
+    "1.3.6.1.4.1.311.10.3.4.1":  "文件恢复",
+    "1.3.6.1.4.1.311.10.3.9":    "根列表签名者",
+    "1.3.6.1.4.1.311.10.5.1":    "数字权利",
+    "1.3.6.1.4.1.311.20.1":      "CTL 用法",
+    "1.3.6.1.4.1.311.10.6.1":    "密钥数据包许可证",
+    "1.3.6.1.4.1.311.10.6.2":    "许可证服务器验证",
+    "1.3.6.1.4.1.311.20.2.2":    "智能卡登录"
+  };
+
+  /* 证书策略特殊 OID -> 中文目的（常规页"证书的目的"） */
+  var POLICY_PURPOSE = {
+    "1.3.6.1.4.1.311.10.12.1": "所有应用策略",
+    "2.5.29.32.0":             "所有颁发策略"
+  };
+  /* EKU OID -> 常规页“证书的目的” Windows 文本（与 EKU_NAME 顺序一致） */
+  var EKU_PURPOSE = {
+    "1.3.6.1.5.5.7.3.1":  "保证远程计算机的身份",
+    "1.3.6.1.5.5.7.3.2":  "向远程计算机证明你的身份",
+    "1.3.6.1.5.5.7.3.3":  "确保软件来自软件发布者",
+    "1.3.6.1.5.5.7.3.4":  "保护软件在发行后不被更改",
+    "1.3.6.1.5.5.7.3.5":  "保护电子邮件消息",
+    "1.3.6.1.5.5.7.3.6":  "允许 Internet 上的安全通信",
+    "1.3.6.1.5.5.7.3.7":  "允许用当前时间签名数据",
+    "1.3.6.1.5.5.7.3.8":  "允许加密磁盘上的数据",
+    "1.3.6.1.5.5.7.3.9":  "1.3.6.1.4.1.4146.1.95",
+    "1.3.6.1.4.1.311.61.1.1":    "2.23.140.1.1",
+    "1.3.6.1.4.1.311.10.3.5":    "2.23.140.1.3",
+    "1.3.6.1.4.1.311.10.3.6":    "OCSP 签名",
+    "1.3.6.1.4.1.311.10.3.7":    "内核模式代码签名",
+    "1.3.6.1.4.1.311.10.3.8":    "Windows 硬件驱动程序验证",
+    "1.3.6.1.4.1.311.64.1.1":    "Windows 系统组件验证",
+    "1.3.6.1.5.5.7.3.36":        "OEM Windows 系统组件验证",
+    "1.3.6.1.4.1.311.10.3.19":   "内嵌 Windows 系统组件验证",
+    "1.3.6.1.5.2.3.5":           "域名系统(DNS)服务器信任",
+    "1.3.6.1.4.1.311.10.3.13":   "1.3.6.1.5.5.7.3.36",
+    "1.3.6.1.4.1.311.21.5":      "已吊销列表签名者",
+    "1.3.6.1.4.1.311.10.3.10":   "KDC 身份验证",
+    "1.3.6.1.4.1.311.10.3.11":   "生存时间签名",
+    "1.3.6.1.4.1.311.10.3.12":   "私钥存档",
+    "1.3.6.1.4.1.311.10.3.2":    "合格的部属",
+    "1.3.6.1.4.1.311.10.3.4":    "密钥恢复",
+    "1.3.6.1.4.1.311.21.6":      "文档签名",
+    "1.3.6.1.4.1.311.21.19":    "密钥恢复代理",
+    "1.3.6.1.5.5.8.2.2":         "目录服务电子邮件复制",
+    "1.3.6.1.4.1.311.10.3.4.1":  "文件恢复",
+    "1.3.6.1.4.1.311.10.3.9":    "根列表签名者",
+    "1.3.6.1.4.1.311.10.5.1":    "数字权利",
+    "1.3.6.1.4.1.311.20.1":      "CTL 用法",
+    "1.3.6.1.4.1.311.10.6.1":    "密钥数据包许可证",
+    "1.3.6.1.4.1.311.10.6.2":    "许可证服务器验证",
+    "1.3.6.1.4.1.311.20.2.2":    "智能卡登录"
+  };
+
+  function fmtEku(ext) {
+    return (ext.extendedKeyUsage || []).map(function (e) {
+      var nm = EKU_NAME[e.oid] || (e.name && e.name.indexOf(".") < 0 ? e.name : null) || e.oid;
+      return nm + " (" + e.oid + ")";
+    }).join("\\n");
+  }
+  function fmtAia(ext) {
+    return (ext.authorityInfoAccess || []).map(function (a, i) {
+      return "[" + (i + 1) + "]Authority Info Access\\n   Access Method: " +
+        (a.accessMethodName || a.accessMethod) + " (" + a.accessMethod + ")\\n   Access Location: URI: " +
+        (a.accessLocation ? a.accessLocation.value : "");
+    }).join("\\n");
+  }
+  function fmtCrl(ext) {
+    return (ext.crlDistributionPoints || []).map(function (c, i) {
+      var uris = (c.distributionPoint && c.distributionPoint.fullName || [])
+        .map(function (f) { return f.value || ""; }).join("\\n         URI: ");
+      return "[" + (i + 1) + "]CRL Distribution Point\\n   Distribution Point Name:\\n      Full Name:\\n         URI: " + uris;
+    }).join("\\n");
+  }
+  function fmtPolicies(ext) {
+    return (ext.certificatePolicies || []).map(function (p, i) {
+      var s = "[" + (i + 1) + "]Certificate Policy\\n   Policy Identifier=" + p.policyIdentifier;
+      (p.policyQualifiers || []).forEach(function (q) {
+        if (q.cpsUri) s += "\\n   CPS: " + q.cpsUri;
+        if (q.userNotice && q.userNotice.explicitText)
+          s += "\\n   User Notice:\\n      Explicit Text: " + String(q.userNotice.explicitText).split("\\n").join("\\n      ");
+      });
+      return s;
+    }).join("\\n");
+  }
+  function fmtSct(ext) {
+    return (ext.sctList || []).map(function (s, i) {
+      return "第 " + (i + 1) + " 条 SCT:\\n" +
+        "  日志版本: V" + (s.version || 1) + "\\n" +
+        "  日志标识符: " + (s.logId || "(未提供)") + "\\n" +
+        "  时间戳: " + fmtDate(Number(s.timestamp || 0), true) + "\\n" +
+        "  签名类型: " + (s.signatureAlgorithm || "?") + "-" + (s.hashAlgorithm || "?") + "\\n" +
+        "  签名: " + (s.signature || "(未提供)");
+    }).join("\\n\\n");
+  }
+
+  /* 扩展 OID → 中文名（决定字段显示顺序与名称） */
+  var EXT_ORDER = [
+    ["2.5.29.35", "授权密钥标识符", function (e) { return "KeyID=" + e.keyIdentifier; }],
+    ["2.5.29.14", "使用者密钥标识符", function (e) { return e.keyIdentifier; }],
+    ["1.3.6.1.5.5.7.1.1", "授权信息访问", fmtAia],
+    ["2.5.29.31", "CRL分发点", fmtCrl],
+    ["2.5.29.37", "增强型密钥用法", fmtEku],
+    ["2.5.29.32", "证书策略", fmtPolicies],
+    ["2.5.29.19", "基本约束", fmtBasic],
+    ["2.5.29.15", "密钥用法", fmtKeyUsage],
+    ["1.3.6.1.4.1.11129.2.4.2", "证书透明度 SCT", fmtSct]
+  ];
+
+  /* 常见签名算法 OID → 标准名（优先于 JSON 里的 name） */
+  var SIG_OID_NAMES = {
+    "1.2.840.113549.1.1.2":  "MD2withRSA",
+    "1.2.840.113549.1.1.4":  "MD5withRSA",
+    "1.2.840.113549.1.1.5":  "SHA1withRSA",
+    "1.2.840.113549.1.1.14": "SHA224withRSA",
+    "1.2.840.113549.1.1.11": "SHA256withRSA",
+    "1.2.840.113549.1.1.12": "SHA384withRSA",
+    "1.2.840.113549.1.1.13": "SHA512withRSA",
+    "1.2.840.113549.1.1.10": "RSASSA-PSS",
+    "1.2.840.10045.4.1":     "SHA1withECDSA",
+    "1.2.840.10045.4.3.1":   "SHA224withECDSA",
+    "1.2.840.10045.4.3.2":   "SHA256withECDSA",
+    "1.2.840.10045.4.3.3":   "SHA384withECDSA",
+    "1.2.840.10045.4.3.4":   "SHA512withECDSA",
+    "1.2.840.10040.4.3":     "SHA1withDSA",
+    "2.16.840.1.101.3.4.3.2":"SHA224withDSA",
+    "2.16.840.1.101.3.4.3.3":"SHA256withDSA",
+    "1.2.156.10197.1.501":   "SM2withSM3",
+    "1.3.101.112":           "Ed25519",
+    "1.3.101.113":           "Ed448"
+  };
+
+  /* ---------- 数据解析：JSON → 展示模型 ---------- */
+  /* chainJsons: 完整证书链 JSON 数组（顺序：终端证书、中间CA证书、根证书），可选 */
+  function parseCert(json, chainJsons) {
+    var sigAlgOid = (json.signature && json.signature.algorithm) || (json.signatureAlgorithm && json.signatureAlgorithm.algorithm) || "";
+    var sigName = (json.signature && json.signature.name) || (json.signatureAlgorithm && json.signatureAlgorithm.name) || "";
+    var sigAlg = SIG_OID_NAMES[sigAlgOid] || sigName || sigAlgOid || "(未知)";
+    var hash;
+    if (sigAlgOid === "1.2.156.10197.1.501" || sigAlg === "SM2withSM3") {
+      hash = "SM3";
+    } else {
+      var mh = sigAlg.match(/SHA(\\d+)/i);
+      hash = mh ? "SHA" + mh[1] : (/SHA1/i.test(sigAlg) ? "SHA1" : (/MD5/i.test(sigAlg) ? "MD5" : "SHA256"));
+    }
+    var pubBits = rsaBits(json.subjectPublicKeyInfo && json.subjectPublicKeyInfo.publicKey);
+    var pkHex = hexBlock(json.subjectPublicKeyInfo && json.subjectPublicKeyInfo.publicKey);
+
+    var fields = [
+      { label: "版本", group: "v1", value: String(json.version || "v3").toUpperCase() },
+      { label: "序列号", group: "v1", value: json.serialNumber || "(未提供)" },
+      { label: "签名算法", group: "v1", value: sigAlg },
+      { label: "签名哈希算法", group: "v1", value: hash },
+      { label: "颁发者", group: "v1", value: fmtName(json.issuer) },
+      { label: "有效期从", group: "v1", value: fmtDate(json.validity && json.validity.notBefore && json.validity.notBefore.value, true) },
+      { label: "有效期到", group: "v1", value: fmtDate(json.validity && json.validity.notAfter && json.validity.notAfter.value, true) },
+      { label: "使用者", group: "v1", value: fmtName(json.subject) },
+      { label: "公钥", group: "v1", value: pubKeyDesc(json.subjectPublicKeyInfo) + (pkHex ? "\\n" + pkHex : "") }
+    ];
+
+    var exts = json.extensions || {};
+    EXT_ORDER.forEach(function (item) {
+      var ext = exts[item[0]];
+      if (!ext) return;
+      fields.push({
+        label: item[1],
+        group: ext.critical ? "crit" : "ext",
+        value: item[2](ext)
+      });
+    });
+
+    /* 用途列表（常规页）：EKU 文本用途 + 证书策略 OID，每项带 OID 供悬停显示 */
+    var purposes = [];
+    var eku = exts["2.5.29.37"];
+    if (eku && eku.extendedKeyUsage) {
+      eku.extendedKeyUsage.forEach(function (e) {
+        purposes.push({ text: EKU_PURPOSE[e.oid] || EKU_NAME[e.oid] || e.oid, oid: e.oid });
+      });
+    }
+    var pol = exts["2.5.29.32"];
+    var policyInfo = { cps: [], notices: [] };
+    if (pol && pol.certificatePolicies) {
+      pol.certificatePolicies.forEach(function (p) {
+        var dup = purposes.some(function (x) { return x.oid === p.policyIdentifier; });
+        if (!dup) purposes.push({ text: POLICY_PURPOSE[p.policyIdentifier] || p.policyIdentifier, oid: p.policyIdentifier });
+        (p.policyQualifiers || []).forEach(function (q) {
+          if (q.cpsUri) policyInfo.cps.push(q.cpsUri);
+          if (q.userNotice && q.userNotice.explicitText) policyInfo.notices.push(String(q.userNotice.explicitText));
+        });
+      });
+    }
+    if (!purposes.length) purposes.push({ text: "无", oid: "" });
+
+    /* 证书链：优先使用外部传入的完整链（根→中间→终端），否则由 issuer/subject 推导 */
+    var chain;
+    if (chainJsons && chainJsons.length) {
+      chain = chainJsons.slice().reverse().map(function (j, i) {
+        return { name: findCN(j.subject), lvl: i, json: j };
+      });
+    } else {
+      chain = [
+        { name: "My Root CA", lvl: 0 },
+        { name: findCN(json.issuer), lvl: 1 },
+        { name: findCN(json.subject), lvl: 2, json: json }
+      ];
+    }
+
+    return {
+      fields: fields,
+      purposes: purposes,
+      chain: chain,
+      chainJsons: chainJsons || null,
+      thumb: null,           // 保留字段（当前不计算指纹，避免依赖 .crt 文件）
+      serial: json.serialNumber || "",
+      source: json._source || "",
+      leafCn: findCN(json.subject),
+      issuerCn: findCN(json.issuer),
+      policyInfo: policyInfo,
+      nbRaw: json.validity && json.validity.notBefore && json.validity.notBefore.value,
+      naRaw: json.validity && json.validity.notAfter && json.validity.notAfter.value
+    };
+  }
+
+  /* ---------- SVG 图标 ---------- */
+  function iconOk() {
+    return '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#e6f4e6" stroke="#107c10" stroke-width="1.6"/><path d="M7.5 12.2l3 3 6-6.5" stroke="#107c10" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  }
+  function iconErr() {
+    return '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#fde7e9" stroke="#c50f1f" stroke-width="1.6"/><path d="M8 8l8 8M16 8l-8 8" stroke="#c50f1f" stroke-width="2.2" stroke-linecap="round"/></svg>';
+  }
+  function iconWarn() {
+    return '<svg viewBox="0 0 24 24" fill="none"><path d="M12 3.5L22 20H2z" fill="#fdf3d7" stroke="#c87600" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 10v4.5" stroke="#c87600" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17.2" r="1.1" fill="#c87600"/></svg>';
+  }
+  function iconCert() {
+    return '<svg viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="14" rx="1.5" fill="#f4c542" stroke="#b8860b" stroke-width="1.1"/><path d="M8.5 6V5a3.5 3.5 0 0 1 7 0v1" fill="none" stroke="#777" stroke-width="1.3"/><circle cx="12" cy="13" r="2" fill="#0078d4"/></svg>';
+  }
+  function iconBigCert() {
+    return '<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="23" fill="#e6eef7" stroke="#a8c8e8" stroke-width="1.4"/><circle cx="24" cy="24" r="19.5" fill="#f4f8fc" stroke="#c8dcee"/><rect x="13" y="16" width="22" height="17" rx="2.5" fill="#f7c948" stroke="#c99a2e" stroke-width="1.3"/><path d="M19.5 16v-1.5a4.5 4.5 0 0 1 9 0V16" fill="none" stroke="#8a6d1f" stroke-width="1.7"/><circle cx="24" cy="24" r="3" fill="#0078d4"/><path d="M18.5 30.5h11" stroke="#c99a2e" stroke-width="1.3"/></svg>';
+  }
+
+  /* ---------- 状态：ok / revoked / expired ---------- */
+  function statusInfo(s) {
+    if (s === "revoked") return { cls: NS.stErr, icon: iconErr(), text: "该证书已被证书颁发机构吊销。" };
+    if (s === "expired") return { cls: NS.stWarn, icon: iconWarn(), text: "该证书已过期，或者尚未生效。" };
+    return { cls: NS.stOk, icon: iconOk(), text: "该证书没有问题。" };
+  }
+
+  /* ---------- 窗口构建 ---------- */
+  function buildWindow(model, opts) {
+    if (!opts) opts = {};
+    var urlTab = (location.search.match(/[?&]tab=(\\w+)/) || [])[1];
+    var initTab = (urlTab === "detail" || urlTab === "path") ? urlTab : "general";
+    var state = { tab: initTab, filter: "all", selKey: "version", status: "ok", pathSel: Math.max(0, model.chain.length - 1), pathZoom: 100 };
+
+    /* 样式注入（仅一次） */
+    injectStyle();
+
+    /* 遮罩 + 窗口 */
+    var overlay = el("div", NS.overlay);
+    var win = el("div", NS.win);
+    win.style.width = Math.min(WIN_W, window.innerWidth - 24) + "px";
+    win.style.height = Math.min(WIN_H, window.innerHeight - 80) + "px";
+
+    /* 标题栏 */
+    var titlebar = el("div", NS.titlebar);
+    titlebar.innerHTML =
+      '<svg class="' + NS.tIcon + '" viewBox="0 0 24 24"><rect x="4" y="7" width="16" height="13" rx="1.5" fill="#f4c542" stroke="#b8860b"/><path d="M8 7V6a4 4 0 0 1 8 0v1" fill="none" stroke="#555" stroke-width="1.6"/><circle cx="12" cy="13" r="2.4" fill="#0078d4"/></svg>' +
+      '<span class="' + NS.tTitle + '">证书' + (model.source ? ' - ' + esc(model.source) : "") + '</span>' +
+      '<div class="' + NS.seg + '" style="display:none">' +
+      '<button ' + DA.s + '="ok" class="' + NS.on + '">正常</button><button ' + DA.s + '="revoked">已吊销</button><button ' + DA.s + '="expired">已过期</button>' +
+      '</div>' +
+      '<button class="' + NS.close + '" title="关闭">✕</button>';
+
+    /* 标签页 */
+    var tabs = el("div", NS.tabs);
+    tabs.innerHTML =
+      '<button class="' + NS.tab + (initTab === "general" ? " " + NS.on : "") + '" ' + DA.tab + '="general">常规</button>' +
+      '<button class="' + NS.tab + (initTab === "detail" ? " " + NS.on : "") + '" ' + DA.tab + '="detail">详细信息</button>' +
+      '<button class="' + NS.tab + (initTab === "path" ? " " + NS.on : "") + '" ' + DA.tab + '="path">证书路径</button>';
+
+    /* 内容区 */
+    var content = el("div", NS.content);
+    var paneGeneral = el("section", NS.pane + (initTab === "general" ? " " + NS.on : ""));
+    var paneDetail = el("section", NS.pane + (initTab === "detail" ? " " + NS.on : ""));
+    var panePath = el("section", NS.pane + (initTab === "path" ? " " + NS.on : ""));
+    content.appendChild(paneGeneral);
+    content.appendChild(paneDetail);
+    content.appendChild(panePath);
+
+    win.appendChild(titlebar);
+    win.appendChild(tabs);
+    win.appendChild(content);
+    overlay.appendChild(win);
+    document.body.appendChild(overlay);
+
+    /* toast */
+    var toast = el("div", NS.toast);
+    document.body.appendChild(toast);
+    var toastTimer = null;
+    /* ---------- 颁发者说明弹窗 ---------- */
+    function showIssuerNotice() {
+      var info = model.policyInfo;
+      if (!info || (!info.cps.length && !info.notices.length)) return;
+      var box = el("div", NS.infoBox);
+      var h = '<div class="' + NS.ibTitle + '">颁发者说明</div><div class="' + NS.ibBody + '">';
+      if (info.cps.length) {
+        h += '<div class="' + NS.ibLabel + '">CPS（证书颁发实践声明）：</div>';
+        info.cps.forEach(function (u) {
+          h += '<div class="' + NS.ibLine + '"><a href="' + esc(u) + '" target="_blank" rel="noopener">' + esc(u) + '</a></div>';
+        });
+      }
+      if (info.notices.length) {
+        h += '<div class="' + NS.ibLabel + '">用户通告：</div>';
+        info.notices.forEach(function (t) {
+          h += '<div class="' + NS.ibText + '">' + esc(t) + '</div>';
+        });
+      }
+      h += '</div><div class="' + NS.ibFoot + '"><button class="' + NS.btn + '" ' + DA.ibclose + '="1">确定</button></div>';
+      box.innerHTML = h;
+      document.body.appendChild(box);
+      var onKey = function (e) { if (e.key === "Escape") { box.remove(); document.removeEventListener("keydown", onKey); } };
+      box.addEventListener("click", function (e) {
+        if (e.target.closest("[" + DA.ibclose + "]")) { box.remove(); }
+      });
+      document.addEventListener("keydown", onKey);
+    }
+
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.add(NS.show);
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () { toast.classList.remove(NS.show); }, 2200);
+    }
+
+    /* ---------- 渲染：常规 ---------- */
+    function renderGeneral() {
+      var s = state.status;
+      var info = statusInfo(s);
+      paneGeneral.innerHTML =
+        '<div class="' + NS.certHead + '">' + iconBigCert() +
+        '<div><div class="' + NS.certTitle + '">证书信息</div>' +
+        '<div class="' + NS.statusLine + " " + info.cls + '">' + info.icon + '<span>' + info.text + '</span></div></div></div>' +
+        (s === "ok"
+          ? '<div class="' + NS.purpose + '"><div class="' + NS.pLabel + '">这个证书的目的如下:</div><ul>' +
+            model.purposes.map(function (p) {
+              return '<li title="OID: ' + esc(p.oid) + '">' + esc(p.text) + "</li>";
+            }).join("") +
+            '</ul><div class="' + NS.pNote + '">* 有关详细信息，请参考证书颁发机构的说明。</div></div>'
+          : "") +
+        '<div class="' + NS.kv + '">' +
+        '<div class="' + NS.kvRow + '"><div class="' + NS.k + '">颁发给:</div><div class="' + NS.v + '">' + esc(model.leafCn || "(未知)") + '</div></div>' +
+        '<div class="' + NS.kvRow + '"><div class="' + NS.k + '">颁发者:</div><div class="' + NS.v + '">' + esc(model.issuerCn || "(未知)") + '</div></div>' +
+        '<div class="' + NS.kvRow + '"><div class="' + NS.k + '">有效期从</div><div class="' + NS.v + '">' + esc(fmtDate(model.nbRaw, false)) + '</div></div>' +
+        '<div class="' + NS.kvRow + '"><div class="' + NS.k + '">到</div><div class="' + NS.v + '">' + esc(fmtDate(model.naRaw, false)) + '</div></div>' +
+        '</div>' +
+        '<div class="' + NS.btnRow + '">' +
+        ((model.policyInfo && (model.policyInfo.cps.length || model.policyInfo.notices.length))
+          ? '<button class="' + NS.btn + '" ' + DA.ibshow + '="1">颁发者说明(S)</button>'
+          : '') +
+        '<button class="' + NS.btn + '" ' + DA.close + '="1">确定</button></div>';
+    }
+    /* ---------- 渲染：详细信息 ---------- */
+    function renderDetail() {
+      var s = state.status, f = state.filter;
+      var rows = model.fields.filter(function (x) {
+        if (f === "v1") return x.group === "v1";
+        if (f === "ext") return x.group === "ext" || x.group === "crit";
+        if (f === "crit") return x.group === "crit";
+        if (f === "attr") return x.group === "attr";
+        return true;
+      });
+      if ((s === "revoked" || s === "expired") && (f === "all" || f === "v1")) {
+        rows.push({
+          label: "已展开错误信息", group: "v1",
+          value: s === "revoked" ? "吊销状态: 证书已被吊销。" : "证书状态: 证书已过期，或尚未生效。"
+        });
+      }
+      if (!rows.some(function (r) { return r.label === state.selKey; })) state.selKey = rows.length ? rows[0].label : "";
+      paneDetail.innerHTML =
+        '<div class="' + NS.filter + '"><label for="' + NS.filterId + '">显示(S):</label>' +
+        '<select id="' + NS.filterId + '">' +
+        '<option value="all"' + (f === "all" ? " selected" : "") + '>&lt;所有&gt;</option>' +
+        '<option value="v1"' + (f === "v1" ? " selected" : "") + '>只有版本 1字段</option>' +
+        '<option value="ext"' + (f === "ext" ? " selected" : "") + '>只有扩展</option>' +
+        '<option value="crit"' + (f === "crit" ? " selected" : "") + '>只有关键扩展</option>' +
+        '<option value="attr"' + (f === "attr" ? " selected" : "") + '>只有属性</option>' +
+        '</select></div>' +
+        '<div class="' + NS.grid + '"><div class="' + NS.gridHead + '"><div>字段</div><div>值</div></div>' +
+        '<div class="' + NS.gridBody + '">' +
+        rows.map(function (r) {
+          return '<div class="' + NS.row + (r.label === state.selKey ? " " + NS.sel : "") + '" ' + DA.key + '="' + esc(r.label) + '">' +
+            '<div>' + esc(r.label) + '</div><div class="' + NS.val + '">' + esc(r.value) + '</div></div>';
+        }).join("") +
+        '</div></div>' +
+        '<div class="' + NS.detail + '"></div>' +
+        '<div class="' + NS.btnRow + '">' +
+        '<button class="' + NS.btn + '" ' + DA.toast + '="演示环境：已将证书信息复制到剪贴板（模拟）。">复制到文件(C)...</button>' +
+        '<button class="' + NS.btn + '" ' + DA.close + '="1">确定</button></div>';
+      var sel = rows.filter(function (r) { return r.label === state.selKey; })[0];
+      paneDetail.querySelector("." + NS.detail).textContent = sel ? sel.value : "";
+      var filter = paneDetail.querySelector("#" + NS.filterId);
+      filter.addEventListener("change", function () { state.filter = filter.value; renderDetail(); });
+      paneDetail.querySelector("." + NS.gridBody).addEventListener("click", function (e) {
+        var row = e.target.closest("." + NS.row);
+        if (!row) return;
+        state.selKey = row.getAttribute(DA.key);
+        /* 仅切换选中高亮与详情内容，不重建列表 DOM（保持滚动条位置） */
+        Array.prototype.forEach.call(paneDetail.querySelectorAll("." + NS.row), function (r) {
+          r.classList.toggle(NS.sel, r === row);
+        });
+        var sel2 = rows.filter(function (r) { return r.label === state.selKey; })[0];
+        paneDetail.querySelector("." + NS.detail).textContent = sel2 ? sel2.value : "";
+      });
+    }
+
+    /* ---------- 渲染：证书路径 ---------- */
+    function renderPath() {
+      var s = state.status, info = statusInfo(s);
+      var icon = function (i) { return i === state.pathSel ? info.icon : iconCert(); };
+      panePath.innerHTML =
+        '<div class="' + NS.pathHead + '"><div class="' + NS.pathLabel + '">证书路径(P)</div>' +
+        '<div class="' + NS.zoom + '"><button class="' + NS.zbtn + '" ' + DA.z + '="-" title="缩小">−</button>' +
+        '<span class="' + NS.zval + '">' + state.pathZoom + '%</span>' +
+        '<button class="' + NS.zbtn + '" ' + DA.z + '="+" title="放大">＋</button></div></div>' +
+        '<div class="' + NS.pathTree + '">' +
+        model.chain.map(function (n, i) {
+          return '<div class="' + NS.pnode + " " + NS.lvl + n.lvl + (i === state.pathSel ? " " + NS.sel : "") + '" ' + DA.idx + '="' + i + '" role="button" tabindex="0">' +
+            icon(i) + '<span>' + esc(n.name) + '</span></div>';
+        }).join("") +
+        '</div>' +
+        '<div class="' + NS.pathView + '"><button class="' + NS.btn + " " + NS.viewbtn + '">查看证书(V)</button></div>' +
+        '<div class="' + NS.pathStatus + '"><div class="' + NS.psLabel + '">证书状态(S):</div>' +
+        '<div class="' + NS.psText + " " + info.cls + '">' + info.icon + '<span>' + info.text + '</span></div></div>' +
+        '<div class="' + NS.btnRow + '"><button class="' + NS.btn + '" ' + DA.close + '="1">确定</button></div>';
+      var tree = panePath.querySelector("." + NS.pathTree);
+      tree.style.fontSize = state.pathZoom + "%";
+      /* 缩放控制 */
+      panePath.querySelector("." + NS.zoom).addEventListener("click", function (e) {
+        var b = e.target.closest("." + NS.zbtn);
+        if (!b) return;
+        var z = state.pathZoom + (b.getAttribute(DA.z) === "+" ? 10 : -10);
+        state.pathZoom = Math.max(50, Math.min(200, z));
+        renderPath();
+      });
+      /* 点击行：仅切换高亮与图标，不重建 DOM（保持滚动位置） */
+      var setSel = function (row) {
+        Array.prototype.forEach.call(tree.querySelectorAll("." + NS.pnode), function (n, idx) {
+          n.classList.toggle(NS.sel, n === row);
+          var svg = n.querySelector("svg");
+          if (svg) svg.outerHTML = (n === row ? info.icon : iconCert());
+        });
+      };
+      /* 打开选中层证书的新窗口（双击行 / 查看证书按钮共用） */
+      var openNodeCert = function (idx) {
+        var node = model.chain[idx];
+        if (!node || !node.json) {
+          showToast("该层证书 JSON 数据不可用。");
+          return;
+        }
+        var all = model.chainJsons || [];
+        var sub;
+        if (all.length) {
+          // chainJsons = [terminal..root]; chain = [root..terminal]
+          sub = all.slice(all.length - 1 - idx, all.length);
+        } else {
+          sub = [node.json];
+        }
+        showFromJson(node.json, sub);
+      };
+      /* 查看证书按钮：打开当前选中层 */
+      panePath.querySelector("." + NS.viewbtn).addEventListener("click", function () {
+        openNodeCert(state.pathSel);
+      });
+      /* 双击行：打开该层证书 */
+      tree.addEventListener("dblclick", function (e) {
+        var row = e.target.closest("." + NS.pnode);
+        if (!row) return;
+        state.pathSel = Number(row.getAttribute(DA.idx));
+        setSel(row);
+        openNodeCert(state.pathSel);
+      });
+      tree.addEventListener("click", function (e) {
+        var row = e.target.closest("." + NS.pnode);
+        if (!row) return;
+        state.pathSel = Number(row.getAttribute(DA.idx));
+        setSel(row);
+      });
+      tree.addEventListener("keydown", function (e) {
+        if (e.key !== "Enter" && e.key !== " ") return;
+        var row = e.target.closest("." + NS.pnode);
+        if (!row) return;
+        e.preventDefault();
+        state.pathSel = Number(row.getAttribute(DA.idx));
+        setSel(row);
+      });
+    }
+
+    /* ---------- 事件：标签切换 ---------- */
+    tabs.addEventListener("click", function (e) {
+      var t = e.target.closest("." + NS.tab);
+      if (!t) return;
+      state.tab = t.getAttribute(DA.tab);
+      Array.prototype.forEach.call(tabs.children, function (x) { x.classList.toggle(NS.on, x === t); });
+      [paneGeneral, paneDetail, panePath].forEach(function (p, i) {
+        p.classList.toggle(NS.on, i === (state.tab === "general" ? 0 : state.tab === "detail" ? 1 : 2));
+      });
+    });
+
+    /* ---------- 事件：状态切换 ---------- */
+    titlebar.querySelector("." + NS.seg).addEventListener("click", function (e) {
+      var b = e.target.closest("button");
+      if (!b) return;
+      state.status = b.getAttribute(DA.s);
+      Array.prototype.forEach.call(titlebar.querySelectorAll("." + NS.seg + " button"), function (x) {
+        x.classList.toggle(NS.on, x === b);
+      });
+      renderGeneral(); renderDetail(); renderPath();
+    });
+
+    /* ---------- 事件：按钮反馈 / 关闭 ---------- */
+    content.addEventListener("click", function (e) {
+      var b = e.target.closest("." + NS.btn);
+      if (!b) return;
+      if (b.hasAttribute(DA.close)) { close(); return; }
+      if (b.getAttribute(DA.toast)) showToast(b.getAttribute(DA.toast));
+      if (b.hasAttribute(DA.ibshow)) showIssuerNotice();
+    });
+
+    function close() {
+      overlay.remove();
+      toast.remove();
+      window.removeEventListener("resize", onResize);
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    }
+    titlebar.querySelector("." + NS.close).addEventListener("click", close);
+
+    /* ---------- 拖拽移动 ---------- */
+    var dragging = false, offX = 0, offY = 0;
+    function onMove(e) {
+      if (!dragging) return;
+      var x = e.clientX - offX, y = e.clientY - offY;
+      x = Math.max(-win.offsetWidth + 80, Math.min(x, window.innerWidth - 80));
+      y = Math.max(0, Math.min(y, window.innerHeight - 44));
+      win.style.left = x + "px";
+      win.style.top = y + "px";
+    }
+    function onUp() { dragging = false; titlebar.classList.remove(NS.dragging); }
+    titlebar.addEventListener("mousedown", function (e) {
+      if (e.target.closest("." + NS.close) || e.target.closest("." + NS.seg)) return;
+      dragging = true;
+      offX = e.clientX - win.offsetLeft;
+      offY = e.clientY - win.offsetTop;
+      titlebar.classList.add(NS.dragging);
+      e.preventDefault();
+    });
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+    function onResize() {
+      var vw = window.innerWidth, vh = window.innerHeight;
+      win.style.left = Math.max(6, Math.round((vw - win.offsetWidth) / 2)) + "px";
+      win.style.top = Math.max(6, Math.round((vh - win.offsetHeight) / 2)) + "px";
+    }
+    onResize();
+    window.addEventListener("resize", onResize);
+
+    /* 初始渲染 */
+    renderGeneral();
+    renderDetail();
+    renderPath();
+
+    /* ---------- 自动状态判定：有效期 -> 异步吊销检查 ---------- */
+    function applyStatus(ns) {
+      if (state.status === ns) return;
+      state.status = ns;
+      renderGeneral(); renderDetail(); renderPath();
+    }
+    (function autoDetect() {
+      var now = Date.now();
+      var nb = model.nbRaw ? new Date(model.nbRaw).getTime() : NaN;
+      var na = model.naRaw ? new Date(model.naRaw).getTime() : NaN;
+      var expired = (!isNaN(nb) && now < nb) || (!isNaN(na) && now > na);
+      if (expired) { applyStatus("expired"); return; }
+      if (opts.noRevokeCheck) { applyStatus("ok"); return; }
+      if (!model.serial) return;
+      fetch("/api/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ target: model.serial })
+      }).then(function (r) { return r.json(); })
+        .then(function (j) {
+          var t = (j && j.message) || "";
+          if (/无法|未知|None|解析失败/.test(t)) { applyStatus("ok"); return; }
+          applyStatus((t.indexOf("已吊销") >= 0 || t.indexOf("已被") >= 0) ? "revoked" : "ok");
+        })
+        .catch(function () { /* 获取失败（非本库证书 / 网络错误）保持 ok */ });
+    })();
+  }
+
+  /* ---------- 样式注入（一次性，全部由 NS 生成，保证一一对应） ---------- */
+  var styleInjected = false;
+  function injectStyle() {
+    if (styleInjected) return;
+    styleInjected = true;
+    var css = [
+      "." + NS.overlay + "{position:fixed;inset:0;background:rgba(10,20,35,.45);z-index:10000}",
+      "." + NS.win + "{background:#f0f0f0;border:1px solid rgba(255,255,255,.35);border-radius:8px;box-shadow:0 18px 55px rgba(0,0,0,.55),0 2px 8px rgba(0,0,0,.35);overflow:hidden;display:flex;flex-direction:column;font-size:13px;font-family:'Segoe UI','Microsoft YaHei',system-ui,-apple-system,sans-serif;color:#222;position:fixed;z-index:10001;max-width:calc(100vw - 24px);max-height:calc(100vh - 40px)}",
+      "." + NS.titlebar + "{background:linear-gradient(180deg,#ffffff,#e8e8e8);border-bottom:1px solid #d0d0d0;padding:7px 10px;display:flex;align-items:center;gap:8px;user-select:none;cursor:move;touch-action:none;flex:none}",
+      "." + NS.titlebar + "." + NS.dragging + "{background:linear-gradient(180deg,#e8f2fb,#dce9f5)}",
+      "." + NS.tIcon + "{width:16px;height:16px;flex:none}",
+      "." + NS.tTitle + "{font-size:13px;color:#1a1a1a;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}",
+      "." + NS.seg + "{display:flex;background:#e4e4e4;border-radius:5px;overflow:hidden;border:1px solid #c8c8c8;flex:none}",
+      "." + NS.seg + " button{border:none;background:transparent;font-family:inherit;font-size:11.5px;padding:4px 9px;cursor:pointer;color:#444}",
+      "." + NS.seg + " button." + NS.on + "{background:#0078d4;color:#fff;font-weight:600}",
+      "." + NS.close + "{width:30px;height:22px;border:none;background:transparent;border-radius:3px;cursor:pointer;font-size:12px;color:#333;line-height:1;flex:none}",
+      "." + NS.close + ":hover{background:#e81123;color:#fff}",
+      "." + NS.tabs + "{display:flex;padding:0 12px;background:#f0f0f0;border-bottom:1px solid #d0d0d0;flex:none}",
+      "." + NS.tab + "{position:relative;top:1px;padding:8px 14px;font-size:13px;color:#333;cursor:pointer;border:1px solid transparent;border-bottom:none;border-radius:4px 4px 0 0;background:transparent;font-family:inherit;margin-right:2px}",
+      "." + NS.tab + ":hover{background:#e5f1fb}." + NS.tab + "." + NS.on + "{background:#fff;border-color:#d0d0d0;border-bottom-color:#fff;color:#1a1a1a;font-weight:600}",
+      "." + NS.content + "{background:#fff;flex:1;min-height:0;display:flex;flex-direction:column;padding:16px 18px 12px;overflow:auto}",
+      "." + NS.pane + "{display:none;flex-direction:column;flex:1;min-height:0}",
+      "." + NS.pane + "." + NS.on + "{display:flex}",
+      "." + NS.certHead + "{display:flex;align-items:flex-start;gap:12px;margin-bottom:10px}",
+      "." + NS.certHead + " svg{width:44px;height:44px;flex:none}",
+      "." + NS.certTitle + "{font-size:15px;font-weight:600;color:#1a1a1a;margin-bottom:4px}",
+      "." + NS.statusLine + "{display:flex;align-items:center;gap:7px;font-size:13.5px;font-weight:500}",
+      "." + NS.statusLine + " svg{width:18px;height:18px;flex:none}",
+      "." + NS.stOk + "{color:#107c10}." + NS.stErr + "{color:#c50f1f}." + NS.stWarn + "{color:#c87600}",
+      "." + NS.purpose + "{margin:2px 0 12px 4px}",
+      "." + NS.pLabel + "{color:#444;margin-bottom:5px}",
+      "." + NS.purpose + " ul{list-style:none;margin-left:16px;max-height:88px;overflow-y:auto;padding-right:4px}",
+      "." + NS.purpose + " li{position:relative;padding:2px 0 2px 14px;color:#222}",
+      "." + NS.purpose + " li::before{content:'';position:absolute;left:0;top:9px;width:6px;height:6px;border-radius:50%;background:#0067c0}",
+      "." + NS.pNote + "{color:#666;margin-top:7px;font-size:12px}",
+      "." + NS.kv + "{margin:4px 0 6px;border-top:1px solid #e0e0e0;padding-top:9px}",
+      "." + NS.kvRow + "{display:flex;margin-bottom:5px;line-height:1.5}",
+      "." + NS.k + "{width:78px;flex:none;color:#333}." + NS.v + "{color:#1a1a1a;word-break:break-all}",
+      "." + NS.filter + "{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex:none}",
+      "." + NS.filter + " select{font-family:inherit;font-size:13px;padding:3px 6px;border:1px solid #b5b5b5;border-radius:3px;background:#fff;color:#1a1a1a;min-width:150px}",
+      "." + NS.grid + "{border:1px solid #c8c8c8;background:#fff;flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}",
+      "." + NS.gridHead + ",." + NS.row + "{display:grid;grid-template-columns:140px 1fr}",
+      "." + NS.gridHead + "{background:#f0f0f0;border-bottom:1px solid #c8c8c8;font-weight:600;color:#1a1a1a;flex:none}",
+      "." + NS.gridHead + " div,." + NS.row + " div{padding:4px 8px;border-right:1px solid #e4e4e4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}",
+      "." + NS.gridHead + " div:last-child,." + NS.row + " div:last-child{border-right:none}",
+      "." + NS.gridBody + "{overflow-y:auto;flex:1;min-height:0}",
+      "." + NS.row + "{cursor:pointer}." + NS.row + ":hover{background:#f3f7fb}." + NS.row + "." + NS.sel + "{background:#cce8ff}",
+      "." + NS.row + " ." + NS.val + "{color:#555}." + NS.row + "." + NS.sel + " ." + NS.val + "{color:#1a1a1a}",
+      "." + NS.detail + "{margin-top:8px;border:1px solid #c8c8c8;background:#fff;min-height:46px;padding:6px 8px;font-size:12px;color:#1a1a1a;line-height:1.5;white-space:pre-wrap;word-break:break-all;overflow:auto;max-height:260px;flex:none}",
+      "." + NS.btnRow + "{display:flex;justify-content:flex-end;gap:8px;margin-top:12px;flex-wrap:wrap;flex:none}",
+      "." + NS.btn + "{font-family:inherit;font-size:13px;padding:5px 16px;background:linear-gradient(180deg,#fcfcfc,#f0f0f0);border:1px solid #adadad;border-radius:3px;color:#1a1a1a;cursor:pointer}",
+      "." + NS.btn + ":hover{border-color:#0067c0;background:linear-gradient(180deg,#fdfdff,#eaf3fb)}",
+      "." + NS.btn + ":active{background:#e3e3e3}",
+      "." + NS.pathHead + "{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex:none}",
+      "." + NS.pathLabel + "{color:#333}",
+      "." + NS.zoom + "{display:flex;align-items:center;gap:4px}",
+      "." + NS.zbtn + "{width:22px;height:20px;border:1px solid #adadad;background:linear-gradient(180deg,#fcfcfc,#f0f0f0);border-radius:3px;cursor:pointer;font-size:12px;color:#333;line-height:1;font-family:inherit;padding:0}",
+      "." + NS.zbtn + ":hover{border-color:#0067c0;background:linear-gradient(180deg,#fdfdff,#eaf3fb)}",
+      "." + NS.zval + "{font-size:11.5px;color:#555;min-width:42px;text-align:center}",
+      "." + NS.pathTree + "{border:1px solid #c8c8c8;background:#fff;padding:12px 8px 12px 16px;display:flex;flex-direction:column;gap:2px;flex:1;min-height:0;overflow:auto}",
+      "." + NS.pnode + "{display:flex;align-items:center;gap:7px;padding:4px 6px;border-radius:3px;font-size:inherit;position:relative;cursor:pointer}",
+      "." + NS.pnode + ":hover{background:#eef5fb}." + NS.pnode + ":focus-visible{outline:2px solid #0067c0;outline-offset:-2px}",
+      "." + NS.pnode + " svg{width:1.15em;height:1.15em;flex:none}",
+      "." + NS.pnode + "." + NS.lvl + "1{margin-left:2.4em}." + NS.pnode + "." + NS.lvl + "2{margin-left:4.8em}",
+      "." + NS.pnode + "." + NS.lvl + "1::before,." + NS.pnode + "." + NS.lvl + "2::before{content:'';position:absolute;left:-2em;width:2em;border-left:1.5px solid #9aa4ae;border-bottom:1.5px solid #9aa4ae;border-radius:0 0 0 4px}",
+      "." + NS.pnode + "." + NS.lvl + "1::before{top:-2.1em;height:2.1em}." + NS.pnode + "." + NS.lvl + "2::before{top:-2.1em;height:2.1em}",
+      "." + NS.pnode + "." + NS.sel + "{background:#cce8ff;font-weight:600}",
+      "." + NS.pathView + "{margin:8px 0 2px;text-align:right;flex:none}",
+      "." + NS.pathStatus + "{margin-top:12px;border-top:1px solid #e0e0e0;padding-top:9px;flex:none}",
+      "." + NS.psLabel + "{color:#333;margin-bottom:5px}",
+      "." + NS.psText + "{display:flex;align-items:center;gap:7px;font-size:13.5px;font-weight:500}",
+      "." + NS.psText + " svg{width:18px;height:18px;flex:none}",
+      "." + NS.toast + "{position:fixed;left:50%;bottom:30px;transform:translateX(-50%) translateY(16px);background:rgba(30,30,30,.94);color:#fff;padding:9px 18px;border-radius:6px;font-size:13px;opacity:0;pointer-events:none;transition:all .22s;z-index:10010;max-width:86vw;text-align:center}",
+      "." + NS.toast + "." + NS.show + "{opacity:1;transform:translateX(-50%) translateY(0)}",
+      "." + NS.infoBox + "{position:fixed;left:50%;top:38%;transform:translate(-50%,-50%);background:#f0f0f0;border:1px solid #c8c8c8;border-radius:6px;box-shadow:0 12px 44px rgba(0,0,0,.45);z-index:10011;width:min(520px,90vw);font-family:'Segoe UI','Microsoft YaHei',system-ui,sans-serif;font-size:13px;color:#222}",
+      "." + NS.ibTitle + "{background:linear-gradient(180deg,#ffffff,#e8e8e8);border-bottom:1px solid #d0d0d0;padding:7px 12px;font-weight:600;border-radius:6px 6px 0 0}",
+      "." + NS.ibBody + "{padding:10px 14px;max-height:260px;overflow:auto;white-space:pre-wrap;word-break:break-all}",
+      "." + NS.ibLabel + "{font-weight:600;margin:8px 0 3px;color:#333}",
+      "." + NS.ibLine + " a{color:#0066cc;text-decoration:none}",
+      "." + NS.ibLine + " a:hover{text-decoration:underline}",
+      "." + NS.ibText + "{background:#fff;border:1px solid #e0e0e0;border-radius:4px;padding:6px 8px;margin:3px 0;line-height:1.5}",
+      "." + NS.ibFoot + "{padding:8px 14px;border-top:1px solid #e0e0e0;text-align:right}",
+      "@media (max-width:560px){." + NS.content + "{padding:12px 12px 8px}." + NS.gridHead + ",." + NS.row + "{grid-template-columns:104px 1fr}." + NS.seg + " button{padding:4px 7px}}"
+    ].join("\\n");
+    var st = el("style");
+    st.textContent = css;
+    document.head.appendChild(st);
+  }
+
+  /* ---------- 统一入口 ----------
+   * 数据一律通过本函数置入，参数为 JSON 结构文本变量（字符串），
+   * 不涉及任何文件读取 / 文件选择框 / 固定文件名。
+   * MODPKICACERTVIERW(终端证书JSON文本, 中间CA证书JSON文本, 根证书JSON文本, ...)
+   * 按证书链顺序传入（第一个为终端证书，最后为根证书），支持任意层数；
+   * 也兼容直接传 JSON 对象。
+   */
+  function showFromJson(json, chainJsons, opts) {
+    if (json && !json._source) {
+      json._source = (findCN(json.subject) || "证书") + ".json";
+    }
+    var model = parseCert(json, chainJsons);
+    buildWindow(model, opts);
+  }
+
+  function parseJsonArgs(args) {
+    var list = [];
+    for (var i = 0; i < args.length; i++) {
+      var v = args[i];
+      if (typeof v === "string") {
+        var t = v.trim();
+        if (!t) continue;
+        try { list.push(JSON.parse(t)); }
+        catch (e) { console.warn("MODPKICACERTVIERW: 第 " + (i + 1) + " 个参数 JSON 解析失败"); }
+      } else if (v && typeof v === "object") {
+        list.push(v);
+      }
+    }
+    return list;
+  }
+
+  global.MODPKICACERTVIERW = function () {
+    var args = Array.prototype.slice.call(arguments);
+    var opts = {};
+    var last = args[args.length - 1];
+    if (typeof last === "boolean" && last === true) {
+      args.pop(); opts = { noRevokeCheck: true };
+    } else if (last && typeof last === "object" && !last.subject && "noRevokeCheck" in last) {
+      args.pop(); opts = last;
+    }
+    var jsons = parseJsonArgs(args);
+    if (!jsons.length) { console.warn("MODPKICACERTVIERW: 未收到有效证书 JSON"); return; }
+    var main = jsons[0];
+    /* 链顺序：传入的第一个是终端证书，最后一个是根证书；
+       路径页显示顺序（根→中间→终端）由 parseCert 内部反转处理 */
+    showFromJson(main, jsons, opts);
+  };
+
+})(window);
+
+</script>
+""";
+    private static final String PAGE_HTML = PAGE_P1.concat(PAGE_P1B).concat(PAGE_P2).concat(PAGE_P2B).concat(PAGE_P3).concat(PAGE_VIEWER);
 }
