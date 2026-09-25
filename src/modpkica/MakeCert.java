@@ -193,7 +193,10 @@ public final class MakeCert {
             certAlgo = a.length >= 12 ? a[11].toUpperCase(Locale.ROOT) : "RSA";
             certBit = parseBit(a[1], certAlgo);
         }
-        KeyPair certKp = generateKeyPair(certAlgo, certBit);
+        // PQC（ML-DSA-44/65/87）：密钥位数参数为规格字符串（如 ML-DSA-65）
+        KeyPair certKp = "PQC".equals(certAlgo)
+                ? CertUtil.generatePqcKeyPair(a[1])
+                : generateKeyPair(certAlgo, certBit);
 
         // ---- 签名算法（对齐 Go 版 roothash 逻辑） ----
         String hash = resolveSignHash(a, rootAlgo, isOcsp, isTsa, tsaHash);
@@ -433,6 +436,8 @@ public final class MakeCert {
                 return CertUtil.generateEccKeyPair(bit);
             case "SM2":
                 return CertUtil.generateSm2KeyPair();
+            case "PQC":
+                return CertUtil.generatePqcKeyPair(String.valueOf(bit));
             default:
                 throw new IllegalArgumentException("不支持的算法: " + algo);
         }

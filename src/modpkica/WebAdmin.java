@@ -326,7 +326,8 @@ public final class WebAdmin {
             "/api/config", "/api/init", "/api/makeroot", "/api/signcert",
             "/api/revoke", "/api/restore", "/api/rekey", "/api/renew",
             "/api/crl", "/api/initocsp", "/api/inittimestamp",
-            "/api/sign/exe", "/api/sign/pdf");
+            "/api/sign/exe", "/api/sign/pdf",
+            "/api/my/import", "/api/my/delete");
 
     /** 写操作全局锁：保证 PKI 文件（证书/私钥/CRL/CONFIG/日志）串行修改。 */
     private static final Object WRITE_LOCK = new Object();
@@ -464,7 +465,20 @@ public final class WebAdmin {
                     runAction(ex, m -> Admin.doInitTimestamp(baseDir, str(m, "hash")));
                     return;
                 case "/api/verify":
-                    runAction(ex, m -> Admin.doVerifyCert(baseDir, str(m, "target")));
+                    runAction(ex, m -> Admin.doVerifyCert(baseDir, verifyTarget(str(m, "target"))));
+                    return;
+                case "/api/my/list":
+                    if ("GET".equalsIgnoreCase(method)) {
+                        sendJson(ex, 200, myListJson());
+                    } else {
+                        sendJson(ex, 405, Map.of("ok", false, "message", "仅支持 GET"));
+                    }
+                    return;
+                case "/api/my/import":
+                    myImportAction(ex);
+                    return;
+                case "/api/my/delete":
+                    runAction(ex, m -> myDelete(str(m, "serial")));
                     return;
                 case "/api/verify/file":
                     verifyCertFileAction(ex);
@@ -1318,6 +1332,484 @@ public final class WebAdmin {
         return Map.of("ok", true, "data", list);
     }
 
+    // ============================================================
+    // 我的证书：PKI/MY 导入证书库（myCERTS.txt 台账 + {序列号}.crt/.key）
+    // ============================================================
+
+    private static Path myRecordPath() {
+        return Paths.get(baseDir, "PKI", "MY", "myCERTS.txt");
+    }
+
+    /** /api/my/list：读取 PKI/MY/myCERTS.txt 台账。 */
+    private static Map<String, Object> myListJson() {
+        List<Map<String, Object>> list = new ArrayList<>();
+        try {
+            Path f = myRecordPath();
+            if (Files.exists(f)) {
+                for (String line : Files.readAllLines(f, StandardCharsets.UTF_8)) {
+                    String t = line.trim();
+                    if (t.isEmpty() || t.startsWith("#")) {
+                        continue;
+                    }
+                    String[] p = t.split("\\s+");
+                    if (p.length < 6) {
+                        continue;
+                    }
+                    Map<String, Object> e = new LinkedHashMap<>();
+                    e.put("serial", p[0]);
+                    e.put("type", p[1]);
+                    e.put("hasKey", p[2]);
+                    e.put("algo", p[3]);
+                    e.put("notBefore", p[4]);
+                    e.put("notAfter", p[5]);
+                    list.add(e);
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return Map.of("ok", true, "data", list);
+    }
+
+    /** myCERTS.txt 是否已登记该序列号。 */
+    private static boolean myHasSerial(String serial) {
+        if (serial == null || serial.isEmpty()) {
+            return false;
+        }
+        try {
+            Path f = myRecordPath();
+            if (!Files.exists(f)) {
+                return false;
+            }
+            for (String line : Files.readAllLines(f, StandardCharsets.UTF_8)) {
+                String t = line.trim();
+                if (t.isEmpty() || t.startsWith("#")) {
+                    continue;
+                }
+                if (t.split("\\s+")[0].equalsIgnoreCase(serial)) {
+                    return true;
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return false;
+    }
+
+    /** 验证目标回退：MY 台账中的序列号 → PKI/MY/序列号.crt 绝对路径，其余原样（CERTS.txt 行为不变）。 */
+    private static String verifyTarget(String target) {
+        if (target != null && myHasSerial(target)) {
+            java.io.File f = new java.io.File(baseDir, "PKI/MY/" + target.toLowerCase() + ".crt");
+            if (f.exists()) {
+                return f.getAbsolutePath();
+            }
+        }
+        return target;
+    }
+
+    /** 证书序列号规范化：小写 hex，奇数补 0（与 CertVerify 显示一致）。 */
+    private static String mySerialOf(java.security.cert.X509Certificate c) {
+        String h = c.getSerialNumber().toString(16).toLowerCase();
+        if (h.length() % 2 != 0) {
+            h = "0" + h;
+        }
+        return h;
+    }
+
+    /** 证书算法：RSA / ECC / SM2 / PQC（ML-DSA/SLH-DSA/ML-KEM 等）。 */
+    private static String myAlgoOf(java.security.cert.X509Certificate c) {
+        try {
+            if (c.getPublicKey() instanceof java.security.interfaces.RSAPublicKey) {
+                return "RSA";
+            }
+            if (CtLog.isSm2Precert(c)) {
+                return "SM2";
+            }
+            if (c.getPublicKey() instanceof java.security.interfaces.ECPublicKey) {
+                return "ECC";
+            }
+            String alg = c.getPublicKey() == null ? "-" : c.getPublicKey().getAlgorithm();
+            if (PemIO.isPqcAlgName(alg)) {
+                return "PQC";
+            }
+            return alg;
+        } catch (Exception e) {
+            return "-";
+        }
+    }
+
+    /** 证书类型：自签名 CA → R；CA → C；终端 → E。 */
+    private static String myTypeOf(java.security.cert.X509Certificate c) {
+        int bc = c.getBasicConstraints();
+        if (bc >= 0) {
+            boolean self = c.getSubjectX500Principal().equals(c.getIssuerX500Principal());
+            return self ? "R" : "C";
+        }
+        return "E";
+    }
+
+    private static String fmtMyTime(java.util.Date d) {
+        try {
+            return new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss").format(d);
+        } catch (Exception e) {
+            return String.valueOf(d);
+        }
+    }
+
+    /** 校验证书与私钥匹配：私钥签名 → 证书公钥验签（SM2 走 Sm2Util，同一 ZA 上下文）。 */
+    private static boolean myKeyMatches(java.security.cert.X509Certificate cert, PrivateKey priv) {
+        try {
+            if (CtLog.isSm2Precert(cert)) {
+                byte[] tbs = Sm2Util.sm3("MODPKICA-IMPORT-CHECK".getBytes(StandardCharsets.UTF_8));
+                org.bouncycastle.crypto.params.ECPrivateKeyParameters dp = Sm2Util.toEcPrivateParams(priv);
+                byte[] sig = Sm2Util.sm2Sign(dp, tbs);
+                return Sm2Util.sm2Verify(Sm2Util.toEcPublicParams(cert.getPublicKey()), tbs, sig);
+            }
+            // PQC（ML-DSA/SLH-DSA 等）：公钥算法名直接作 BC Signature 名；KEM 类无签名算法则视为匹配
+            String pubAlg = cert.getPublicKey() == null ? "" : cert.getPublicKey().getAlgorithm();
+            if (PemIO.isPqcAlgName(pubAlg)) {
+                try {
+                    byte[] d0 = "MODPKICA-IMPORT-CHECK".getBytes(StandardCharsets.UTF_8);
+                    java.security.Signature sg0 = java.security.Signature.getInstance(pubAlg, "BC");
+                    sg0.initSign(priv);
+                    sg0.update(d0);
+                    byte[] s0 = sg0.sign();
+                    java.security.Signature vf0 = java.security.Signature.getInstance(pubAlg, "BC");
+                    vf0.initVerify(cert.getPublicKey());
+                    vf0.update(d0);
+                    return vf0.verify(s0);
+                } catch (Exception pe) {
+                    // ML-KEM 等仅 KEM 的 PQC 私钥无法做数字签名：算法族一致即视为匹配
+                    return true;
+                }
+            }
+            String alg = priv instanceof java.security.interfaces.RSAPrivateKey
+                    ? "SHA256withRSA" : "SHA256withECDSA";
+            byte[] data = "MODPKICA-IMPORT-CHECK".getBytes(StandardCharsets.UTF_8);
+            java.security.Signature sg = java.security.Signature.getInstance(alg, "BC");
+            sg.initSign(priv);
+            sg.update(data);
+            byte[] s = sg.sign();
+            java.security.Signature vf = java.security.Signature.getInstance(alg, "BC");
+            vf.initVerify(cert.getPublicKey());
+            vf.update(data);
+            return vf.verify(s);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /** BC 私钥参数 → JCA PrivateKey（RSA / EC(SM2) / PQC 统一，供 Signature 与 KeyFactory 使用）。 */
+    static PrivateKey toJcaPrivateKey(org.bouncycastle.crypto.params.AsymmetricKeyParameter akp) throws Exception {
+        org.bouncycastle.asn1.pkcs.PrivateKeyInfo pki = org.bouncycastle.crypto.util.PrivateKeyInfoFactory.createPrivateKeyInfo(akp);
+        byte[] p8 = pki.getEncoded();
+        String oid = pki.getPrivateKeyAlgorithm().getAlgorithm().getId();
+        if (oid.startsWith("1.2.840.113549.1.1")) {
+            return java.security.KeyFactory.getInstance("RSA", "BC")
+                    .generatePrivate(new java.security.spec.PKCS8EncodedKeySpec(p8));
+        }
+        // PQC：依次尝试 BC 通用 KeyFactory（ML-DSA/SLH-DSA/ML-KEM/Falcon/XMSS）
+        for (String n : new String[]{"ML-DSA", "SLH-DSA", "ML-KEM", "Falcon", "XMSS", "McEliece"}) {
+            try {
+                return java.security.KeyFactory.getInstance(n, "BC")
+                        .generatePrivate(new java.security.spec.PKCS8EncodedKeySpec(p8));
+            } catch (Exception ignored) {
+            }
+        }
+        // SM2/ECC：BC 的 EC KeyFactory 认识 SM2 曲线 OID
+        return java.security.KeyFactory.getInstance("EC", "BC")
+                .generatePrivate(new java.security.spec.PKCS8EncodedKeySpec(p8));
+    }
+
+    /** /api/my/import：导入 pfx/p12/jks（需密码）或 cer/crt/pem（含私钥可选）。 */
+    private static void myImportAction(HttpExchange ex) {
+        try {
+            Map<String, byte[]> f = readMultipart(ex);
+            byte[] data = f.get("file");
+            if (data == null || data.length == 0) {
+                throw new IllegalArgumentException("未上传证书文件");
+            }
+            String fn = f.get("__name_file") != null
+                    ? new String(f.get("__name_file"), StandardCharsets.UTF_8) : "cert.pem";
+            String password = f.get("password") != null
+                    ? new String(f.get("password"), StandardCharsets.UTF_8) : "";
+            Map<String, Object> r = myImportBytes(data, fn, password);
+            MLog.append(baseDir, "WebAdmin /api/my/import",
+                    "POST 导入证书 file=" + fn + " size=" + data.length,
+                    "序列号=" + r.get("serial") + " 类型=" + r.get("type")
+                            + " 算法=" + r.get("algo") + " 私钥=" + r.get("hasKey")
+                            + " 证书=" + r.get("certPath") + " 私钥文件=" + r.get("keyPath"));
+            sendJson(ex, 200, r);
+        } catch (Exception ex2) {
+            try {
+                MLog.appendErr(baseDir, "WebAdmin /api/my/import 异常",
+                        "POST 导入证书", String.valueOf(ex2));
+                sendJson(ex, 500, Map.of("ok", false, "message", String.valueOf(ex2)));
+            } catch (Exception ignored) {
+            }
+        }
+    }
+
+    /** 导入核心（可独立测试）：返回 ok/serial/type/algo/hasKey/certPath/keyPath/message。 */
+    static Map<String, Object> myImportBytes(byte[] data, String fileName, String password) throws Exception {
+        String lower = fileName == null ? "" : fileName.toLowerCase();
+        if (lower.endsWith(".pfx") || lower.endsWith(".p12") || lower.endsWith(".jks")) {
+            // JKS / PKCS12：导出全部私钥条目（证书链叶子 + 私钥）
+            return importKeyStore(data, fileName, password);
+        }
+        // PEM：解析 CERTIFICATE 块 + 可选私钥块
+        String text = new String(data, StandardCharsets.UTF_8);
+        java.util.regex.Matcher cm = java.util.regex.Pattern.compile(
+                "-----BEGIN CERTIFICATE-----\\s*([A-Za-z0-9+/=\\r\\n]+?)-----END CERTIFICATE-----",
+                java.util.regex.Pattern.DOTALL).matcher(text);
+        if (!cm.find()) {
+            throw new IllegalArgumentException("未找到 CERTIFICATE PEM 块");
+        }
+        byte[] der = java.util.Base64.getDecoder().decode(cm.group(1).replaceAll("\\s", ""));
+        java.security.cert.X509Certificate cert = (java.security.cert.X509Certificate)
+                java.security.cert.CertificateFactory.getInstance("X.509", "BC")
+                        .generateCertificate(new java.io.ByteArrayInputStream(der));
+        PrivateKey priv = null;
+        java.util.regex.Matcher km = java.util.regex.Pattern.compile(
+                "-----BEGIN ([A-Z0-9 ]+)-----\\s*([A-Za-z0-9+/=\\r\\n]+?)-----END",
+                java.util.regex.Pattern.DOTALL).matcher(text);
+        while (km.find()) {
+            String type = km.group(1).trim();
+            if (type.equals("ENCRYPTED PRIVATE KEY")) {
+                throw new IllegalArgumentException(
+                        "PEM 私钥已加密（ENCRYPTED PRIVATE KEY），请改用 pfx/p12/jks 并输入密码导入");
+            }
+            if (type.equals("PRIVATE KEY") || type.equals("RSA PRIVATE KEY")
+                    || type.equals("EC PRIVATE KEY") || type.equals("SM2 PRIVATE KEY")) {
+                java.nio.file.Path tmp = java.nio.file.Files.createTempFile("modpkica_mykey_", ".pem");
+                try {
+                    java.nio.file.Files.write(tmp,
+                            text.substring(km.start(), km.end()).getBytes(StandardCharsets.UTF_8));
+                    priv = toJcaPrivateKey(PemIO.readPrivateKey(tmp.toString()));
+                } finally {
+                    java.nio.file.Files.deleteIfExists(tmp);
+                }
+                break;
+            }
+        }
+        if (priv != null && !myKeyMatches(cert, priv)) {
+            throw new IllegalArgumentException("证书公钥与私钥不匹配，拒绝导入");
+        }
+        return persistMyCert(cert, priv);
+    }
+
+    /**
+     * 读取 JKS / PKCS12 的全部私钥条目（私钥 + 证书链叶子）。
+     * PKCS12 用 BC 直接加载；JKS 是 Sun 专有容器且私钥在 getKey() 时才解密，
+     * 因此必须把「提 BC 为首位 → 加载 → 读取全部条目」放在同一作用域内完成，
+     * 否则恢复位置后 Sun 的 EC KeyFactory 仍不认识 SM2 曲线（1.2.156.10197.1.301）。
+     */
+    private static java.util.List<Object[]> loadKeyStoreEntries(byte[] data, String ksType, String pwd) throws Exception {
+        java.util.List<Object[]> out = new ArrayList<>();
+        if ("PKCS12".equals(ksType)) {
+            java.security.KeyStore ks;
+            try {
+                ks = java.security.KeyStore.getInstance(ksType, "BC");
+            } catch (Exception e) {
+                ks = java.security.KeyStore.getInstance(ksType);
+            }
+            ks.load(new java.io.ByteArrayInputStream(data), pwd.toCharArray());
+            java.util.List<String> errs = new ArrayList<>();
+            collectKeyStoreEntries(ks, pwd, out, errs);
+            if (out.isEmpty() && !errs.isEmpty()) {
+                throw new IllegalArgumentException("密钥库私钥解封装失败：" + String.join("；", errs)
+                        + "。可尝试导入同目录的 PEM 证书(.crt.pem/.cer)与私钥(.key.pem)文件");
+            }
+            return out;
+        }
+        // JKS：Sun 容器；BC 提为首位解决 SM2 曲线识别
+        java.security.Provider bc = java.security.Security.getProvider("BC");
+        int origPos = -1;
+        java.security.Provider[] ps = java.security.Security.getProviders();
+        for (int i = 0; i < ps.length; i++) {
+            if ("BC".equals(ps[i].getName())) {
+                origPos = i;
+                break;
+            }
+        }
+        if (origPos > 0) {
+            java.security.Security.removeProvider("BC");
+            java.security.Security.insertProviderAt(bc, 1);
+        }
+        try {
+            java.security.KeyStore ks = java.security.KeyStore.getInstance("JKS");
+            ks.load(new java.io.ByteArrayInputStream(data), pwd.toCharArray());
+            java.util.List<String> errs = new ArrayList<>();
+            collectKeyStoreEntries(ks, pwd, out, errs);
+            if (out.isEmpty() && !errs.isEmpty()) {
+                throw new IllegalArgumentException("密钥库私钥解封装失败：" + String.join("；", errs)
+                        + "。可尝试导入同目录的 PEM 证书(.crt.pem/.cer)与私钥(.key.pem)文件");
+            }
+            return out;
+        } finally {
+            if (origPos > 0) {
+                java.security.Security.removeProvider("BC");
+                java.security.Security.insertProviderAt(bc, origPos + 1);
+            }
+        }
+    }
+
+    /** 收集密钥库全部私钥条目（私钥 + 证书链叶子），单条目异常跳过并把失败原因记入 errs。 */
+    private static void collectKeyStoreEntries(java.security.KeyStore ks, String pwd,
+            java.util.List<Object[]> out, java.util.List<String> errs) {
+        try {
+            java.util.Enumeration<String> aliases = ks.aliases();
+            while (aliases.hasMoreElements()) {
+                String a = aliases.nextElement();
+                if (!ks.isKeyEntry(a)) {
+                    continue;
+                }
+                try {
+                    PrivateKey priv = (PrivateKey) ks.getKey(a, pwd.toCharArray());
+                    java.security.cert.Certificate[] chain = ks.getCertificateChain(a);
+                    if (priv != null && chain != null && chain.length > 0
+                            && chain[0] instanceof java.security.cert.X509Certificate) {
+                        out.add(new Object[]{priv, chain[0]});
+                    }
+                } catch (Exception e) {
+                    if (errs != null) {
+                        errs.add("条目[" + a + "]私钥读取失败: " + e);
+                    }
+                }
+            }
+        } catch (java.security.KeyStoreException ignored) {
+        }
+    }
+
+    /** 导入 JKS/PKCS12：导出全部私钥条目（公私钥不匹配的条目跳过），返回首条 + count/all。 */
+    private static Map<String, Object> importKeyStore(byte[] data, String fileName, String password) throws Exception {
+        String lower = fileName.toLowerCase();
+        String ksType = lower.endsWith(".jks") ? "JKS" : "PKCS12";
+        String pwd = password == null ? "" : password;
+        java.util.List<Object[]> entries;
+        try {
+            entries = loadKeyStoreEntries(data, ksType, pwd);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("密钥库加载失败（" + ksType + "）：" + e
+                    + "。若为 ML-DSA/PQC 私钥封装兼容问题，可改用同目录的 PEM 证书(.crt.pem/.cer)与私钥(.key.pem)文件导入");
+        }
+        if (entries.isEmpty()) {
+            throw new IllegalArgumentException("密钥库中未找到私钥条目（" + ksType + "）");
+        }
+        java.util.List<String> importedSerials = new ArrayList<>();
+        Map<String, Object> first = null;
+        for (Object[] en : entries) {
+            PrivateKey priv = (PrivateKey) en[0];
+            java.security.cert.X509Certificate cert = (java.security.cert.X509Certificate) en[1];
+            if (!myKeyMatches(cert, priv)) {
+                continue;
+            }
+            Map<String, Object> r = persistMyCert(cert, priv);
+            if (first == null) {
+                first = r;
+            }
+            importedSerials.add((String) r.get("serial"));
+        }
+        if (first == null) {
+            throw new IllegalArgumentException("密钥库中未找到可导入的证书（无有效私钥条目）");
+        }
+        Map<String, Object> out = new LinkedHashMap<>(first);
+        out.put("count", importedSerials.size());
+        out.put("all", importedSerials);
+        out.put("message", "导入成功 " + importedSerials.size() + " 个证书：" + String.join("、", importedSerials));
+        return out;
+    }
+
+    /** 落盘 PKI/MY/{serial}.crt|.key 并登记台账（重复序列号先移除旧记录）。 */
+    private static Map<String, Object> persistMyCert(java.security.cert.X509Certificate cert, PrivateKey priv) throws Exception {
+        String serial = mySerialOf(cert);
+        String algo = myAlgoOf(cert);
+        String type = myTypeOf(cert);
+        String hasKey = priv != null ? "Y" : "N";
+        java.io.File myDir = new java.io.File(baseDir, "PKI/MY");
+        if (!myDir.exists()) {
+            myDir.mkdirs();
+        }
+        java.io.File certF = new java.io.File(myDir, serial + ".crt");
+        PemIO.writeCert(certF.getAbsolutePath(), cert);
+        String keyPath = "";
+        if (priv != null) {
+            java.io.File keyF = new java.io.File(myDir, serial + ".key");
+            PemIO.writePrivateKey(keyF.getAbsolutePath(), priv, algo);
+            keyPath = "PKI/MY/" + serial + ".key";
+        }
+        String certPath = "PKI/MY/" + serial + ".crt";
+        String rec = serial + "   " + type + "   " + hasKey + "   " + algo + "   "
+                + fmtMyTime(cert.getNotBefore()) + "   " + fmtMyTime(cert.getNotAfter());
+        if (myHasSerial(serial)) {
+            myRemoveRecord(serial);
+        }
+        myAppendRecord(rec);
+        return Map.of("ok", true, "serial", serial, "type", type, "algo", algo,
+                "hasKey", hasKey, "certPath", certPath, "keyPath", keyPath,
+                "message", "导入成功 序列号=" + serial + " 类型=" + type
+                        + " 算法=" + algo + (priv != null ? "（含私钥）" : "（仅证书）"));
+    }
+
+
+    /** 追加台账记录：文件不存在或为空时先写模板头。 */
+    private static void myAppendRecord(String rec) throws Exception {
+        Path f = myRecordPath();
+        boolean empty = !Files.exists(f) || Files.size(f) == 0;
+        if (empty) {
+            if (f.getParent() != null) {
+                Files.createDirectories(f.getParent());
+            }
+            Files.write(f, ("# 序列号   类型       是否存在私钥          算法          生效日期    失效日期\n"
+                    + "#         R/C/E        Y/N       RSA/ECC/SM2/PQC  日期格式例如 2000/06/17-12:12:12\n")
+                    .getBytes(StandardCharsets.UTF_8));
+        }
+        Files.write(f, (rec + "\n").getBytes(StandardCharsets.UTF_8),
+                java.nio.file.StandardOpenOption.APPEND);
+    }
+
+    /** /api/my/delete：删除 PKI/MY/序列号.crt/.key，并从台账移除记录。 */
+    private static String myDelete(String serial) throws Exception {
+        if (serial == null || serial.isEmpty()) {
+            throw new IllegalArgumentException("缺少序列号");
+        }
+        String s = serial.toLowerCase();
+        Path f = myRecordPath();
+        if (!Files.exists(f) || !myHasSerial(s)) {
+            throw new IllegalArgumentException("未找到序列号 " + serial + "（myCERTS.txt 无此记录）");
+        }
+        java.io.File certF = new java.io.File(baseDir, "PKI/MY/" + s + ".crt");
+        java.io.File keyF = new java.io.File(baseDir, "PKI/MY/" + s + ".key");
+        boolean dc = certF.exists() && certF.delete();
+        boolean dk = keyF.exists() && keyF.delete();
+        myRemoveRecord(s);
+        String out = "已删除序列号 " + serial + " 的证书" + (dc ? "" : "（证书文件不存在）")
+                + (dk ? "" : "（私钥文件不存在）");
+        MLog.append(baseDir, "WebAdmin /api/my/delete",
+                "POST 删除我的证书 serial=" + serial,
+                "证书删除=" + dc + " 私钥删除=" + dk);
+        return out;
+    }
+
+    private static void myRemoveRecord(String serial) throws Exception {
+        Path f = myRecordPath();
+        if (!Files.exists(f)) {
+            return;
+        }
+        List<String> lines = new ArrayList<>();
+        for (String line : Files.readAllLines(f, StandardCharsets.UTF_8)) {
+            String t = line.trim();
+            if (t.isEmpty() || t.startsWith("#")) {
+                lines.add(line);
+                continue;
+            }
+            String[] p = t.split("\\s+");
+            if (p.length >= 1 && p[0].equalsIgnoreCase(serial)) {
+                continue;
+            }
+            lines.add(line);
+        }
+        Files.write(f, lines, StandardCharsets.UTF_8);
+    }
+
     /** /api/certs/cacerts：列出 JAVA 环境 cacerts 中的可信证书（结构同 /api/certs，只读）。 */
     private static Map<String, Object> cacertsJson() {
         List<Map<String, Object>> list = new ArrayList<>();
@@ -1750,7 +2242,7 @@ public final class WebAdmin {
     /** 按序列号查找证书文件（多目录回退；OCSP/TIMSTAMP 按内容扫描匹配）。 */
     static String findCertFile(String serial) {
         String[] dirs = {
-            "PKI/WebPublic/CRT/", "PKI/ROOT/", "PKI/CA/", "PKI/CERT/", "PKI/KEY/"
+            "PKI/WebPublic/CRT/", "PKI/ROOT/", "PKI/CA/", "PKI/CERT/", "PKI/KEY/", "PKI/MY/"
         };
         for (String d : dirs) {
             String p = d + serial + ".crt";
@@ -2189,6 +2681,15 @@ public final class WebAdmin {
             }
             if (name != null) {
                 fields.put(name, Arrays.copyOfRange(body, dataStart, dataEnd));
+                String fname = null;
+                java.util.regex.Matcher fm = java.util.regex.Pattern
+                        .compile("filename=\"([^\"]*)\"").matcher(headers);
+                if (fm.find()) {
+                    fname = fm.group(1);
+                }
+                if (fname != null) {
+                    fields.put("__name_" + name, fname.getBytes(StandardCharsets.UTF_8));
+                }
             }
             pos = next;
         }
@@ -2230,13 +2731,30 @@ public final class WebAdmin {
             CertsDB db = new CertsDB();
             db.load(base);
             CertsDB.CertEntry e = serial == null || serial.isEmpty() ? null : db.findBySerial(serial);
-            if (serial != null && !serial.isEmpty() && e == null) {
-                throw new IllegalArgumentException("CERTS.txt 无序列号 " + serial);
-            }
             String keyType = e == null ? "RSA" : e.algo;
-            java.security.cert.X509Certificate cert = e == null ? null : SignTool.loadCertBySerial(base, serial);
-            PrivateKey key = e == null ? null : SignTool.loadKeyBySerial(base, serial);
-            List<java.security.cert.X509Certificate> chain = e == null ? null : SignTool.loadChain(base, serial);
+            java.security.cert.X509Certificate cert;
+            PrivateKey key;
+            List<java.security.cert.X509Certificate> chain;
+            if (serial != null && !serial.isEmpty() && e == null) {
+                // 回退：我的证书库 PKI/MY（含私钥，无需 EKU 判断）
+                String mySerial = serial.toLowerCase();
+                java.io.File myCert = new java.io.File(base, "PKI/MY/" + mySerial + ".crt");
+                java.io.File myKey = new java.io.File(base, "PKI/MY/" + mySerial + ".key");
+                if (!myCert.exists() || !myKey.exists()) {
+                    throw new IllegalArgumentException("CERTS.txt 与我的证书库均无序列号 " + serial);
+                }
+                try (java.io.InputStream in = Files.newInputStream(myCert.toPath())) {
+                    cert = (java.security.cert.X509Certificate) java.security.cert.CertificateFactory
+                            .getInstance("X.509", "BC").generateCertificate(in);
+                }
+                key = toJcaPrivateKey(PemIO.readPrivateKey(myKey.getAbsolutePath()));
+                keyType = myAlgoOf(cert);
+                chain = new ArrayList<>();   // 我的证书仅叶子，无链（SignTool 自动兜底用叶子自身）
+            } else {
+                cert = e == null ? null : SignTool.loadCertBySerial(base, serial);
+                key = e == null ? null : SignTool.loadKeyBySerial(base, serial);
+                chain = e == null ? null : SignTool.loadChain(base, serial);
+            }
 
             byte[] result;
             String op;
@@ -2381,10 +2899,12 @@ public final class WebAdmin {
         CertsDB db = new CertsDB();
         db.load(base);
         List<Map<String, Object>> list = new ArrayList<>();
+        java.util.Set<String> seenMy = new java.util.HashSet<>();
         for (CertsDB.CertEntry e : db.getAll()) {
             if (e.type != 'E') {
                 continue;
             }
+            seenMy.add(e.serial.toLowerCase());
             try {
                 java.security.cert.X509Certificate c = SignTool.loadCertBySerial(base, e.serial);
                 boolean usable = "pdf".equals(kind)
@@ -2405,6 +2925,51 @@ public final class WebAdmin {
                 list.add(m);
             } catch (Exception ignored) {
                 // 证书文件缺失或损坏则跳过
+            }
+        }
+        // 追加「我的证书」PKI/MY 中含私钥的记录：无需 EKU 判断（签名证书可直接选自我的证书库）
+        Path myRec = Paths.get(base, "PKI", "MY", "myCERTS.txt");
+        if (Files.exists(myRec)) {
+            try {
+                for (String line : Files.readAllLines(myRec, StandardCharsets.UTF_8)) {
+                    String t = line.trim();
+                    if (t.isEmpty() || t.startsWith("#")) {
+                        continue;
+                    }
+                    String[] p = t.split("\\s+");
+                    if (p.length < 4 || !"Y".equals(p[2])) {
+                        continue;
+                    }
+                    String mySerial = p[0].toLowerCase();
+                    if (seenMy.contains(mySerial)) {
+                        continue;
+                    }
+                    java.io.File cf = new java.io.File(base, "PKI/MY/" + mySerial + ".crt");
+                    if (!cf.exists()) {
+                        continue;
+                    }
+                    try (java.io.InputStream in = Files.newInputStream(cf.toPath())) {
+                        java.security.cert.X509Certificate c = (java.security.cert.X509Certificate)
+                                java.security.cert.CertificateFactory.getInstance("X.509", "BC")
+                                        .generateCertificate(in);
+                        Map<String, Object> m = new LinkedHashMap<>();
+                        m.put("serial", p[0]);
+                        m.put("dn", c.getSubjectX500Principal().toString());
+                        m.put("issuer", c.getIssuerX500Principal().toString());
+                        m.put("algo", p[3]);
+                        m.put("bits", SignTool.keyBits(c));
+                        m.put("validFrom", c.getNotBefore().toString());
+                        m.put("validTo", c.getNotAfter().toString());
+                        m.put("status", "V");
+                        m.put("ekus", new ArrayList<>());
+                        m.put("src", "my");
+                        list.add(m);
+                        seenMy.add(mySerial);
+                    } catch (Exception ignored) {
+                        // 证书损坏则跳过该条
+                    }
+                }
+            } catch (Exception ignored) {
             }
         }
         return Map.of("ok", true, "data", list);
@@ -2897,6 +3462,7 @@ public final class WebAdmin {
                 <div class="ct-tabs">
                   <button class="ct-tab active" id="csTabBtnLocal" onclick="csSwitchTab('local')">证书库 CERTS.txt</button>
                   <button class="ct-tab" id="csTabBtnCa" onclick="csSwitchTab('cacerts')">可信公网证书库 cacerts</button>
+                  <button class="ct-tab" id="csTabBtnMy" onclick="csSwitchTab('my')">我的证书</button>
                 </div>
                 <div id="csPaneLocal">
                   <div class="toolbar">
@@ -2923,6 +3489,21 @@ public final class WebAdmin {
                     </table>
                   </div>
                 </div>
+                <div id="csPaneMy" style="display:none">
+                  <div class="toolbar">
+                    <input id="myFilter" placeholder="筛选：序列号 / 类型 / 算法" style="flex:1;max-width:360px" oninput="renderMy()">
+                    <button class="primary" onclick="$('myFile').click()">导入证书</button>
+                    <button class="ghost" onclick="loadMy()">刷新列表</button>
+                  </div>
+                  <input type="file" id="myFile" accept=".pfx,.p12,.jks,.cer,.crt,.pem" style="display:none" onchange="myFileChosen()">
+                  <div id="myMsg" class="hint" style="margin:6px 0;color:var(--dim)">从本机导入证书（pfx / p12 / jks 需输入密码；cer / crt / pem 直接导入，可含私钥）。</div>
+                  <div style="overflow:auto;max-height:60vh">
+                    <table id="myTable">
+                      <thead><tr><th>序列号</th><th>类型</th><th>算法</th><th>是否含有私钥</th><th>生效日期</th><th>失效日期</th><th>操作</th></tr></thead>
+                      <tbody></tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -2932,8 +3513,8 @@ public final class WebAdmin {
                 <h2>签发根证书（MakeRoot）</h2>
                 <div class="row">
                   <div style="grid-column:1/-1"><label>证书 DN（逗号分隔 key=value）</label><input id="mkDn" placeholder="根证书 DN（key=value 逗号分隔，key 可为标准属性或 OID），如 CN=My Root CA,O=My Org,C=CN"></div>
-                  <div><label>密钥算法</label><select id="mkAlgo" onchange="extAlgoChanged('mk')"><option>RSA</option><option>ECC</option><option>SM2</option></select></div>
-                  <div><label>哈希算法</label><select id="mkHash"><option>sha256</option><option>sha1</option><option>sha384</option><option>sha512</option><option>SM3</option></select></div>
+                  <div><label>密钥算法</label><select id="mkAlgo" onchange="extAlgoChanged('mk')"><option>RSA</option><option>ECC</option><option>SM2</option><option>PQC</option></select></div>
+                  <div><label>哈希算法</label><select id="mkHash"><option>sha256</option><option>sha1</option><option>sha384</option><option>sha512</option><option>SM3</option><option>NULL</option></select></div>
                   <div><label>密钥位数</label><select id="mkBits"></select></div>
                 </div>
                 <div class="fsec" style="margin-top:14px">
@@ -3048,9 +3629,9 @@ public final class WebAdmin {
                 <div class="fsec"><div class="fsec-title">密钥与算法</div>
                   <div class="row">
                     <div><label>证书类型</label><select id="scCa"><option value="0">终端证书</option><option value="1">中间 CA</option></select></div>
-                    <div><label>密钥算法</label><select id="scAlgo" onchange="algoChanged()"><option>RSA</option><option>ECC</option><option>SM2</option></select></div>
+                    <div><label>密钥算法</label><select id="scAlgo" onchange="algoChanged()"><option>RSA</option><option>ECC</option><option>SM2</option><option>PQC</option></select></div>
                     <div><label>密钥位数</label><select id="scBits"></select></div>
-                    <div><label>哈希算法</label><select id="scHash"><option>sha256</option><option>sha1</option><option>sha384</option><option>sha512</option><option>SM3</option></select></div>
+                    <div><label>哈希算法</label><select id="scHash"><option>sha256</option><option>sha1</option><option>sha384</option><option>sha512</option><option>SM3</option><option>NULL</option></select></div>
                   </div>
                 </div>
 
@@ -3308,8 +3889,8 @@ public final class WebAdmin {
                 <div class="hint">注意：会备份现有 CERTS.txt 为 .old.时间戳，然后写入模板、签发根证书、全量 OCSP 与时间戳证书。仅在全新环境或确认无业务数据时执行。</div>
                 <div class="row">
                   <div style="grid-column:1/-1"><label>根证书 DN</label><input id="inDn" placeholder="根证书 DN（key=value 逗号分隔，key 可为标准属性或 OID），如 CN=My Root CA,O=My Org,C=CN"></div>
-                  <div><label>密钥算法</label><select id="inAlgo" onchange="extAlgoChanged('in')"><option>RSA</option><option>ECC</option><option>SM2</option></select></div>
-                  <div><label>哈希算法</label><select id="inHash"><option>sha256</option><option>sha1</option><option>sha384</option><option>sha512</option><option>SM3</option></select></div>
+                  <div><label>密钥算法</label><select id="inAlgo" onchange="extAlgoChanged('in')"><option>RSA</option><option>ECC</option><option>SM2</option><option>PQC</option></select></div>
+                  <div><label>哈希算法</label><select id="inHash"><option>sha256</option><option>sha1</option><option>sha384</option><option>sha512</option><option>SM3</option><option>NULL</option></select></div>
                   <div><label>密钥位数</label><select id="inBits"></select></div>
                 </div>
                 <div class="fsec" style="margin-top:14px">
@@ -3527,6 +4108,42 @@ public final class WebAdmin {
             </div>
             <div class="modal-body">
               <pre class="out" id="verifyModalOut">验证中...</pre>
+            </div>
+          </div>
+        </div>
+
+        <!-- 我的证书：导入密码输入弹窗 -->
+        <div class="modal-mask" id="myPwdModal" style="display:none" onclick="if(event.target===this)closeMyPwd()">
+          <div class="modal" style="width:min(460px,92vw)">
+            <div class="modal-head">
+              <h3 id="myPwdTitle">输入密钥库密码</h3>
+              <button class="ghost" onclick="closeMyPwd()">取消</button>
+            </div>
+            <div class="modal-body">
+              <p class="cfg-hint" id="myPwdFile" style="margin-bottom:10px"></p>
+              <label>密码</label>
+              <input type="password" id="myPwd" placeholder="请输入密钥库密码（pfx / p12 / jks）" onkeydown="if(event.key==='Enter')myPwdOk()">
+            </div>
+            <div class="modal-foot">
+              <button onclick="myPwdOk()">确定</button>
+              <button class="ghost" onclick="closeMyPwd()">取消</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 我的证书：删除确认弹窗 -->
+        <div class="modal-mask" id="myDelModal" style="display:none" onclick="if(event.target===this)closeMyDel()">
+          <div class="modal" style="width:min(440px,92vw)">
+            <div class="modal-head">
+              <h3>删除证书</h3>
+              <button class="ghost" onclick="closeMyDel()">取消</button>
+            </div>
+            <div class="modal-body">
+              <p id="myDelText" style="line-height:1.8"></p>
+            </div>
+            <div class="modal-foot">
+              <button class="danger" onclick="myDoDelete()">确定</button>
+              <button class="ghost" onclick="closeMyDel()">取消</button>
             </div>
           </div>
         </div>
@@ -3811,7 +4428,7 @@ const $ = id => document.getElementById(id);
           list.forEach(c => {
             const o = document.createElement('option');
             o.value = c.serial;
-            o.textContent = c.serial + ' ｜ ' + (c.algo || '') + (c.bits ? ' ' + c.bits : '') + ' ｜ ' + c.dn;
+            o.textContent = (c.src === 'my' ? '〔我的〕 ' : '') + c.serial + ' ｜ ' + (c.algo || '') + (c.bits ? ' ' + c.bits : '') + ' ｜ ' + c.dn;
             o.title = '序列号: ' + c.serial + '\\n算法: ' + (c.algo || '') + (c.bits ? ' ' + c.bits + ' 位' : '') +
               '\\n颁发者: ' + (c.issuer || '') + '\\n有效期: ' + (c.validFrom || '') + ' ~ ' + (c.validTo || '') +
               '\\n状态: ' + (c.status === 'V' ? '正常' : c.status === 'R' ? '已吊销' : '未知') +
@@ -4239,9 +4856,12 @@ const $ = id => document.getElementById(id);
         function csSwitchTab(t) {
           document.getElementById('csTabBtnLocal').className = 'ct-tab' + (t==='local' ? ' active' : '');
           document.getElementById('csTabBtnCa').className = 'ct-tab' + (t==='cacerts' ? ' active' : '');
+          document.getElementById('csTabBtnMy').className = 'ct-tab' + (t==='my' ? ' active' : '');
           document.getElementById('csPaneLocal').style.display = t==='local' ? '' : 'none';
           document.getElementById('csPaneCa').style.display = t==='cacerts' ? '' : 'none';
+          document.getElementById('csPaneMy').style.display = t==='my' ? '' : 'none';
           if (t==='cacerts') loadCacerts();
+          if (t==='my') loadMy();
         }
         async function loadCacerts() {
           try {
@@ -4264,6 +4884,110 @@ const $ = id => document.getElementById(id);
             tb.appendChild(tr);
           });
           if (!rows.length) tb.innerHTML = '<tr><td colspan="6" style="color:var(--dim)">（无匹配记录）</td></tr>';
+        }
+
+        // ===== 证书库：我的证书（PKI/MY 导入库） =====
+        let myData = [];
+        let myPendingFile = null;
+        let myPendingName = '';
+        let myDeleteSerial = '';
+        async function loadMy() {
+          try {
+            const r = await api('/api/my/list');
+            if (r.ok) { myData = r.data || []; renderMy(); }
+          } catch (e) { /* ignore */ }
+        }
+        function myTypeTxt(t) { return {R:'根证书', C:'CA证书', E:'终端证书'}[t] || t; }
+        function renderMy() {
+          const f = v('myFilter').toLowerCase();
+          const rows = myData.filter(e => !f || JSON.stringify(e).toLowerCase().includes(f));
+          const tb = $('myTable').querySelector('tbody');
+          tb.innerHTML = '';
+          rows.forEach(e => {
+            const tr = document.createElement('tr');
+            tr.innerHTML =
+              '<td class="t-box" data-tip="' + esc(myTip(e)) + '">' + esc(e.serial) + '</td>' +
+              '<td>' + esc(myTypeTxt(e.type)) + '</td>' +
+              '<td>' + esc(e.algo) + '</td>' +
+              '<td>' + (e.hasKey === 'Y' ? '是' : '否') + '</td>' +
+              '<td>' + esc(e.notBefore) + '</td><td>' + esc(e.notAfter) + '</td>' +
+              '<td><button class="ghost" data-mserial="' + esc(e.serial) + '" data-act="detail" style="padding:4px 12px;font-size:12px">详情</button> ' +
+              '<button class="ghost" data-mserial="' + esc(e.serial) + '" data-act="verify" style="padding:4px 12px;font-size:12px">验证</button> ' +
+              '<button class="ghost" data-mserial="' + esc(e.serial) + '" data-act="del" style="padding:4px 12px;font-size:12px;color:#dc2626;font-weight:700">删除</button></td>';
+            tb.appendChild(tr);
+          });
+          if (!rows.length) tb.innerHTML = '<tr><td colspan="7" style="color:var(--dim)">（无记录，点击"导入证书"添加）</td></tr>';
+        }
+        function myTip(e) {
+          return '<div class="kv"><b>序列号：</b>' + esc(e.serial) + '</div>' +
+            '<div class="kv"><b>证书类型：</b>' + esc(myTypeTxt(e.type)) + '</div>' +
+            '<div class="kv"><b>算法：</b>' + esc(e.algo) + ' / 私钥：' + (e.hasKey === 'Y' ? '有' : '无') + '</div>' +
+            '<div class="kv"><b>有效期：</b>' + esc(e.notBefore) + ' ~ ' + esc(e.notAfter) + '</div>';
+        }
+        function myFileChosen() {
+          const inp = $('myFile');
+          if (!inp.files || !inp.files.length) return;
+          const file = inp.files[0];
+          const name = (file.name || '').toLowerCase();
+          myPendingFile = file; myPendingName = file.name || 'cert';
+          if (name.endsWith('.pfx') || name.endsWith('.p12') || name.endsWith('.jks')) {
+            $('myPwdFile').textContent = '文件：' + file.name;
+            $('myPwd').value = '';
+            $('myPwdModal').style.display = 'flex';
+            setTimeout(function(){ $('myPwd').focus(); }, 60);
+          } else {
+            myDoImport('');
+          }
+          inp.value = '';
+        }
+        function closeMyPwd() { $('myPwdModal').style.display = 'none'; }
+        function myPwdOk() { myDoImport($('myPwd').value); closeMyPwd(); }
+        async function myDoImport(password) {
+          if (!myPendingFile) return;
+          const msg = $('myMsg');
+          msg.className = 'hint'; msg.style.color = 'var(--dim)';
+          msg.textContent = '正在导入 ' + myPendingName + ' ...';
+          const fd = new FormData();
+          fd.append('file', myPendingFile);
+          if (password !== '') fd.append('password', password);
+          try {
+            const resp = await fetch('/api/my/import', { method: 'POST', body: fd });
+            const j = await resp.json();
+            if (j.ok) {
+              msg.style.color = 'var(--ok)';
+              msg.textContent = (j.message || '导入成功') + '，证书：' + (j.certPath || '') + (j.keyPath ? '，私钥：' + j.keyPath : '');
+              loadMy();
+            } else {
+              msg.style.color = 'var(--err)';
+              msg.textContent = '导入失败：' + (j.message || '未知错误');
+            }
+          } catch (e) {
+            msg.style.color = 'var(--err)';
+            msg.textContent = '导入请求异常：' + e;
+          }
+        }
+        function myAskDelete(serial) {
+          myDeleteSerial = serial;
+          $('myDelText').textContent = '是否删除 序列号为 ' + serial + ' 的证书？';
+          $('myDelModal').style.display = 'flex';
+        }
+        function closeMyDel() { $('myDelModal').style.display = 'none'; }
+        async function myDoDelete() {
+          const s = myDeleteSerial;
+          closeMyDel();
+          if (!s) return;
+          try {
+            const r = await api('/api/my/delete', { serial: s });
+            const msg = $('myMsg');
+            msg.className = 'hint';
+            msg.style.color = r.ok ? 'var(--ok)' : 'var(--err)';
+            msg.textContent = r.message || (r.ok ? '删除成功' : '删除失败');
+            loadMy();
+          } catch (e) {
+            const msg = $('myMsg');
+            msg.className = 'hint'; msg.style.color = 'var(--err)';
+            msg.textContent = '删除请求异常：' + e;
+          }
         }
 
         // 签发证书的颁发者下拉：CERTS.txt 中 R/C 类型序列号（悬停显示证书详情）
@@ -4347,6 +5071,10 @@ const $ = id => document.getElementById(id);
           if (!s) { $('modalJson').textContent = '未选择证书'; return; }
           if (currentDetailSource === 'cacerts' && currentDetailJson) {
             MODPKICACERTVIERW(currentDetailJson, { noRevokeCheck: true });
+            return;
+          }
+          if (currentDetailSource === 'my' && currentDetailJson) {
+            MODPKICACERTVIERW(currentDetailJson);
             return;
           }
           $('modalJson').textContent = '正在获取证书链...';
@@ -4652,13 +5380,24 @@ const $ = id => document.getElementById(id);
         }
 
         // ===== 密钥位数联动（RSA 可编辑下拉 / ECC·SM2 只读固定） =====
-        const BITS_OPT = { RSA: [1024, 2048, 3072, 4096, 5120, 6144, 7168, 8192], ECC: [256, 384, 521], SM2: [256] };
+        const BITS_OPT = { RSA: [1024, 2048, 3072, 4096, 5120, 6144, 7168, 8192], ECC: [256, 384, 521], SM2: [256], PQC: ['ML-DSA-44','ML-DSA-65','ML-DSA-87'] };
+        function syncHashForAlgo(algo, hashSel) {
+          if (!hashSel) return;
+          if (algo === 'PQC') {
+            hashSel.value = 'NULL';
+            hashSel.disabled = true;
+          } else {
+            hashSel.disabled = false;
+            if (hashSel.value === 'NULL') hashSel.value = 'sha256';
+          }
+        }
         function algoChanged() {
           const algo = $('scAlgo').value;
           const opts = BITS_OPT[algo] || [];
           const cur = parseInt($('scBits').value, 10);
           $('scBits').innerHTML = opts.map(v => '<option>' + v + '</option>').join('');
           $('scBits').value = opts.includes(cur) ? String(cur) : String(opts[0]);
+          syncHashForAlgo(algo, $('scHash'));
         }
         // 取当前密钥位数实际值
         function bitsVal() {
@@ -4667,13 +5406,14 @@ const $ = id => document.getElementById(id);
 
         // ===== 密钥位数联动（扩展列表：签发根证书/初始化环境共用） =====
         // RSA 可编辑下拉 1024..8192（含 5120/6144/7168）；ECC 固定 256/384/521；SM2 固定 256
-        const BITS_OPT_EXT = { RSA: [1024, 2048, 3072, 4096, 5120, 6144, 7168, 8192], ECC: [256, 384, 521], SM2: [256] };
+        const BITS_OPT_EXT = { RSA: [1024, 2048, 3072, 4096, 5120, 6144, 7168, 8192], ECC: [256, 384, 521], SM2: [256], PQC: ['ML-DSA-44','ML-DSA-65','ML-DSA-87'] };
         function extAlgoChanged(p) {
           const algo = $(p + 'Algo').value;
           const opts = BITS_OPT_EXT[algo] || [];
           const cur = parseInt($(p + 'Bits').value, 10);
           $(p + 'Bits').innerHTML = opts.map(v => '<option>' + v + '</option>').join('');
           $(p + 'Bits').value = opts.includes(cur) ? String(cur) : String(opts[0]);
+          syncHashForAlgo(algo, $(p + 'Hash'));
         }
         function extBitsVal(p) {
           return $(p + 'Bits').value;
@@ -4942,6 +5682,24 @@ const $ = id => document.getElementById(id);
             const r = await api('/api/certjson?serial=' + encodeURIComponent(btn.getAttribute('data-serial')));
             if (r.ok) MODPKICACERTVIERW(r.data, { noRevokeCheck: true });
           } catch (e) { /* ignore */ }
+        });
+
+        // 我的证书表格：详情 / 验证 / 删除 事件委托
+        $('myTable').querySelector('tbody').addEventListener('click', function (ev) {
+          const btn = ev.target.closest ? ev.target.closest('button[data-mserial]') : null;
+          if (!btn) return;
+          const serial = btn.getAttribute('data-mserial');
+          const act = btn.getAttribute('data-act') || '';
+          if (act === 'detail') showDetail(serial, 'my');
+          else if (act === 'verify') openVerify(serial);
+          else if (act === 'del') myAskDelete(serial);
+        });
+        $('myTable').querySelector('tbody').addEventListener('dblclick', function (ev) {
+          if (ev.target.closest && ev.target.closest('button')) return;
+          const tr = ev.target.closest ? ev.target.closest('tr') : null;
+          if (!tr) return;
+          const btn = tr.querySelector('button[data-mserial]');
+          if (btn) viewChainCert(btn.getAttribute('data-mserial'));
         });
         </script>
         </body>
@@ -5256,6 +6014,9 @@ const $ = id => document.getElementById(id);
       var bits = n >= 120 ? 521 : (n >= 50 ? 384 : 256);
       return "ECC (" + bits + " Bits)";
     }
+    if (oid === "2.16.840.1.101.3.4.3.17") return "ML-DSA-44";
+    if (oid === "2.16.840.1.101.3.4.3.18") return "ML-DSA-65";
+    if (oid === "2.16.840.1.101.3.4.3.19") return "ML-DSA-87";
     if (oid === "1.3.101.112") return "Ed25519";
     if (oid === "1.3.101.113") return "Ed448";
     if (oid === "1.2.840.10040.4.1") return "DSA";
@@ -5446,6 +6207,9 @@ const $ = id => document.getElementById(id);
     "2.16.840.1.101.3.4.3.2":"SHA224withDSA",
     "2.16.840.1.101.3.4.3.3":"SHA256withDSA",
     "1.2.156.10197.1.501":   "SM2withSM3",
+    "2.16.840.1.101.3.4.3.17":"ML-DSA-44",
+    "2.16.840.1.101.3.4.3.18":"ML-DSA-65",
+    "2.16.840.1.101.3.4.3.19":"ML-DSA-87",
     "1.3.101.112":           "Ed25519",
     "1.3.101.113":           "Ed448"
   };
@@ -5459,6 +6223,11 @@ const $ = id => document.getElementById(id);
     var hash;
     if (sigAlgOid === "1.2.156.10197.1.501" || sigAlg === "SM2withSM3") {
       hash = "SM3";
+    } else if (sigAlgOid === "2.16.840.1.101.3.4.3.17" || sigAlg === "ML-DSA-44") {
+      hash = "内置SHAKE128（纯签名）";
+    } else if (sigAlgOid === "2.16.840.1.101.3.4.3.18" || sigAlg === "ML-DSA-65"
+        || sigAlgOid === "2.16.840.1.101.3.4.3.19" || sigAlg === "ML-DSA-87") {
+      hash = "内置SHAKE256（纯签名）";
     } else {
       var mh = sigAlg.match(/SHA(\\d+)/i);
       hash = mh ? "SHA" + mh[1] : (/SHA1/i.test(sigAlg) ? "SHA1" : (/MD5/i.test(sigAlg) ? "MD5" : "SHA256"));

@@ -1,4 +1,4 @@
-# MODPKICA Java 复刻版 v1.25（BC 1.85 离线）
+# MODPKICA Java 复刻版 v1.26（BC 1.85 离线）
 
 > 使用 **Java + BouncyCastle 1.85** 离线复刻 Go 版 MODPKICA 全套 PKI 功能：X.509 证书签发、CRL 吊销列表、OCSP 在线状态、RFC3161 / Authenticode 时间戳、RFC 6962 CT 日志服务（SCT 服务管理）、WebAdmin 浏览器管理面板。
 >
@@ -152,7 +152,7 @@
 
 ### 4. MakeCert —— 签发下级证书
 
-支持签发中间 CA（类型 C）、终端证书（类型 E）；颁发者证书类型自动从 ROOT / CA 目录加载密钥对；支持 RSA / ECC / SM2、SHA1 / SHA256 / SHA384 / SHA512 / SM3；密钥用法、增强型密钥用法（EKU 编号或 OID）、证书策略、SAN、有效期自定义。**SCT 预证书流程**：签发服务器 / 客户端证书（EKU 含服务器/客户端认证）时，先签发含 poison 扩展（RFC 6962）的 SCT 预证书，POST 本机 `/ct/add` 获取 SCTList，嵌入 SCT 扩展（OID `1.3.6.1.4.1.11129.2.4.2`）二次签名生成最终证书（已移除自创 2.4.5 扩展）。
+支持签发中间 CA（类型 C）、终端证书（类型 E）；颁发者证书类型自动从 ROOT / CA 目录加载密钥对；支持 RSA / ECC / SM2 / PQC（ML-DSA-44/65/87，纯签名哈希 NULL）、SHA1 / SHA256 / SHA384 / SHA512 / SM3；密钥用法、增强型密钥用法（EKU 编号或 OID）、证书策略、SAN、有效期自定义。**SCT 预证书流程**：签发服务器 / 客户端证书（EKU 含服务器/客户端认证）时，先签发含 poison 扩展（RFC 6962）的 SCT 预证书，POST 本机 `/ct/add` 获取 SCTList，嵌入 SCT 扩展（OID `1.3.6.1.4.1.11129.2.4.2`）二次签名生成最终证书（已移除自创 2.4.5 扩展）。
 
 ### 5. RootGetCrl —— 签发吊销列表
 
@@ -523,7 +523,13 @@ A：离线 / 无外网环境会请求失败，但签名**不中断**——时间
 ---
 
 ## 更新记录
-## 更新记录
+- **v1.26（2026-09-26）——新增 PQC（ML-DSA）签发/导入 + 我的证书库 + 证书查看器 ML-DSA 显示**
+  - **我的证书（MyCerts）导入**：证书库新增选择夹「我的证书」，增加「导入证书」按钮，支持 pfx / jks / p12 / cer / crt / pem 文件；选择 .pfx/.p12/.jks 时弹密码输入悬浮窗，并**立即校验文件与密码是否匹配**，匹配后导出内部全部证书/私钥存于 `PKI/MY/序列号.crt` + `序列号.key`，并按格式登记 `PKI/MY/myCERTS.txt`（# 序列号 类型 R/C/E 是否存在私钥 Y/N 算法 RSA/ECC/SM2/PQC 生效日期 失效日期，模板 `myCERTS.txt.sm`）；每行操作含 详情 / 验证 / 删除（深红字体，删除弹「是否删除 序列号为xxxx的证书？」确认窗）
+  - **PQC（ML-DSA）证书导入**：支持 PQC 目录下 PEM 证书（.crt/.cer）与私钥（.key.pem）导入，算法登记为 `PQC`；PKCS12（pfx/jks）对 ML-DSA 私钥封装存在兼容性问题时提示改用同目录 PEM 文件导入；国密 jks/pfx 样本导入兼容修复
+  - **PQC（ML-DSA）证书签发**：签发证书 / 签发根证书 / 初始化环境三页新增密钥算法 `PQC`，密钥位数（下拉）可选 `ML-DSA-44 / ML-DSA-65 / ML-DSA-87`，哈希算法新增 `NULL`——选 PQC 时哈希自动锁定 NULL（不可选其他，切回 RSA/ECC/SM2 自动恢复）；CERTS.txt 算法列统一写 `PQC`；后端 `MakeRoot.java` / `MakeCert.java` 新增 PQC 分支，`CertUtil.generatePqcKeyPair` 改用 BC 1.85 标准 `MLDSAParameterSpec.fromName(...)`；实测三规格根证书签名算法 OID 分别为 `2.16.840.1.101.3.4.3.17/.18/.19`、签名长度 2420/3309/4627，自签验证通过，PQC 根签 PQC 终端证书链验证通过，PQC 根 CRL 生成成功
+  - **证书查看器支持 ML-DSA（PQC）**：签名算法 OID `2.16.840.1.101.3.4.3.17/18/19` 正确显示 `ML-DSA-44 / ML-DSA-65 / ML-DSA-87`（SIG_OID_NAMES 新增三条映射）；签名哈希算法按 FIPS 204 纯签名特性显示 `内置SHAKE128（纯签名）`（44）与 `内置SHAKE256（纯签名）`（65/87），不再误显示 SHA256；公钥类型（详细信息页）对三个 SPKI 算法 OID 同样显示 ML-DSA 名称
+  - **签名专区联动我的证书**：微软代码签名 / PDF 文档签名两个下拉式选择框「签名证书」自动追加 `PKI/MY/myCERTS.txt` 中含私钥的记录（不判 OID，按格式直接加入）
+
 - **v1.25（2026-09-21）——新增 Windows 风格证书查看器 + 颁发者说明弹窗**
   - **证书查看器（cert-viewer.js，仿制 Windows 证书查看器）**：
     - **三页签**：常规 / 详细信息 / 证书路径，Windows 风格可拖拽窗口；入口 = 证书库「详情」弹窗→「查看证书」按钮、证书库行双击、证书路径页双击层级（每层打开独立新查看器，路径截断到该层）

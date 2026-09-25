@@ -27,6 +27,7 @@ import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithID;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.SM2Signer;
+import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
 import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
@@ -48,6 +49,7 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.security.spec.ECGenParameterSpec;
 import java.util.Date;
+import java.util.Locale;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -126,6 +128,38 @@ public final class CertUtil {
     /** 生成 SM2 密钥对（sm2p256v1）。 */
     public static KeyPair generateSm2KeyPair() throws Exception {
         return Sm2Util.generateSm2JcaKeyPair();
+    }
+
+    /**
+     * 生成 ML-DSA（FIPS 204）PQC 密钥对。
+     *
+     * @param spec 规格字符串，接受 "ML-DSA-44"/"ML-DSA-65"/"ML-DSA-87"（也兼容 "44"/"65"/"87" 等）
+     */
+    public static KeyPair generatePqcKeyPair(String spec) throws Exception {
+        String s = normalizePqcSpec(spec);
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(s, "BC");
+        kpg.initialize(MLDSAParameterSpec.fromName(s));
+        return kpg.generateKeyPair();
+    }
+
+    /** 归一化 ML-DSA 规格为 BC 算法名（ML-DSA-44/65/87），非法输入回退 ML-DSA-65。 */
+    public static String normalizePqcSpec(String spec) {
+        if (spec == null) {
+            return "ML-DSA-65";
+        }
+        String s = spec.trim().toUpperCase(Locale.ROOT).replace(" ", "").replace("_", "-");
+        switch (s) {
+            case "44":
+            case "ML-DSA-44":
+                return "ML-DSA-44";
+            case "87":
+            case "ML-DSA-87":
+                return "ML-DSA-87";
+            case "65":
+            case "ML-DSA-65":
+            default:
+                return "ML-DSA-65";
+        }
     }
 
     // ============================ 签名算法 OID ============================
@@ -219,6 +253,10 @@ public final class CertUtil {
             // JCA 私钥 -> ECPrivateKeyParameters
             ECPrivateKeyParameters priv = Sm2Util.toEcPrivateParams(key);
             return new SM2ContentSigner(priv);
+        }
+        // PQC（ML-DSA/SLH-DSA 等）：纯签名算法，内部自带哈希，算法名即私钥算法名（如 ML-DSA-65）
+        if ("PQC".equalsIgnoreCase(keyType) || PemIO.isPqcAlgName(key.getAlgorithm())) {
+            return new JcaContentSignerBuilder(key.getAlgorithm()).setProvider("BC").build(key);
         }
         String h = normalizeHash(hash).toLowerCase();
         String jcaAlg;

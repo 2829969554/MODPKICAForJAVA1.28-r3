@@ -138,6 +138,10 @@ public final class MakeRoot {
             case "SM2":
                 kp = CertUtil.generateSm2KeyPair();
                 break;
+            case "PQC":
+                // ML-DSA-44/65/87：密钥位数参数为规格字符串（如 ML-DSA-65）
+                kp = CertUtil.generatePqcKeyPair(args[1]);
+                break;
             default:
                 System.out.println("不支持的算法: " + keyType);
                 return;
@@ -225,7 +229,8 @@ public final class MakeRoot {
         db.addEntry(e);
 
         System.out.println("根证书生成成功 序列号=" + serialHex + " 算法=" + keyType
-                + " 位长=" + bit + " 哈希=" + hash);
+                + " 位长=" + ("PQC".equals(keyType) ? CertUtil.normalizePqcSpec(args[1]) : bit)
+                + " 哈希=" + hash);
 
         // ---- 8. 生成该根的 CRL（对齐 Go 版：MAKEROOT 完成后调用 rootGETcrl） ----
         RootGetCrl.run();
@@ -261,6 +266,9 @@ public final class MakeRoot {
                 return 384;
             }
             return 521;
+        }
+        if ("PQC".equals(keyType)) {
+            return 0; // ML-DSA 规格字符串（ML-DSA-44/65/87）由 generatePqcKeyPair 处理
         }
         return 256; // SM2 固定 256
     }

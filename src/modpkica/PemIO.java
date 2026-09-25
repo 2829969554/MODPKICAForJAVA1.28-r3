@@ -191,6 +191,10 @@ public final class PemIO {
             // 直接写 PKCS#8，但用国密自定义头
             type = "SM2 PRIVATE KEY";
             der = pki.getEncoded();
+        } else if ("PQC".equalsIgnoreCase(keyType)) {
+            // PQC（ML-DSA/SLH-DSA/ML-KEM 等）：标准 PKCS#8 PRIVATE KEY
+            type = "PRIVATE KEY";
+            der = pki.getEncoded();
         } else {
             throw new IllegalArgumentException("未知 keyType: " + keyType);
         }
@@ -227,12 +231,49 @@ public final class PemIO {
             if (Sm2Util.OID_SM2_PUBLIC_KEY.equals(alg.getId())) {
                 return "SM2";
             }
+            if (isPqcOid(alg.getId())) {
+                return "PQC";
+            }
             return "ECC";
         }
         return null;
     }
 
     // ============================ 内部工具 ============================
+
+    /**
+     * 判断算法 OID 是否属于 PQC（后量子）算法族。
+     * ML-DSA / SLH-DSA / ML-KEM / Falcon / XMSS 等（RFC 8708 / NIST PQC 标准 OID）。
+     */
+    public static boolean isPqcOid(String oid) {
+        if (oid == null) {
+            return false;
+        }
+        // ML-DSA：2.16.840.1.101.3.4.3.17/18/19（SPKI）与 1.3.6.1.5.5.7.6.30（私钥弧）
+        // SLH-DSA：2.16.840.1.101.3.4.3.14/15/16 与 1.3.6.1.5.5.7.6.31
+        // ML-KEM：2.16.840.1.101.3.4.4.* 与 1.3.6.1.5.5.7.6.32
+        return oid.startsWith("2.16.840.1.101.3.4.3.1")   // 14..19 SLH-DSA/ML-DSA
+                || oid.startsWith("2.16.840.1.101.3.4.4.") // ML-KEM
+                || oid.startsWith("1.3.6.1.5.5.7.6.30")     // ML-DSA 私钥弧
+                || oid.startsWith("1.3.6.1.5.5.7.6.31")     // SLH-DSA 私钥弧
+                || oid.startsWith("1.3.6.1.5.5.7.6.32")     // ML-KEM 私钥弧
+                || oid.startsWith("1.3.101.113")            // Falcon 候选
+                || oid.startsWith("1.3.101.110")            // XMSS
+                || oid.startsWith("0.4.0.127.0.15.1.1.13"); // McEliece（Go 标准）
+    }
+
+    /** 判断算法名是否为 PQC（BC 返回的公钥/私钥算法名）。 */
+    public static boolean isPqcAlgName(String alg) {
+        if (alg == null) {
+            return false;
+        }
+        String u = alg.toUpperCase();
+        return u.contains("ML-DSA") || u.contains("SLH-DSA") || u.contains("ML-KEM")
+                || u.contains("SPHINCS") || u.contains("DILITHIUM") || u.contains("KYBER")
+                || u.contains("FALCON") || u.contains("XMSS") || u.contains("MCELIECE")
+                || u.contains("RAINBOW") || u.contains("BIKE") || u.contains("HQC")
+                || u.contains("SNTRU") || u.contains("LAKE");
+    }
 
     /** 按 OID 查曲线位宽，查不到默认 256。 */
     private static int lookupCurveBitLength(ASN1ObjectIdentifier oid) {
