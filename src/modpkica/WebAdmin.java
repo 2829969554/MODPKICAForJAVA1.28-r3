@@ -409,6 +409,20 @@ public final class WebAdmin {
                         sendJson(ex, 405, Map.of("ok", false, "message", "仅支持 GET"));
                     }
                     return;
+                case "/api/cert/download":
+                    if ("GET".equalsIgnoreCase(method)) {
+                        certDownload(ex);
+                    } else {
+                        sendJson(ex, 405, Map.of("ok", false, "message", "仅支持 GET"));
+                    }
+                    return;
+                case "/api/cert/export":
+                    if ("GET".equalsIgnoreCase(method)) {
+                        certExport(ex);
+                    } else {
+                        sendJson(ex, 405, Map.of("ok", false, "message", "仅支持 GET"));
+                    }
+                    return;
                 case "/api/version":
                     sendJson(ex, 200, Map.of("ok", true, "message", Admin.VERSION));
                     return;
@@ -2536,6 +2550,415 @@ public final class WebAdmin {
 
     // ============================================================
     // 小工具
+
+    // ============================================================
+    // 证书下载 / 导出（证书库右键菜单）
+    // ============================================================
+
+    /** /api/cert/download?serial=..&kind=..&password=..&src=certs|cacerts|my —— 下载文件（附件）。 */
+    private static void certDownload(HttpExchange ex) throws Exception {
+        String q = ex.getRequestURI().getQuery();
+        String serial = qp(q, "serial");
+        String kind = qp(q, "kind");
+        String password = qp(q, "password");
+        String src = qp(q, "src");
+        if (serial == null || serial.isEmpty() || kind == null || kind.isEmpty()) {
+            sendJson(ex, 400, Map.of("ok", false, "message", "缺少参数 serial/kind"));
+            return;
+        }
+        if (src == null || src.isEmpty()) {
+            src = "certs";
+        }
+        byte[] data;
+        String fileName;
+        try {
+            switch (kind) {
+                case "single_crt":
+                case "chain_crt":
+                case "issuer_crt": {
+                    java.util.List<java.security.cert.X509Certificate> chain = buildCertChain(serial, src);
+                    if (chain.isEmpty()) {
+                        sendJson(ex, 404, Map.of("ok", false, "message", "未找到证书: " + serial));
+                        return;
+                    }
+                    int from = "issuer_crt".equals(kind) ? Math.min(1, chain.size()) : 0;
+                    int to = "single_crt".equals(kind) ? Math.min(1, chain.size()) : chain.size();
+                    StringBuilder pem = new StringBuilder();
+                    for (int i = from; i < to; i++) {
+                        pem.append(X509JsonConverter.derToPem(chain.get(i).getEncoded()));
+                    }
+                    data = pem.toString().getBytes(StandardCharsets.UTF_8);
+                    fileName = serial + ".crt";
+                    break;
+                }
+                case "p7b": {
+                    java.util.List<java.security.cert.X509Certificate> chain = buildCertChain(serial, src);
+                    if (chain.isEmpty()) {
+                        sendJson(ex, 404, Map.of("ok", false, "message", "未找到证书: " + serial));
+                        return;
+                    }
+                    data = p7bBytes(chain);
+                    fileName = serial + ".p7b";
+                    break;
+                }
+                case "key": {
+                    String keyPath = findKeyFile(serial, src);
+                    if (keyPath == null) {
+                        sendJson(ex, 404, Map.of("ok", false, "message",
+                                "未找到私钥文件: " + serial + "（已查找 PKI/MY、PKI/KEY、PKI/ROOT、PKI/CA、PKI/OCSP 目录）"));
+                        return;
+                    }
+                    data = Files.readAllBytes(Paths.get(baseDir, keyPath));
+                    fileName = serial + ".key";
+                    break;
+                }
+                case "pfx":
+                case "jks": {
+                    java.util.List<java.security.cert.X509Certificate> chain = buildCertChain(serial, src);
+                    String keyPath = findKeyFile(serial, src);
+                    if (chain.isEmpty() || keyPath == null) {
+                        sendJson(ex, 404, Map.of("ok", false, "message", "证书或私钥不存在: " + serial));
+                        return;
+                    }
+                    if (password == null) {
+                        password = "";
+                    }
+                    java.security.PrivateKey key = readJcaPrivateKey(keyPath);
+                    data = keyStoreBytes(chain, key, password, "pfx".equals(kind) ? "PKCS12" : "JKS");
+                    fileName = serial + ("pfx".equals(kind) ? ".pfx" : ".jks");
+                    break;
+                }
+                default:
+                    sendJson(ex, 400, Map.of("ok", false, "message", "未知 kind: " + kind));
+                    return;
+            }
+        } catch (Exception e) {
+            sendJson(ex, 500, Map.of("ok", false, "message", "下载失败: " + e));
+            return;
+        }
+        sendBytes(ex, 200, "application/octet-stream", fileName, data);
+    }
+
+    /** /api/cert/export?serial=..&kind=..&src=.. —— 导出文本（剪贴板）。 */
+    private static void certExport(HttpExchange ex) throws Exception {
+        String q = ex.getRequestURI().getQuery();
+        String serial = qp(q, "serial");
+        String kind = qp(q, "kind");
+        String src = qp(q, "src");
+        if (serial == null || serial.isEmpty() || kind == null || kind.isEmpty()) {
+            sendJson(ex, 400, Map.of("ok", false, "message", "缺少参数 serial/kind"));
+            return;
+        }
+        if (src == null || src.isEmpty()) {
+            src = "certs";
+        }
+        String text;
+        try {
+            switch (kind) {
+                case "cert_pem": {
+                    java.security.cert.X509Certificate c = loadCertBySource(serial, src);
+                    text = X509JsonConverter.derToPem(c.getEncoded());
+                    break;
+                }
+                case "chain_pem":
+                case "issuer_pem": {
+                    java.util.List<java.security.cert.X509Certificate> chain = buildCertChain(serial, src);
+                    if (chain.isEmpty()) {
+                        sendJson(ex, 404, Map.of("ok", false, "message", "未找到证书: " + serial));
+                        return;
+                    }
+                    int from = "issuer_pem".equals(kind) ? Math.min(1, chain.size()) : 0;
+                    StringBuilder pem = new StringBuilder();
+                    for (int i = from; i < chain.size(); i++) {
+                        pem.append(X509JsonConverter.derToPem(chain.get(i).getEncoded()));
+                    }
+                    text = pem.toString();
+                    break;
+                }
+                case "key_pem":
+                case "key_hex":
+                case "key_b64": {
+                    String keyPath = findKeyFile(serial, src);
+                    if (keyPath == null) {
+                        sendJson(ex, 404, Map.of("ok", false, "message",
+                                "未找到私钥文件: " + serial + "（已查找 PKI/MY、PKI/KEY、PKI/ROOT、PKI/CA、PKI/OCSP 目录）"));
+                        return;
+                    }
+                    byte[] raw = Files.readAllBytes(Paths.get(baseDir, keyPath));
+                    byte[] der = "key_pem".equals(kind) ? raw : pemToDer(raw);
+                    if ("key_pem".equals(kind)) {
+                        text = new String(Files.readAllBytes(Paths.get(baseDir, keyPath)),
+                                StandardCharsets.UTF_8);
+                    } else if ("key_hex".equals(kind)) {
+                        text = hexOf(der);
+                    } else {
+                        text = Base64.getEncoder().encodeToString(der);
+                    }
+                    break;
+                }
+                default:
+                    sendJson(ex, 400, Map.of("ok", false, "message", "未知 kind: " + kind));
+                    return;
+            }
+        } catch (Exception e) {
+            sendJson(ex, 500, Map.of("ok", false, "message", "导出失败: " + e));
+            return;
+        }
+        sendJson(ex, 200, Map.of("ok", true, "text", text));
+    }
+
+    /** query 参数提取（URL 未解码值）。 */
+    private static String qp(String q, String name) {
+        if (q == null) {
+            return null;
+        }
+        for (String kv : q.split("&")) {
+            if (kv.startsWith(name + "=")) {
+                return kv.substring(name.length() + 1);
+            }
+        }
+        return null;
+    }
+
+    /** 按序列号加载证书（src=certs|cacerts|my）。 */
+    private static java.security.cert.X509Certificate loadCertBySource(String serial, String src)
+            throws Exception {
+        if ("cacerts".equals(src)) {
+            String want = serial.toLowerCase().replace("0x", "");
+            for (java.security.cert.X509Certificate c : loadCacertsCerts()) {
+                if (certSerialHex(c).equals(want)) {
+                    return c;
+                }
+            }
+            throw new Exception("cacerts 未找到序列号: " + serial);
+        }
+        String certPath = findCertFile(serial.toLowerCase());
+        if (certPath == null) {
+            throw new Exception("未找到证书文件: " + serial);
+        }
+        return PemIO.readCert(baseDir + "/" + certPath);
+    }
+
+    /** 构建证书链（自身 → 颁发者 → … → 根）。 */
+    private static java.util.List<java.security.cert.X509Certificate> buildCertChain(
+            String serial, String src) throws Exception {
+        java.util.List<java.security.cert.X509Certificate> out = new ArrayList<>();
+        Set<String> seen = new LinkedHashSet<>();
+        out.add(loadCertBySource(serial, src));
+        seen.add(serial.toLowerCase());
+        CertsDB db = null;
+        try {
+            db = new CertsDB();
+            db.load(baseDir);
+        } catch (Exception ignore) {
+            db = null;
+        }
+        java.security.cert.X509Certificate issuer = out.get(0);
+        String cur = serial;
+        while (true) {
+            String parent = null;
+            if (db != null) {
+                try {
+                    parent = db.findIssuerIdBySerial(cur);
+                } catch (Exception ignore) {
+                    parent = null;
+                }
+            }
+            if (parent == null || parent.isEmpty() || "null".equalsIgnoreCase(parent)) {
+                parent = findIssuerByDn(issuer, src);
+            }
+            if (parent == null || parent.equalsIgnoreCase(cur)
+                    || !seen.add(parent.toLowerCase())) {
+                break;
+            }
+            try {
+                java.security.cert.X509Certificate pc = loadCertBySource(
+                        parent, "cacerts".equals(src) ? "cacerts" : "certs");
+                out.add(pc);
+                issuer = pc;
+                cur = parent;
+            } catch (Exception e) {
+                break;
+            }
+        }
+        return out;
+    }
+
+    /** 按颁发者 DN 在 ROOT/CA/MY/CERT/WebPublic 目录及 cacerts 中寻找 subject 匹配的上级证书。 */
+    private static String findIssuerByDn(java.security.cert.X509Certificate child, String src) {
+        String issuerDn;
+        try {
+            issuerDn = child.getIssuerX500Principal().getName();
+        } catch (Exception e) {
+            return null;
+        }
+        String subjectDn = null;
+        try {
+            subjectDn = child.getSubjectX500Principal().getName();
+        } catch (Exception ignore) {
+            subjectDn = null;
+        }
+        if (issuerDn != null && issuerDn.equals(subjectDn)) {
+            return null; // 自签根
+        }
+        String[] dirs = {"PKI/ROOT/", "PKI/CA/", "PKI/MY/", "PKI/CERT/", "PKI/WebPublic/CRT/"};
+        for (String d : dirs) {
+            Path dir = Paths.get(baseDir, d);
+            if (!Files.isDirectory(dir)) {
+                continue;
+            }
+            try (Stream<Path> st = Files.list(dir)) {
+                List<Path> crts = st.filter(p -> p.getFileName().toString().endsWith(".crt"))
+                        .collect(Collectors.toList());
+                for (Path p : crts) {
+                    try {
+                        java.security.cert.X509Certificate c = PemIO.readCert(p.toString());
+                        if (issuerDn.equals(c.getSubjectX500Principal().getName())) {
+                            return c.getSerialNumber().toString(16).toLowerCase();
+                        }
+                    } catch (Exception ignore) {
+                    }
+                }
+            } catch (Exception ignore) {
+            }
+        }
+        if (!"certs".equals(src)) {
+            for (java.security.cert.X509Certificate c : loadCacertsCerts()) {
+                try {
+                    if (issuerDn.equals(c.getSubjectX500Principal().getName())) {
+                        return certSerialHex(c);
+                    }
+                } catch (Exception ignore) {
+                }
+            }
+        }
+        return null;
+    }
+
+    /** 查找私钥文件路径（相对 baseDir；cacerts 无私钥返回 null）。 */
+    private static String findKeyFile(String serial, String src) {
+        if ("cacerts".equals(src)) {
+            return null;
+        }
+        String s = serial.toLowerCase();
+        String[] cands = {
+                "PKI/MY/" + s + ".key",
+                "PKI/KEY/" + s + ".key",
+                "PKI/ROOT/" + s + ".key",
+                "PKI/CA/" + s + ".key",
+                "PKI/OCSP/" + s + "_ocsp.key"};
+        for (String p : cands) {
+            if (Files.exists(Paths.get(baseDir, p))) {
+                return p;
+            }
+        }
+        return null;
+    }
+
+    /** PKCS#7 certificates-only（.p7b）。 */
+    private static byte[] p7bBytes(java.util.List<java.security.cert.X509Certificate> chain)
+            throws Exception {
+        org.bouncycastle.cms.CMSSignedDataGenerator gen =
+                new org.bouncycastle.cms.CMSSignedDataGenerator();
+        gen.addCertificates(new org.bouncycastle.cert.jcajce.JcaCertStore(chain));
+        org.bouncycastle.cms.CMSSignedData sd =
+                gen.generate(new org.bouncycastle.cms.CMSAbsentContent(), false);
+        return sd.getEncoded();
+    }
+
+    /** PKCS12 / JKS 密钥库（证书链 + 私钥 + 密码）。 */
+    private static byte[] keyStoreBytes(
+            java.util.List<java.security.cert.X509Certificate> chain,
+            java.security.PrivateKey key, String password, String type) throws Exception {
+        java.security.KeyStore ks = "PKCS12".equals(type)
+                ? java.security.KeyStore.getInstance("PKCS12", "BC")
+                : java.security.KeyStore.getInstance("JKS"); // 默认 JDK provider
+        ks.load(null, null);
+        char[] pw = password.toCharArray();
+        String alias = chain.get(0).getSerialNumber().toString(16).toLowerCase();
+        ks.setKeyEntry(alias, key, pw, chain.toArray(new java.security.cert.Certificate[0]));
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ks.store(bos, pw);
+        return bos.toByteArray();
+    }
+
+    /** 读取私钥文件为 JCA PrivateKey（支持 PKCS#1 / SEC1 / PKCS#8 / OpenSSH 等 PEM 类型）。 */
+    private static java.security.PrivateKey readJcaPrivateKey(String keyPath) throws Exception {
+        try (java.io.Reader r = new java.io.InputStreamReader(
+                Files.newInputStream(Paths.get(baseDir, keyPath)), StandardCharsets.UTF_8);
+             org.bouncycastle.openssl.PEMParser pp = new org.bouncycastle.openssl.PEMParser(r)) {
+            Object o = pp.readObject();
+            org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter cv =
+                    new org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter();
+            if (o instanceof org.bouncycastle.asn1.pkcs.PrivateKeyInfo) {
+                return cv.getPrivateKey((org.bouncycastle.asn1.pkcs.PrivateKeyInfo) o);
+            }
+            if (o instanceof org.bouncycastle.openssl.PEMKeyPair) {
+                org.bouncycastle.openssl.PEMKeyPair kp =
+                        (org.bouncycastle.openssl.PEMKeyPair) o;
+                if (kp.getPrivateKeyInfo() != null) {
+                    return cv.getPrivateKey(kp.getPrivateKeyInfo());
+                }
+                return cv.getKeyPair(kp).getPrivate();
+            }
+            if (o instanceof org.bouncycastle.asn1.pkcs.RSAPrivateKey) {
+                return cv.getPrivateKey(org.bouncycastle.asn1.pkcs.PrivateKeyInfo.getInstance(o));
+            }
+            if (o instanceof org.bouncycastle.asn1.sec.ECPrivateKey) {
+                org.bouncycastle.asn1.sec.ECPrivateKey ec =
+                        (org.bouncycastle.asn1.sec.ECPrivateKey) o;
+                org.bouncycastle.asn1.x509.AlgorithmIdentifier algId =
+                        new org.bouncycastle.asn1.x509.AlgorithmIdentifier(
+                                org.bouncycastle.asn1.x9.X9ObjectIdentifiers.id_ecPublicKey,
+                                ec.getParametersObject());
+                return cv.getPrivateKey(
+                        new org.bouncycastle.asn1.pkcs.PrivateKeyInfo(algId, ec));
+            }
+            if (o instanceof org.bouncycastle.crypto.params.AsymmetricKeyParameter) {
+                org.bouncycastle.asn1.pkcs.PrivateKeyInfo pki =
+                        org.bouncycastle.crypto.util.PrivateKeyInfoFactory
+                                .createPrivateKeyInfo((org.bouncycastle.crypto.params.AsymmetricKeyParameter) o);
+                return cv.getPrivateKey(pki);
+            }
+            throw new Exception("不支持的私钥格式: " + (o == null ? "null" : o.getClass().getSimpleName()));
+        }
+    }
+
+    /** PEM 字节 → DER 字节（已是 DER 时原样返回）。字符过滤方式，兼容任何 PEM 变体。 */
+    private static byte[] pemToDer(byte[] pemBytes) {
+        String txt = new String(pemBytes, StandardCharsets.US_ASCII);
+        int b = txt.indexOf("-----BEGIN");
+        int e = txt.indexOf("-----END");
+        if (b < 0 || e < 0) {
+            return pemBytes;
+        }
+        StringBuilder sb = new StringBuilder();
+        for (int i = b; i < e; i++) {
+            char c = txt.charAt(i);
+            if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')
+                    || (c >= '0' && c <= '9') || c == '+' || c == '/' || c == '=') {
+                sb.append(c);
+            }
+        }
+        return Base64.getDecoder().decode(sb.toString());
+    }
+
+    /** 发送二进制文件（附件下载）。 */
+    private static void sendBytes(HttpExchange ex, int code, String contentType,
+            String fileName, byte[] data) throws IOException {
+        ex.getResponseHeaders().set("Content-Type", contentType);
+        ex.getResponseHeaders().set("Content-Disposition",
+                "attachment; filename=\"" + fileName + "\"");
+        ex.getResponseHeaders().set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+        ex.getResponseHeaders().set("Pragma", "no-cache");
+        ex.sendResponseHeaders(code, data.length);
+        try (OutputStream os = ex.getResponseBody()) {
+            os.write(data);
+        }
+    }
+
+    // ============================================================
+    // 小工具
     // ============================================================
 
     /** 读取 CONFIG.txt 的 WEBPORT（供状态展示）。 */
@@ -3969,6 +4392,74 @@ public final class WebAdmin {
             </div>
 
 
+<style>
+.ctx-menu{position:fixed;z-index:99999;background:var(--panel2);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 28px rgba(0,0,0,.45);padding:6px;min-width:224px;user-select:none;font-size:13px}
+.ctx-item{padding:8px 12px;border-radius:6px;cursor:pointer;white-space:nowrap;position:relative;color:var(--text)}
+.ctx-item:hover{background:var(--accent);color:#0b1120}
+.ctx-item.disabled{color:var(--dim);cursor:not-allowed;pointer-events:none;background:transparent}
+.ctx-item.has-sub .ctx-sub{display:none;position:absolute;left:100%;top:0;background:var(--panel2);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 28px rgba(0,0,0,.45);padding:6px 6px 6px 8px;min-width:290px;z-index:99998}
+.ctx-item.has-sub .ctx-sub.ctx-sub-up{top:auto;bottom:0}
+.ctx-sub .ctx-item{font-size:12px}
+</style>
+<!-- 证书库右键菜单：下载证书 / 导出证书 -->
+<div id="ctxMenu" class="ctx-menu" style="display:none">
+  <div class="ctx-item has-sub"><span>下载证书</span>
+    <div class="ctx-sub">
+      <div class="ctx-item" onclick="ctxDownload('single_crt')">下载单证书(END.crt)</div>
+      <div class="ctx-item" onclick="ctxDownload('chain_crt')">下载组合证书链(END+CA+ROOT.crt)</div>
+      <div class="ctx-item" onclick="ctxDownload('p7b')">下载组合证书链(END+CA+ROOT.p7b)</div>
+      <div class="ctx-item" onclick="ctxDownload('issuer_crt')">下载颁发者证书链(CA+ROOT.crt)</div>
+      <div class="ctx-item" data-needkey onclick="ctxDownload('key')">下载私钥(END.key)</div>
+      <div class="ctx-item" data-needkey onclick="ctxDownload('pfx',1)">下载证书+私钥(.pfx)</div>
+      <div class="ctx-item" data-needkey onclick="ctxDownload('jks',1)">下载证书+私钥(.jks)</div>
+    </div>
+  </div>
+  <div class="ctx-item has-sub"><span>导出证书</span>
+    <div class="ctx-sub">
+      <div class="ctx-item" onclick="ctxExport('cert_pem')">导出单证书到剪辑板(PEM)</div>
+      <div class="ctx-item" onclick="ctxExport('chain_pem')">导出证书链到剪辑板(PEM：END+CA+ROOT)</div>
+      <div class="ctx-item" onclick="ctxExport('issuer_pem')">PEM颁发者证书链到剪辑板(PEM：CA+ROOT)</div>
+      <div class="ctx-item" data-needkey onclick="ctxExport('key_pem')">导出私钥到剪辑板(PEM)</div>
+      <div class="ctx-item" data-needkey onclick="ctxExport('key_hex')">导出私钥到剪辑板(HEX)</div>
+      <div class="ctx-item" data-needkey onclick="ctxExport('key_b64')">导出私钥到剪辑板(Base64)</div>
+    </div>
+  </div>
+</div>
+<!-- 证书库右键下载 pfx/jks：密码输入 -->
+<div class="modal-mask" id="ctxPwdModal" style="display:none" onclick="if(event.target===this)closeCtxPwd()">
+  <div class="modal" style="width:min(460px,92vw)">
+    <div class="modal-head">
+      <h3>输入密钥库密码</h3>
+      <button class="ghost" onclick="closeCtxPwd()">取消</button>
+    </div>
+    <div class="modal-body">
+      <p class="cfg-hint" id="ctxPwdFile" style="margin-bottom:10px"></p>
+      <label>密码</label>
+      <input type="password" id="ctxPwd" placeholder="请输入导出密钥库的密码（pfx / jks）" onkeydown="if(event.key==='Enter')ctxPwdOk()">
+    </div>
+    <div class="modal-foot">
+      <button onclick="ctxPwdOk()">确定</button>
+      <button class="ghost" onclick="closeCtxPwd()">取消</button>
+    </div>
+  </div>
+</div>
+<!-- 证书库导出：浏览器剪贴板授权失败时的手动复制面板 -->
+<div class="modal-mask" id="ctxCopyModal" style="display:none" onclick="if(event.target===this)closeCtxCopy()">
+  <div class="modal" style="width:min(620px,94vw)">
+    <div class="modal-head">
+      <h3>复制到剪贴板</h3>
+      <button class="ghost" onclick="closeCtxCopy()">取消</button>
+    </div>
+    <div class="modal-body">
+      <p class="cfg-hint" style="margin-bottom:8px">浏览器未自动授权剪贴板写入，内容已预选，请点击下方"复制"按钮（或直接按 Ctrl+C）。</p>
+      <textarea id="ctxCopyText" readonly spellcheck="false" style="width:100%;height:150px;box-sizing:border-box;font-family:var(--mono);font-size:11px;background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:8px;white-space:pre"></textarea>
+    </div>
+    <div class="modal-foot">
+      <button onclick="ctxCopyTextarea()">复制</button>
+      <button class="ghost" onclick="closeCtxCopy()">关闭</button>
+    </div>
+  </div>
+</div>
     """;
     private static final String PAGE_P1B = """
             <!-- 初始化环境 -->
@@ -4910,6 +5401,7 @@ const $ = id => document.getElementById(id);
           tb.innerHTML = '';
           rows.forEach(e => {
             const tr = document.createElement('tr');
+            tr.dataset.serial = e.serial;
             // 状态文本：V.正常 / R.已吊销 / N.未知；配色：正常绿、已吊销深红、未知橙
             const stTxt = {V:'V.正常', R:'R.已吊销', N:'N.未知'}[e.status] || e.status;
             const stCls = e.status === 'R' ? 'color:#dc2626' : e.status === 'V' ? 'color:var(--ok)' : e.status === 'N' ? 'color:#f59e0b' : '';
@@ -4965,6 +5457,7 @@ const $ = id => document.getElementById(id);
           tb.innerHTML = '';
           rows.forEach(e => {
             const tr = document.createElement('tr');
+            tr.dataset.serial = e.serial;
             tr.innerHTML = '<td style="font-family:var(--mono);font-size:12px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(e.serial) + '">' + esc(e.serial) + '</td>' +
               '<td>' + esc(e.algo) + '</td>' +
               '<td>' + esc(e.notBefore) + '</td><td>' + esc(e.notAfter) + '</td>' +
@@ -4994,6 +5487,7 @@ const $ = id => document.getElementById(id);
           tb.innerHTML = '';
           rows.forEach(e => {
             const tr = document.createElement('tr');
+            tr.dataset.serial = e.serial;
             tr.innerHTML =
               '<td class="t-box" data-tip="' + esc(myTip(e)) + '">' + esc(e.serial) + '</td>' +
               '<td>' + esc(myTypeTxt(e.type)) + '</td>' +
@@ -5791,6 +6285,159 @@ const $ = id => document.getElementById(id);
           const btn = tr.querySelector('button[data-mserial]');
           if (btn) viewChainCert(btn.getAttribute('data-mserial'));
         });
+
+        // ===== 证书库右键菜单：下载证书 / 导出证书 =====
+        let ctxSerial = '', ctxSrc = 'certs', ctxKind = '';
+        function ctxMenuShow(ev, serial, src) {
+          ev.preventDefault();
+          ctxSerial = serial; ctxSrc = src;
+          const m = $('ctxMenu');
+          m.style.display = 'block';
+          m.style.visibility = 'hidden';
+          const mw = m.offsetWidth || 260;
+          const mh = m.offsetHeight || 120;
+          m.style.visibility = '';
+          const gap = 4, subW = 300, subH = 280;
+          let x = ev.clientX + gap, y = ev.clientY + gap;
+          if (x + mw + subW > window.innerWidth - gap) x = Math.max(gap, ev.clientX - mw - gap);
+          if (y + mh > window.innerHeight - gap) y = Math.max(gap, window.innerHeight - mh - gap);
+          m.style.left = x + 'px';
+          m.style.top = y + 'px';
+          const subUp = (y + mh + subH > window.innerHeight - gap);
+          m.querySelectorAll('.ctx-sub').forEach(function (el) {
+            el.classList.toggle('ctx-sub-up', subUp);
+            el.style.display = 'none';
+          });
+          const noKey = src === 'cacerts';
+          document.querySelectorAll('#ctxMenu [data-needkey]').forEach(function (el) {
+            el.classList.toggle('disabled', noKey);
+          });
+        }
+        function ctxMenuHide() { const m = $('ctxMenu'); if (m) m.style.display = 'none'; }
+        function ctxDownload(kind, needPwd) {
+          if (needPwd) { openCtxPwd(kind); return; }
+          doCtxDownload(kind, '');
+        }
+        function doCtxDownload(kind, pwd) {
+          const u = '/api/cert/download?serial=' + encodeURIComponent(ctxSerial) + '&kind=' + kind +
+            '&src=' + encodeURIComponent(ctxSrc) + (pwd ? '&password=' + encodeURIComponent(pwd) : '');
+          fetch(u).then(function (r) {
+            if (!r.ok) return r.json().then(function (j) { throw new Error(j.message || '下载失败'); });
+            return r.blob();
+          }).then(function (b) {
+            const ext = { single_crt: '.crt', chain_crt: '.crt', issuer_crt: '.crt', p7b: '.p7b', key: '.key', pfx: '.pfx', jks: '.jks' }[kind] || '';
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(b);
+            a.download = ctxSerial + ext;
+            document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(function () { URL.revokeObjectURL(a.href); }, 5000);
+            ctxMenuHide();
+          }).catch(function (err) { ctxToast(String(err && err.message ? err.message : err), false); });
+        }
+        function ctxExport(kind) {
+          const u = '/api/cert/export?serial=' + encodeURIComponent(ctxSerial) + '&kind=' + kind +
+            '&src=' + encodeURIComponent(ctxSrc);
+          fetch(u).then(function (r) { return r.json(); }).then(function (j) {
+            if (!j.ok) throw new Error(j.message || '导出失败');
+            const legacyCopy = function (text) {
+              const ta = document.createElement('textarea');
+              ta.value = text;
+              ta.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0;width:1px;height:1px';
+              document.body.appendChild(ta);
+              ta.focus(); ta.select();
+              let ok = false;
+              try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+              ta.remove();
+              if (ok) { ctxToast('已复制到剪贴板'); ctxMenuHide(); }
+              else { showCtxCopyPanel(text); }
+            };
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              navigator.clipboard.writeText(j.text)
+                .then(function () { ctxToast('已复制到剪贴板'); ctxMenuHide(); })
+                .catch(function () { legacyCopy(j.text); });
+            } else {
+              legacyCopy(j.text);
+            }
+          }).catch(function (err) { ctxToast(String(err && err.message ? err.message : err), false); });
+        }
+        // 全局悬浮提示（不依赖任何页面元素）
+        function ctxToast(msg, ok) {
+          let t = document.getElementById('ctxToast');
+          if (!t) {
+            t = document.createElement('div');
+            t.id = 'ctxToast';
+            t.style.cssText = 'position:fixed;left:50%;top:64px;transform:translateX(-50%);z-index:999999;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;box-shadow:0 8px 28px rgba(0,0,0,.5);background:var(--panel2);border:1px solid var(--border);color:var(--ok);pointer-events:none;opacity:0;transition:opacity .2s;max-width:70vw;word-break:break-all';
+            document.body.appendChild(t);
+          }
+          t.textContent = msg;
+          t.style.color = ok === false ? 'var(--err)' : 'var(--ok)';
+          t.style.borderColor = ok === false ? 'var(--err)' : 'var(--ok)';
+          t.style.opacity = '1';
+          clearTimeout(t._t);
+          t._t = setTimeout(function () { t.style.opacity = '0'; }, 2600);
+        }
+        // 剪贴板自动授权失败时的手动复制面板
+        function showCtxCopyPanel(text) {
+          const ta = $('ctxCopyText');
+          if (!ta) { ctxToast('复制失败，请手动复制', false); return; }
+          ta.value = text;
+          $('ctxCopyModal').style.display = 'flex';
+          setTimeout(function () { ta.focus(); ta.select(); }, 60);
+        }
+        function closeCtxCopy() { $('ctxCopyModal').style.display = 'none'; }
+        function ctxCopyTextarea() {
+          const ta = $('ctxCopyText');
+          ta.focus(); ta.select();
+          let ok = false;
+          try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+          if (ok) { ctxToast('已复制到剪贴板'); closeCtxCopy(); ctxMenuHide(); }
+          else { ctxToast('复制失败，请手动 Ctrl+C', false); }
+        }
+        // 右键下载 pfx / jks 密码输入
+        function openCtxPwd(kind) {
+          ctxKind = kind;
+          $('ctxPwdFile').textContent = '序列号：' + ctxSerial + '，将导出 ' +
+            (kind === 'pfx' ? '.pfx (PKCS12)' : '.jks (Java KeyStore)') + '，含证书链与私钥';
+          $('ctxPwd').value = '';
+          $('ctxPwdModal').style.display = 'flex';
+          setTimeout(function () { $('ctxPwd').focus(); }, 60);
+        }
+        function closeCtxPwd() { $('ctxPwdModal').style.display = 'none'; }
+        function ctxPwdOk() {
+          const p = $('ctxPwd').value;
+          closeCtxPwd();
+          doCtxDownload(ctxKind, p);
+        }
+        // 三个证书库列表：右键菜单绑定
+        [['certsTable', 'certs'], ['caTable', 'cacerts'], ['myTable', 'my']].forEach(function (p) {
+          const tb = document.getElementById(p[0]).querySelector('tbody');
+          tb.addEventListener('contextmenu', function (ev) {
+            const tr = ev.target.closest ? ev.target.closest('tr') : null;
+            if (!tr || !tr.dataset.serial) return;
+            ctxMenuShow(ev, tr.dataset.serial, p[1]);
+          });
+        });
+        // 子菜单显隐：mouseenter 显示；mouseleave 延迟隐藏，鼠标移入子菜单途中不消失
+        document.querySelectorAll('#ctxMenu .ctx-item.has-sub').forEach(function (li) {
+          const sub = li.querySelector('.ctx-sub');
+          if (!sub) return;
+          const show = function () { clearTimeout(sub._t); sub.style.display = 'block'; };
+          const hide = function () { clearTimeout(sub._t); sub.style.display = 'none'; };
+          li.addEventListener('mouseenter', show);
+          li.addEventListener('mouseleave', function () {
+            clearTimeout(sub._t); sub._t = setTimeout(hide, 240);
+          });
+          sub.addEventListener('mouseenter', function () { clearTimeout(sub._t); });
+          sub.addEventListener('mouseleave', function () {
+            clearTimeout(sub._t); sub._t = setTimeout(hide, 160);
+          });
+        });
+        document.addEventListener('click', function (ev) {
+          const m = $('ctxMenu');
+          if (m && !m.contains(ev.target)) ctxMenuHide();
+        });
+        document.addEventListener('scroll', ctxMenuHide, true);
+        window.addEventListener('resize', ctxMenuHide);
         </script>
         </body>
         

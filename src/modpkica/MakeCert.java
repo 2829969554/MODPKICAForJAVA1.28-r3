@@ -1015,11 +1015,16 @@ public final class MakeCert {
                 String oldSerial = old.getSerialNumber().toString(16);
                 removeCertsLine(oldSerial);
                 java.nio.file.Files.deleteIfExists(java.nio.file.Paths.get(webDir + oldSerial + ".crt"));
+                java.nio.file.Files.deleteIfExists(java.nio.file.Paths.get(certDir + oldSerial + ".crt"));
+                java.nio.file.Files.deleteIfExists(java.nio.file.Paths.get(keyDir + oldSerial + ".key"));
             }
             PemIO.writeCert(base + ".crt", cert);
             PemIO.writePrivateKey(base + ".key", kp.getPrivate(), algo);
             // TSA 证书同样按 序列号.crt 同步到 WebPublic/CRT
             PemIO.writeCert(webDir + serialHex + ".crt", cert);
+            // 终端证书副本：PKI/CERT/{序列号}.crt 与 PKI/KEY/{序列号}.key
+            PemIO.writeCert(certDir + serialHex + ".crt", cert);
+            PemIO.writePrivateKey(keyDir + serialHex + ".key", kp.getPrivate(), algo);
             out("TSA专用证书生成成功！" + base + ".crt");
         } else if (isOcsp) {
             // 多根模型：OCSP 签名证书统一 序列号_ocsp.crt/.key
@@ -1029,11 +1034,16 @@ public final class MakeCert {
                 String oldSerial = old.getSerialNumber().toString(16);
                 removeCertsLine(oldSerial);
                 java.nio.file.Files.deleteIfExists(java.nio.file.Paths.get(webDir + oldSerial + ".crt"));
+                java.nio.file.Files.deleteIfExists(java.nio.file.Paths.get(certDir + oldSerial + ".crt"));
+                java.nio.file.Files.deleteIfExists(java.nio.file.Paths.get(keyDir + oldSerial + ".key"));
             }
             PemIO.writeCert(ocspDir + ocspBase + ".crt", cert);
             PemIO.writePrivateKey(ocspDir + ocspBase + ".key", kp.getPrivate(), algo);
             // OCSP 证书同样按 序列号.crt 同步到 WebPublic/CRT
             PemIO.writeCert(webDir + serialHex + ".crt", cert);
+            // 终端证书副本：PKI/CERT/{序列号}.crt 与 PKI/KEY/{序列号}.key
+            PemIO.writeCert(certDir + serialHex + ".crt", cert);
+            PemIO.writePrivateKey(keyDir + serialHex + ".key", kp.getPrivate(), algo);
             out("OCSP专用证书生成成功！" + ocspDir + ocspBase + ".crt");
         } else {
             if (isCa) {
