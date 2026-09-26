@@ -715,7 +715,12 @@ public final class CtLog {
             }
             v.add((org.bouncycastle.asn1.ASN1Encodable) el);
         }
-        return removed ? new DERSequence(v).getEncoded() : tbs;
+        // RFC 6962 SS3.1: a precertificate MUST carry the poison extension.
+        if (!removed) {
+            throw new IOException("precert is missing poison extension " + OID_POISON
+                    + ", not a valid RFC 6962 precertificate");
+        }
+        return new DERSequence(v).getEncoded();
     }
 
     /** 证书扩展值（OCTET STRING 解壳后的内容）→ hex；无此扩展返回空串。 */

@@ -523,6 +523,10 @@ A：离线 / 无外网环境会请求失败，但签名**不中断**——时间
 ---
 
 ## 更新记录
+- **v1.27（2026-09-26）——服务安静模式 + Ed25519（EDDSA）签发修复**
+  - **服务安静模式（修复 MAIN 控制台刷屏/卡死）**：MAIN（`build.cmd 1`）服务运行期间，WebAdmin 面板操作（签发时间戳 / OCSP / 证书、CRL、吊销等）不再向服务控制台打印「TSA专用证书生成成功！…」等生成信息——`MakeCert` 新增 quiet 服务模式开关（`setQuiet` / `out` 方法，生成成功信息统一写入 `PKI/logs.log`），`WebAdmin.runAction` 管理动作执行期间自动置位 / 复位 quiet；CLI 直接运行 `Admin` / `MakeCert` 仍正常打印结果；面板操作日志完整留痕 logs.log
+  - **Ed25519（EDDSA）签发修复**：修复签发 Ed25519 证书报「不支持的算法: EDDSA」——根因是算法参数 `toUpperCase` 归一化为 `EDDSA` 后与分发代码大小写敏感的 `"EdDSA"` 不匹配；`MakeRoot` 算法分发 `case "EdDSA"→"EDDSA"`、`parseKeyBits` 改 `equalsIgnoreCase`；`MakeCert.generateKeyPair` 方法内统一 `toUpperCase` 归一化、`case "EDDSA"`、`defaultBit` 改 `equalsIgnoreCase`；实测 CLI 全大写 `EDDSA` 签根 / 签叶（含 SCT 流程，自动选 RSA/ECDSA CT 日志密钥）成功，`CertVerify` 根 / 叶验证通过，单元测试 163 passed / 0 failed
+
 - **v1.26（2026-09-26）——新增 PQC（ML-DSA）签发/导入 + 我的证书库 + 证书查看器 ML-DSA 显示**
   - **我的证书（MyCerts）导入**：证书库新增选择夹「我的证书」，增加「导入证书」按钮，支持 pfx / jks / p12 / cer / crt / pem 文件；选择 .pfx/.p12/.jks 时弹密码输入悬浮窗，并**立即校验文件与密码是否匹配**，匹配后导出内部全部证书/私钥存于 `PKI/MY/序列号.crt` + `序列号.key`，并按格式登记 `PKI/MY/myCERTS.txt`（# 序列号 类型 R/C/E 是否存在私钥 Y/N 算法 RSA/ECC/SM2/PQC 生效日期 失效日期，模板 `myCERTS.txt.sm`）；每行操作含 详情 / 验证 / 删除（深红字体，删除弹「是否删除 序列号为xxxx的证书？」确认窗）
   - **PQC（ML-DSA）证书导入**：支持 PQC 目录下 PEM 证书（.crt/.cer）与私钥（.key.pem）导入，算法登记为 `PQC`；PKCS12（pfx/jks）对 ML-DSA 私钥封装存在兼容性问题时提示改用同目录 PEM 文件导入；国密 jks/pfx 样本导入兼容修复

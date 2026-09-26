@@ -72,11 +72,25 @@ public final class CrlUtil {
     public static byte[] generateCrl(X509Certificate caCert, PrivateKey caKey,
                                      List<RevokedCert> revoked,
                                      Date thisUpdate, Date nextUpdate,
-                                     String keyType, String hash) throws Exception {
+                                     String keyType, String hash,
+                                     BigInteger crlNumber) throws Exception {
         X509v2CRLBuilder builder = new X509v2CRLBuilder(
                 org.bouncycastle.asn1.x500.X500Name.getInstance(
                         caCert.getSubjectX500Principal().getEncoded()), thisUpdate);
         builder.setNextUpdate(nextUpdate);
+
+        // RFC 5280 5.2.3: cRLNumber (2.5.29.20) MUST be present and monotonically
+        // increasing for each CRL issuer. Fallback to 1 when not supplied.
+        if (crlNumber == null) {
+            crlNumber = BigInteger.ONE;
+        }
+        builder.addExtension(Extension.cRLNumber, false,
+                new org.bouncycastle.asn1.x509.CRLNumber(crlNumber));
+        // RFC 5280 5.2.4: AuthorityKeyIdentifier (2.5.29.35) = issuing CA cert SKI,
+        // matching the AKI written into certificates issued by this CA.
+        byte[] aki = CertUtil.getSubjectKeyIdentifier(caCert.getPublicKey());
+        builder.addExtension(Extension.authorityKeyIdentifier, false,
+                new org.bouncycastle.asn1.x509.AuthorityKeyIdentifier(aki));
 
         if (revoked != null) {
             for (RevokedCert rc : revoked) {
@@ -96,8 +110,10 @@ public final class CrlUtil {
     public static X509CRL generateCrlObject(X509Certificate caCert, PrivateKey caKey,
                                             List<RevokedCert> revoked,
                                             Date thisUpdate, Date nextUpdate,
-                                            String keyType, String hash) throws Exception {
-        byte[] der = generateCrl(caCert, caKey, revoked, thisUpdate, nextUpdate, keyType, hash);
+                                            String keyType, String hash,
+                                            BigInteger crlNumber) throws Exception {
+        byte[] der = generateCrl(caCert, caKey, revoked, thisUpdate, nextUpdate,
+                keyType, hash, crlNumber);
         X509CRLHolder holder = new X509CRLHolder(der);
         return new JcaX509CRLConverter().setProvider("BC").getCRL(holder);
     }

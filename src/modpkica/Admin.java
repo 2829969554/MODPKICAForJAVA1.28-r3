@@ -374,8 +374,9 @@ public final class Admin {
             if (hash == null || hash.isEmpty()) {
                 switch (r.algo.toUpperCase()) {
                     case "RSA":
-                        makeTsa(baseDir, "SHA1", "RSA", r.serial);
-                        makeTsa(baseDir, "SHA256", "RSA", r.serial);
+                    case "RSA-PSS":
+                        makeTsa(baseDir, "SHA1", r.algo, r.serial);
+                        makeTsa(baseDir, "SHA256", r.algo, r.serial);
                         break;
                     case "ECC":
                         makeTsa(baseDir, "SHA1", "ECC", r.serial);

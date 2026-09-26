@@ -12,13 +12,13 @@ rem  NOTE: comments are in English to avoid cmd code page issues
 rem ============================================================
 setlocal
 
-rem ---- validate optional command number early (1-8) ----
+rem ---- validate optional command number early (1-9) ----
 set "RUN=%~1"
 if defined RUN (
     set "VALID="
-    for /l %%i in (1,1,8) do if "%RUN%"=="%%i" set "VALID=1"
+    for /l %%i in (1,1,9) do if "%RUN%"=="%%i" set "VALID=1"
     if not defined VALID (
-        echo [ERROR] Invalid command number: %RUN%. Valid range: 1-8.
+        echo [ERROR] Invalid command number: %RUN%. Valid range: 1-9.
         exit /b 1
     )
 )
@@ -101,8 +101,10 @@ echo   [5] java "-Dfile.encoding=UTF-8" -cp "out;%RUN_CP%" modpkica.MakeCert "CN
 echo   [6] java "-Dfile.encoding=UTF-8" -cp "out;%RUN_CP%" modpkica.RootGetCrl
 echo   [7] java "-Dfile.encoding=UTF-8" -cp "out;%RUN_CP%" modpkica.CertVerify cert.crt
 echo   [8] java "-Dfile.encoding=UTF-8" -cp "out;%RUN_CP%" modpkica.Auto revoke 1234567890 1
+echo   [9] java "-Dfile.encoding=UTF-8" -cp "out;debug_test\classes;%RUN_CP%" ModpkicaUnitTest
+echo       (unit tests: compile + run, requires the [1/2] build above)
 echo.
-echo Auto-run: build.cmd [1-8]  -> compile first, then run command #N automatically.
+echo Auto-run: build.cmd [1-9]  -> compile first, then run command #N automatically.
 echo           (If compilation fails, the command is NOT executed.)
 echo.
 echo Note: PKI folder layout (CERTS.txt, ROOT, CA, CERT, KEY, OCSP,
@@ -148,4 +150,15 @@ goto :eof
 
 :run_8
 java "-Dfile.encoding=UTF-8" -cp "out;BC185\*;lib\*" modpkica.Auto revoke 1234567890 1
+goto :eof
+
+:run_9
+rem compile unit tests, then run them (no run when test compile fails)
+if not exist debug_test\classes mkdir debug_test\classes
+javac -encoding UTF-8 -cp "out;BC185\*;lib\*" -d debug_test\classes debug_test\ModpkicaUnitTest.java
+if errorlevel 1 (
+    echo [ERROR] Unit test compilation FAILED. Command #9 NOT executed.
+    exit /b 1
+)
+java "-Dfile.encoding=UTF-8" -cp "out;debug_test\classes;BC185\*;lib\*" ModpkicaUnitTest
 goto :eof

@@ -130,6 +130,7 @@ public final class MakeRoot {
         KeyPair kp;
         switch (keyType) {
             case "RSA":
+            case "RSA-PSS":
                 kp = CertUtil.generateRsaKeyPair(bit);
                 break;
             case "ECC":
@@ -141,6 +142,13 @@ public final class MakeRoot {
             case "PQC":
                 // ML-DSA-44/65/87：密钥位数参数为规格字符串（如 ML-DSA-65）
                 kp = CertUtil.generatePqcKeyPair(args[1]);
+                break;
+            case "DSA":
+                kp = CertUtil.generateDsaKeyPair(bit);
+                break;
+            case "EDDSA":
+                // Ed25519（RFC 8032）：固定 256 位，无密钥位数参数
+                kp = CertUtil.generateEd25519KeyPair();
                 break;
             default:
                 System.out.println("不支持的算法: " + keyType);
@@ -232,8 +240,8 @@ public final class MakeRoot {
                 + " 位长=" + ("PQC".equals(keyType) ? CertUtil.normalizePqcSpec(args[1]) : bit)
                 + " 哈希=" + hash);
 
-        // ---- 8. 生成该根的 CRL（对齐 Go 版：MAKEROOT 完成后调用 rootGETcrl） ----
-        RootGetCrl.run();
+        // ---- 8. 生成该根的 CRL（对齐 Go 版：MAKEROOT 完成后调用 rootGETcrl；baseDir 必须贯穿，PKI-031） ----
+        RootGetCrl.run(baseDir);
     }
 
     /**
@@ -246,7 +254,7 @@ public final class MakeRoot {
         } catch (NumberFormatException ex) {
             bit = 0;
         }
-        if ("RSA".equals(keyType)) {
+        if ("RSA".equals(keyType) || "RSA-PSS".equals(keyType)) {
             if (bit < 1024) {
                 bit = 2048; // 缺省
             }
@@ -269,6 +277,22 @@ public final class MakeRoot {
         }
         if ("PQC".equals(keyType)) {
             return 0; // ML-DSA 规格字符串（ML-DSA-44/65/87）由 generatePqcKeyPair 处理
+        }
+        if ("DSA".equals(keyType)) {
+            // FIPS 186-4：L 取 1024/2048/3072 三档
+            if (bit <= 0) {
+                return 2048;
+            }
+            if (bit >= 3072) {
+                return 3072;
+            }
+            if (bit >= 2048) {
+                return 2048;
+            }
+            return 1024;
+        }
+        if ("EDDSA".equalsIgnoreCase(keyType)) {
+            return 256; // Ed25519 固定 256
         }
         return 256; // SM2 固定 256
     }

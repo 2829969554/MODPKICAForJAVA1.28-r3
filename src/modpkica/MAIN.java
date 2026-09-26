@@ -194,6 +194,11 @@ public final class MAIN {
             String ocspKeyPath = ocspCertPath.replace(".crt", ".key");
             X509Certificate responderCert = PemIO.readCert(baseDir + "/" + ocspCertPath);
             String keyType = PemIO.detectKeyType(baseDir + "/" + ocspKeyPath);
+            // RSA-PSS：OCSP 证书私钥物理为 RSA，文件无法区分，须按 CERTS.txt 登记算法判断
+            CertsDB.CertEntry ocspDb = db.findBySerial(responderCert.getSerialNumber().toString(16));
+            if (ocspDb != null && "RSA-PSS".equalsIgnoreCase(ocspDb.algo)) {
+                keyType = "RSA-PSS";
+            }
             PrivateKey ocspKey = CertUtil.readJcaPrivateKey(baseDir + "/" + ocspKeyPath);
 
             // ---- 加载真正颁发者证书（ROOT/CA 目录，用于计算 CertID 的 issuer 哈希） ----
@@ -263,6 +268,10 @@ public final class MAIN {
                 || oid.equals("2.16.840.1.101.3.4.2.1")   // SHA256
                 || oid.equals("2.16.840.1.101.3.4.2.2")   // SHA384
                 || oid.equals("2.16.840.1.101.3.4.2.3")   // SHA512
+                || oid.equals("2.16.840.1.101.3.4.2.7")   // SHA3-224
+                || oid.equals("2.16.840.1.101.3.4.2.8")   // SHA3-256
+                || oid.equals("2.16.840.1.101.3.4.2.9")   // SHA3-384
+                || oid.equals("2.16.840.1.101.3.4.2.10")  // SHA3-512
                 || oid.equals(Sm2Util.OID_SM3));
     }
 
@@ -278,6 +287,14 @@ public final class MAIN {
                 return "sha384";
             case "2.16.840.1.101.3.4.2.3":
                 return "sha512";
+            case "2.16.840.1.101.3.4.2.7":
+                return "sha3-224";
+            case "2.16.840.1.101.3.4.2.8":
+                return "sha3-256";
+            case "2.16.840.1.101.3.4.2.9":
+                return "sha3-384";
+            case "2.16.840.1.101.3.4.2.10":
+                return "sha3-512";
             case Sm2Util.OID_SM3:
                 return "sm3";
             case "1.3.14.3.2.26":
@@ -444,6 +461,32 @@ public final class MAIN {
         return r;
     }
 
+    /** RFC3161 时间戳签名哈希名 → JCA 摘要算法名。 */
+    private static String jcaHashName(String hashName) {
+        if ("sha1".equals(hashName)) {
+            return "SHA1";
+        }
+        if ("sha384".equals(hashName)) {
+            return "SHA384";
+        }
+        if ("sha512".equals(hashName)) {
+            return "SHA512";
+        }
+        if ("sha3-224".equals(hashName)) {
+            return "SHA3-224";
+        }
+        if ("sha3-256".equals(hashName)) {
+            return "SHA3-256";
+        }
+        if ("sha3-384".equals(hashName)) {
+            return "SHA3-384";
+        }
+        if ("sha3-512".equals(hashName)) {
+            return "SHA3-512";
+        }
+        return "SHA256";
+    }
+
     /**
      * 提取 Authenticode 被签名内容：找到 0x04 0x81/82/83 标记，
      * 取其后的数据（长度头 1/2/3 字节，对齐 Go 版 bytes.Split 逻辑）。
@@ -482,12 +525,24 @@ public final class MAIN {
                     "摘要算法=" + parsed.hashAlgOid + " 消息摘要=" + toHex(parsed.messageImprint)
                             + " Nonce=" + parsed.nonce);
 
-            // 自适应根：sha1→rsa_sha1/ecc_sha1 随机；sha256→rsa_sha256/ecc_sha256 随机；sm3→sm2_sm3 固定
+            // 自适应根：sha1→rsa_sha1/ecc_sha1 随机；sha256/sha384/sha512/SHA3→rsa_sha256/ecc_sha256 随机；sm3→sm2_sm3 固定
             String hashName;
             if (Sm2Util.OID_SM3.equals(parsed.hashAlgOid)) {
                 hashName = "sm3";
             } else if (SHA1_OID.equals(parsed.hashAlgOid)) {
                 hashName = "sha1";
+            } else if ("2.16.840.1.101.3.4.2.2".equals(parsed.hashAlgOid)) {
+                hashName = "sha384";
+            } else if ("2.16.840.1.101.3.4.2.3".equals(parsed.hashAlgOid)) {
+                hashName = "sha512";
+            } else if ("2.16.840.1.101.3.4.2.7".equals(parsed.hashAlgOid)) {
+                hashName = "sha3-224";
+            } else if ("2.16.840.1.101.3.4.2.8".equals(parsed.hashAlgOid)) {
+                hashName = "sha3-256";
+            } else if ("2.16.840.1.101.3.4.2.9".equals(parsed.hashAlgOid)) {
+                hashName = "sha3-384";
+            } else if ("2.16.840.1.101.3.4.2.10".equals(parsed.hashAlgOid)) {
+                hashName = "sha3-512";
             } else {
                 hashName = "sha256";
             }
@@ -500,6 +555,11 @@ public final class MAIN {
             // 通过 TSA 证书序列号找颁发者，加载颁发者证书进证书链（多根模型：按序列号从 ROOT/CA 目录加载）
             // 每次请求前重新加载 CERTS.txt，保持与磁盘最新状态一致
             db.reload();
+            // RSA-PSS：TSA 证书私钥物理为 RSA，文件无法区分，须按 CERTS.txt 登记算法判断
+            CertsDB.CertEntry tsaDb = db.findBySerial(tsaCert.getSerialNumber().toString(16));
+            if (tsaDb != null && "RSA-PSS".equalsIgnoreCase(tsaDb.algo)) {
+                keyType = "RSA-PSS";
+            }
             String issuerId = db.findIssuerIdBySerial(tsaCert.getSerialNumber().toString(16));
             X509Certificate issuerCert;
             if (issuerId != null && !"null".equals(issuerId) && !issuerId.isEmpty()) {
@@ -521,12 +581,15 @@ public final class MAIN {
                 digestCalc = new TimestampUtil.SM3DigestCalculator();
                 signHashName = "sm3";
             } else {
-                String jcaHash = "SHA256";
-                if ("sha1".equals(hashName)) {
-                    jcaHash = "SHA1";
+                String jcaHash = jcaHashName(hashName);
+                String jcaSigAlg;
+                if ("RSA-PSS".equalsIgnoreCase(keyType)) {
+                    // RSASSA-PSS：签名算法标识带 PSS 参数，符合 RFC 3161 时间戳标准
+                    jcaSigAlg = jcaHash + "withRSAandMGF1";
+                } else {
+                    jcaSigAlg = jcaHash + "with" + ("ECC".equalsIgnoreCase(keyType) ? "ECDSA" : "RSA");
                 }
-                signer = new JcaContentSignerBuilder(
-                        jcaHash + "with" + ("ECC".equalsIgnoreCase(keyType) ? "ECDSA" : "RSA"))
+                signer = new JcaContentSignerBuilder(jcaSigAlg)
                         .setProvider("BC").build(tsaKey);
                 // 摘要计算器直接用请求中的 messageImprint 算法标识（含 NULL 参数，
                 // 与请求完全一致，否则 BC 会以 "request contains unknown algorithm" 拒绝）
@@ -595,6 +658,23 @@ public final class MAIN {
             X509Certificate precert = chain.get(0);
             X509Certificate issuer = chain.get(1);
 
+            // RFC 6962 hardening (no auth by design):
+            // 1) precert.issuer must equal issuer.subject
+            if (!precert.getIssuerX500Principal().equals(issuer.getSubjectX500Principal())) {
+                throw new IOException("precert issuer does not match submitted issuer cert: precert.issuer="
+                        + precert.getIssuerX500Principal() + " issuer.subject=" + issuer.getSubjectX500Principal());
+            }
+            // 2) precert MUST carry the poison extension (RFC 6962 SS3.1)
+            if (precert.getExtensionValue(CtLog.OID_POISON) == null) {
+                throw new IOException("precert missing poison extension " + CtLog.OID_POISON);
+            }
+            // 3) precert signature must verify with the submitted issuer public key
+            try {
+                precert.verify(issuer.getPublicKey(), "BC");
+            } catch (Exception ve) {
+                throw new IOException("precert signature verification failed with issuer public key: " + ve);
+            }
+
             // RFC 6962 §3.1：tbs_certificate = 预证书 TBS 删除 poison 扩展
             byte[] tbs = CtLog.tbsWithoutPoison(precert);
             // issuer_key_hash = SHA-256(颁发者公钥 SPKI DER)
@@ -655,23 +735,22 @@ public final class MAIN {
             return new String[]{dir + "sm2_sm3.crt", dir + "sm2_sm3.key"};
         }
         String base = "sha1".equals(hash) ? "sha1" : "sha256";
-        String[] rsa = {dir + "rsa_" + base + ".crt", dir + "rsa_" + base + ".key"};
-        String[] ecc = {dir + "ecc_" + base + ".crt", dir + "ecc_" + base + ".key"};
-        boolean hasRsa = fileExists(rsa[0]);
-        boolean hasEcc = fileExists(ecc[0]);
-        Random rand = new Random();
-        if (hasRsa && hasEcc) {
-            // 两种都存在 → 随机一组（自适应根）
-            return rand.nextInt(2) == 0 ? rsa : ecc;
+        // 自适应根：rsa / ecc / rsa-pss 三组中随机选一组存在的
+        String[][] groups = {
+            {dir + "rsa_" + base + ".crt", dir + "rsa_" + base + ".key"},
+            {dir + "ecc_" + base + ".crt", dir + "ecc_" + base + ".key"},
+            {dir + "rsa-pss_" + base + ".crt", dir + "rsa-pss_" + base + ".key"}
+        };
+        java.util.List<String[]> cand = new java.util.ArrayList<>();
+        for (String[] g : groups) {
+            if (fileExists(g[0])) {
+                cand.add(g);
+            }
         }
-        // 只有一种 → 用存在的那组；都没有 → 回退 rsa（后续读取会给出明确报错）
-        if (hasRsa) {
-            return rsa;
+        if (!cand.isEmpty()) {
+            return cand.get(new Random().nextInt(cand.size()));
         }
-        if (hasEcc) {
-            return ecc;
-        }
-        return rsa;
+        return groups[0]; // 都没有 → 回退 rsa（后续读取会给出明确报错）
     }
 
     private static boolean fileExists(String relPath) {
@@ -688,12 +767,20 @@ public final class MAIN {
         return relPaths[relPaths.length - 1];
     }
 
-    /** 读取请求体全部字节。 */
+    /** 最大请求体：8MB（OCSP/时间戳/CT 请求均远小于此，仅防内存 DoS）。 */
+    private static final long MAX_BODY_BYTES = 8L * 1024 * 1024;
+
+    /** 读取请求体全部字节（带上限，超限抛 IOException 拒绝）。 */
     private static byte[] readAll(InputStream in) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         byte[] buf = new byte[8192];
+        long total = 0;
         int n;
         while ((n = in.read(buf)) != -1) {
+            total += n;
+            if (total > MAX_BODY_BYTES) {
+                throw new IOException("request body too large (limit " + MAX_BODY_BYTES + " bytes)");
+            }
             out.write(buf, 0, n);
         }
         return out.toByteArray();

@@ -242,7 +242,9 @@ public class CertsDB {
             Files.writeString(dbPath, sb.toString(), StandardCharsets.UTF_8,
                     StandardOpenOption.CREATE,
                     StandardOpenOption.TRUNCATE_EXISTING);
-        } catch (IOException ignored) {
+        } catch (IOException ex) {
+            // Rewrite failure must NOT be swallowed (PKI-015): memory and disk would diverge.
+            throw new java.io.UncheckedIOException("rewrite CERTS.txt failed: " + dbPath, ex);
         }
     }
 

@@ -85,6 +85,10 @@ public final class CertUtil {
         HASH_NAMES.add("SHA-384");
         HASH_NAMES.add("SHA512");
         HASH_NAMES.add("SHA-512");
+        HASH_NAMES.add("SHA3-224");
+        HASH_NAMES.add("SHA3-256");
+        HASH_NAMES.add("SHA3-384");
+        HASH_NAMES.add("SHA3-512");
         HASH_NAMES.add("SM3");
     }
 
@@ -131,6 +135,30 @@ public final class CertUtil {
     }
 
     /**
+     * 生成 DSA 密钥对（FIPS 186-4：1024/2048/3072 位，L=1024..3072 且为 64 的倍数）。
+     * BC 的 DSA KeyPairGenerator 不接受任意非标准长度，按三档归一。
+     */
+    public static KeyPair generateDsaKeyPair(int bits) throws Exception {
+        int b;
+        if (bits >= 3072) {
+            b = 3072;
+        } else if (bits >= 2048) {
+            b = 2048;
+        } else {
+            b = 1024;
+        }
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("DSA", "BC");
+        kpg.initialize(b, new SecureRandom());
+        return kpg.generateKeyPair();
+    }
+
+    /** 生成 Ed25519 密钥对（RFC 8032，固定 256 位，无密钥位数参数）。 */
+    public static KeyPair generateEd25519KeyPair() throws Exception {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Ed25519", "BC");
+        return kpg.generateKeyPair();
+    }
+
+    /**
      * 生成 ML-DSA（FIPS 204）PQC 密钥对。
      *
      * @param spec 规格字符串，接受 "ML-DSA-44"/"ML-DSA-65"/"ML-DSA-87"（也兼容 "44"/"65"/"87" 等）
@@ -167,50 +195,155 @@ public final class CertUtil {
     /**
      * 根据颁发者密钥类型与摘要返回签名算法 OID。
      *
-     * @param keyType "RSA" / "ECC" / "SM2"
-     * @param hash   摘要名（RSA/ECC 时使用；SM2 忽略，固定 SM3）
+     * @param keyType "RSA" / "ECC" / "SM2" / "DSA" / "EdDSA" / "PQC"
+     * @param hash   摘要名（RSA/ECC/DSA 时使用；SM2 忽略固定 SM3；EdDSA/PQC 忽略）
      */
     public static ASN1ObjectIdentifier getSignatureAlgOid(String keyType, String hash) {
         if ("SM2".equalsIgnoreCase(keyType)) {
             return new ASN1ObjectIdentifier(Sm2Util.OID_SM3_WITH_SM2);
+        }
+        // EdDSA（Ed25519）：RFC 8410 纯签名算法，无哈希参数，OID 固定 1.3.101.112
+        if ("EdDSA".equalsIgnoreCase(keyType)) {
+            return new ASN1ObjectIdentifier("1.3.101.112");
+        }
+        // PQC（ML-DSA 等）：签名算法 OID 即密钥算法 OID（内部自带哈希）
+        if ("PQC".equalsIgnoreCase(keyType)) {
+            return new ASN1ObjectIdentifier("2.16.840.1.101.3.4.3.18"); // 默认 ML-DSA-65
         }
         String h = normalizeHash(hash);
         if ("RSA".equalsIgnoreCase(keyType)) {
             switch (h) {
                 case "SHA1":
                     return new ASN1ObjectIdentifier("1.2.840.113549.1.1.5");
+                case "SHA224":
+                    return new ASN1ObjectIdentifier("1.2.840.113549.1.1.14");
                 case "SHA384":
                     return new ASN1ObjectIdentifier("1.2.840.113549.1.1.12");
                 case "SHA512":
                     return new ASN1ObjectIdentifier("1.2.840.113549.1.1.13");
+                case "SHA3-224":
+                    return new ASN1ObjectIdentifier(
+                            org.bouncycastle.asn1.nist.NISTObjectIdentifiers
+                                    .id_rsassa_pkcs1_v1_5_with_sha3_224.getId());
+                case "SHA3-256":
+                    return new ASN1ObjectIdentifier(
+                            org.bouncycastle.asn1.nist.NISTObjectIdentifiers
+                                    .id_rsassa_pkcs1_v1_5_with_sha3_256.getId());
+                case "SHA3-384":
+                    return new ASN1ObjectIdentifier(
+                            org.bouncycastle.asn1.nist.NISTObjectIdentifiers
+                                    .id_rsassa_pkcs1_v1_5_with_sha3_384.getId());
+                case "SHA3-512":
+                    return new ASN1ObjectIdentifier(
+                            org.bouncycastle.asn1.nist.NISTObjectIdentifiers
+                                    .id_rsassa_pkcs1_v1_5_with_sha3_512.getId());
                 case "SHA256":
                 default:
                     return new ASN1ObjectIdentifier("1.2.840.113549.1.1.11");
+            }
+        }
+        if ("DSA".equalsIgnoreCase(keyType)) {
+            switch (h) {
+                case "SHA1":
+                    return new ASN1ObjectIdentifier("1.2.840.10040.4.3");
+                case "SHA224":
+                    return new ASN1ObjectIdentifier(
+                            org.bouncycastle.asn1.nist.NISTObjectIdentifiers
+                                    .dsa_with_sha224.getId());
+                case "SHA256":
+                    return new ASN1ObjectIdentifier(
+                            org.bouncycastle.asn1.nist.NISTObjectIdentifiers
+                                    .dsa_with_sha256.getId());
+                case "SHA384":
+                    return new ASN1ObjectIdentifier(
+                            org.bouncycastle.asn1.nist.NISTObjectIdentifiers
+                                    .dsa_with_sha384.getId());
+                case "SHA512":
+                    return new ASN1ObjectIdentifier(
+                            org.bouncycastle.asn1.nist.NISTObjectIdentifiers
+                                    .dsa_with_sha512.getId());
+                case "SHA3-224":
+                    return new ASN1ObjectIdentifier(
+                            org.bouncycastle.asn1.nist.NISTObjectIdentifiers
+                                    .id_dsa_with_sha3_224.getId());
+                case "SHA3-256":
+                    return new ASN1ObjectIdentifier(
+                            org.bouncycastle.asn1.nist.NISTObjectIdentifiers
+                                    .id_dsa_with_sha3_256.getId());
+                case "SHA3-384":
+                    return new ASN1ObjectIdentifier(
+                            org.bouncycastle.asn1.nist.NISTObjectIdentifiers
+                                    .id_dsa_with_sha3_384.getId());
+                case "SHA3-512":
+                    return new ASN1ObjectIdentifier(
+                            org.bouncycastle.asn1.nist.NISTObjectIdentifiers
+                                    .id_dsa_with_sha3_512.getId());
+                default:
+                    return new ASN1ObjectIdentifier(
+                            org.bouncycastle.asn1.nist.NISTObjectIdentifiers
+                                    .dsa_with_sha256.getId());
             }
         }
         // ECC
         switch (h) {
             case "SHA1":
                 return new ASN1ObjectIdentifier("1.2.840.10045.4.1");
+            case "SHA224":
+                return new ASN1ObjectIdentifier("1.2.840.10045.4.3.1");
             case "SHA384":
                 return new ASN1ObjectIdentifier("1.2.840.10045.4.3.3");
             case "SHA512":
                 return new ASN1ObjectIdentifier("1.2.840.10045.4.3.4");
+            case "SHA3-224":
+                return new ASN1ObjectIdentifier(
+                        org.bouncycastle.asn1.nist.NISTObjectIdentifiers
+                                .id_ecdsa_with_sha3_224.getId());
+            case "SHA3-256":
+                return new ASN1ObjectIdentifier(
+                        org.bouncycastle.asn1.nist.NISTObjectIdentifiers
+                                .id_ecdsa_with_sha3_256.getId());
+            case "SHA3-384":
+                return new ASN1ObjectIdentifier(
+                        org.bouncycastle.asn1.nist.NISTObjectIdentifiers
+                                .id_ecdsa_with_sha3_384.getId());
+            case "SHA3-512":
+                return new ASN1ObjectIdentifier(
+                        org.bouncycastle.asn1.nist.NISTObjectIdentifiers
+                                .id_ecdsa_with_sha3_512.getId());
             case "SHA256":
             default:
                 return new ASN1ObjectIdentifier("1.2.840.10045.4.3.2");
         }
     }
 
-    /** 归一化摘要名为 SHA1/SHA256/SHA384/SHA512/SM3。 */
+    /**
+     * 归一化摘要名为 SHA1/SHA224/SHA256/SHA384/SHA512/SHA3-224/SHA3-256/SHA3-384/SHA3-512/SM3。
+     * SHA3 系列必须保留连字符（JCA 算法名 SHA3-256withRSA），其余沿用旧逻辑去掉连字符。
+     */
     private static String normalizeHash(String hash) {
         if (hash == null) {
             return "SHA256";
         }
-        String h = hash.toUpperCase().replace("-", "");
-        switch (h) {
+        String u = hash.toUpperCase(Locale.ROOT);
+        if (u.startsWith("SHA3")) {
+            switch (u.replace("_", "-").replace(" ", "")) {
+                case "SHA3-224":
+                    return "SHA3-224";
+                case "SHA3-256":
+                    return "SHA3-256";
+                case "SHA3-384":
+                    return "SHA3-384";
+                case "SHA3-512":
+                    return "SHA3-512";
+                default:
+                    return "SHA3-256";
+            }
+        }
+        switch (u.replace("-", "")) {
             case "SHA1":
                 return "SHA1";
+            case "SHA224":
+                return "SHA224";
             case "SHA256":
                 return "SHA256";
             case "SHA384":
@@ -258,18 +391,32 @@ public final class CertUtil {
         if ("PQC".equalsIgnoreCase(keyType) || PemIO.isPqcAlgName(key.getAlgorithm())) {
             return new JcaContentSignerBuilder(key.getAlgorithm()).setProvider("BC").build(key);
         }
-        String h = normalizeHash(hash).toLowerCase();
+        // EdDSA（Ed25519）：RFC 8032 纯签名算法，签名算法名即私钥算法名，不带任何哈希
+        if ("EdDSA".equalsIgnoreCase(keyType)) {
+            return new JcaContentSignerBuilder(key.getAlgorithm()).setProvider("BC").build(key);
+        }
+        // DSA：SHAxxxwithDSA（BC 支持 SHA1/SHA224/SHA256/SHA384/SHA512/SHA3-xxx）
+        if ("DSA".equalsIgnoreCase(keyType)) {
+            String hd = normalizeHash(hash);
+            return new JcaContentSignerBuilder(hd + "withDSA").setProvider("BC").build(key);
+        }
+        String h = normalizeHash(hash);
         String jcaAlg;
         if ("RSA".equalsIgnoreCase(keyType)) {
-            jcaAlg = h + "WITHRSA";
+            jcaAlg = h.startsWith("SHA3") ? h + "withRSA" : h.toLowerCase() + "WITHRSA";
+        } else if ("RSA-PSS".equalsIgnoreCase(keyType)) {
+            // RSASSA-PSS (RFC 4055 / RFC 8017): BC *withRSAandMGF1 自动生成
+            // RSASSA-PSS AlgorithmIdentifier (hashAlgorithm=本摘要, MGF1=同摘要,
+            // saltLength=摘要长度, trailerField=1), 符合标准默认参数。
+            jcaAlg = h + "withRSAandMGF1";
         } else {
-            // ECC（标准椭圆曲线）只支持 SHA1/SHA256/SHA384/SHA512；
+            // ECC（标准椭圆曲线）只支持 SHA1/SHA224/SHA256/SHA384/SHA512/SHA3-xxx；
             // SM3withECDSA 仅对 SM2 曲线（sm2p256v1）有效，对普通 ECC 报 Unknown signature type
-            if ("sm3".equals(h)) {
+            if ("sm3".equals(h.toLowerCase())) {
                 throw new OperatorCreationException(
                         "ECC 类型证书不支持 SM3 摘要（SM3 仅用于 SM2 国密），请改用 SHA256/SHA384/SHA512");
             }
-            jcaAlg = h + "WITHECDSA";
+            jcaAlg = h.startsWith("SHA3") ? h + "withECDSA" : h.toLowerCase() + "WITHECDSA";
         }
         return new JcaContentSignerBuilder(jcaAlg).setProvider("BC").build(key);
     }

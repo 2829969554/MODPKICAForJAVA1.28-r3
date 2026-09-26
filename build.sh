@@ -16,13 +16,13 @@ BC_CP="BC185/*"
 LIB_CP="lib/*"
 RUN_CP="$BC_CP:$LIB_CP"
 
-# validate optional command number early (1-8)
+# validate optional command number early (1-9)
 RUN="${1:-}"
 if [ -n "$RUN" ]; then
     case "$RUN" in
-        1|2|3|4|5|6|7|8) : ;;
+        1|2|3|4|5|6|7|8|9) : ;;
         *)
-            echo "[ERROR] Invalid command number: $RUN. Valid range: 1-8."
+            echo "[ERROR] Invalid command number: $RUN. Valid range: 1-9."
             exit 1
             ;;
     esac
@@ -66,8 +66,10 @@ echo "  [5] java \"-Dfile.encoding=UTF-8\" -cp \"out:$RUN_CP\" modpkica.MakeCert
 echo "  [6] java \"-Dfile.encoding=UTF-8\" -cp \"out:$RUN_CP\" modpkica.RootGetCrl"
 echo "  [7] java \"-Dfile.encoding=UTF-8\" -cp \"out:$RUN_CP\" modpkica.CertVerify cert.crt"
 echo "  [8] java \"-Dfile.encoding=UTF-8\" -cp \"out:$RUN_CP\" modpkica.Auto revoke 1234567890 1"
+echo "  [9] java \"-Dfile.encoding=UTF-8\" -cp \"out:debug_test/classes:$RUN_CP\" ModpkicaUnitTest"
+echo "      (unit tests: compile + run, requires the [1/2] build above)"
 echo
-echo "Auto-run: ./build.sh [1-8]  -> compile first, then run command #N automatically."
+echo "Auto-run: ./build.sh [1-9]  -> compile first, then run command #N automatically."
 echo "          (If compilation fails, the command is NOT executed.)"
 echo
 echo "Note: PKI folder layout (CERTS.txt, ROOT, CA, CERT, KEY, OCSP,"
@@ -88,6 +90,12 @@ if [ -n "$RUN" ]; then
         6) java "-Dfile.encoding=UTF-8" -cp "out:$RUN_CP" modpkica.RootGetCrl ;;
         7) java "-Dfile.encoding=UTF-8" -cp "out:$RUN_CP" modpkica.CertVerify cert.crt ;;
         8) java "-Dfile.encoding=UTF-8" -cp "out:$RUN_CP" modpkica.Auto revoke 1234567890 1 ;;
+        9)
+            # compile unit tests, then run them (set -e aborts on compile failure)
+            mkdir -p debug_test/classes
+            javac -encoding UTF-8 -cp "out:$RUN_CP" -d debug_test/classes debug_test/ModpkicaUnitTest.java
+            java "-Dfile.encoding=UTF-8" -cp "out:debug_test/classes:$RUN_CP" ModpkicaUnitTest
+            ;;
     esac
 fi
 exit 0

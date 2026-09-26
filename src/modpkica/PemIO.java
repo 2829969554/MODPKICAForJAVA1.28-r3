@@ -171,7 +171,7 @@ public final class PemIO {
 
         String type;
         byte[] der;
-        if ("RSA".equalsIgnoreCase(keyType)) {
+        if ("RSA".equalsIgnoreCase(keyType) || "RSA-PSS".equalsIgnoreCase(keyType)) {
             // 转 PKCS#1
             RSAPrivateKey rsa = RSAPrivateKey.getInstance(pki.parsePrivateKey());
             type = "RSA PRIVATE KEY";
@@ -191,8 +191,10 @@ public final class PemIO {
             // 直接写 PKCS#8，但用国密自定义头
             type = "SM2 PRIVATE KEY";
             der = pki.getEncoded();
-        } else if ("PQC".equalsIgnoreCase(keyType)) {
-            // PQC（ML-DSA/SLH-DSA/ML-KEM 等）：标准 PKCS#8 PRIVATE KEY
+        } else if ("PQC".equalsIgnoreCase(keyType) || "DSA".equalsIgnoreCase(keyType)
+                || "EdDSA".equalsIgnoreCase(keyType)) {
+            // PQC（ML-DSA/SLH-DSA/ML-KEM 等）、DSA、EdDSA（Ed25519/Ed448）：
+            // 统一写标准 PKCS#8 PRIVATE KEY（BC 读回时按算法 OID 判别类型）
             type = "PRIVATE KEY";
             der = pki.getEncoded();
         } else {
@@ -230,6 +232,12 @@ public final class PemIO {
             ASN1ObjectIdentifier alg = pki.getPrivateKeyAlgorithm().getAlgorithm();
             if (Sm2Util.OID_SM2_PUBLIC_KEY.equals(alg.getId())) {
                 return "SM2";
+            }
+            if ("1.2.840.10040.4.1".equals(alg.getId())) {
+                return "DSA"; // id-dsa
+            }
+            if ("1.3.101.112".equals(alg.getId()) || "1.3.101.113".equals(alg.getId())) {
+                return "EdDSA"; // Ed25519 / Ed448（RFC 8410）
             }
             if (isPqcOid(alg.getId())) {
                 return "PQC";

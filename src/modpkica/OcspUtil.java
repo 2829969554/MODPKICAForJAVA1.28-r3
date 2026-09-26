@@ -349,8 +349,19 @@ public final class OcspUtil {
                 return "SHA-384";
             case "2.16.840.1.101.3.4.2.3":
                 return "SHA-512";
+            case "2.16.840.1.101.3.4.2.7":
+                return "SHA3-224";
+            case "2.16.840.1.101.3.4.2.8":
+                return "SHA3-256";
+            case "2.16.840.1.101.3.4.2.9":
+                return "SHA3-384";
+            case "2.16.840.1.101.3.4.2.10":
+                return "SHA3-512";
             default:
-                return "SHA-1";
+                // Unknown hash OID MUST fail loudly (audit: silently falling back to SHA-1
+                // produces a wrong CertID that clients then reject as invalid signature).
+                throw new IllegalArgumentException(
+                        "unsupported OCSP CertID hash algorithm OID: " + oid);
         }
     }
 

@@ -84,6 +84,10 @@ public final class RootGetCrl {
         // 签发的 SM2 中间证书，其证书 SignatureAlgorithm 是 RSA，但 CA 自身密钥是 SM2，
         // CRL 必须用 CA 自身密钥签名，否则报 "BCECPrivateKey is not a RSAPrivateKey"）。
         String keyType = PemIO.detectKeyType(issuerPath + issuer.serial + ".key");
+        // RSA-PSS：RSA 私钥文件无法区分 PSS，须按 CERTS.txt 登记算法列判断
+        if ("RSA-PSS".equalsIgnoreCase(issuer.algo)) {
+            keyType = "RSA-PSS";
+        }
         // 哈希：SM2 固定 SM3；RSA/ECC 沿用证书签名算法中的哈希（对齐 Go 版）
         String hash = "SM2".equalsIgnoreCase(keyType) ? "sm3" : certHashFromSigAlg(caCert);
 
@@ -104,8 +108,13 @@ public final class RootGetCrl {
             }
         }
 
+        // RFC 5280 5.2.3: cRLNumber 单调递增，历史序号持久化于 PKI/WebPublic/CRL/num.txt
+        byte[] aki = CertUtil.getSubjectKeyIdentifier(caCert.getPublicKey());
+        BigInteger crlNumber = nextCrlNumber(webCrlDir, issuer.serial,
+                org.bouncycastle.util.encoders.Hex.toHexString(aki));
+
         byte[] der = CrlUtil.generateCrl(caCert, caKey, revoked, thisUpdate, nextUpdate,
-                keyType, hash);
+                keyType, hash, crlNumber);
         String pem = CrlUtil.derToPem(der);
         java.nio.file.Files.write(java.nio.file.Paths.get(webCrlDir + issuer.serial + ".der.crl"), der);
         java.nio.file.Files.write(java.nio.file.Paths.get(webCrlDir + issuer.serial + ".crl"),
@@ -125,6 +134,62 @@ public final class RootGetCrl {
         return n;
     }
 
+    /** 读取/递增 CRL 顺序号（RFC 5280 5.2.3）。
+     *  历史序号存储于 &lt;webCrlDir&gt;/num.txt，行格式（# 开头为注释）：
+     *  &lt;颁发者证书序列号&gt; &lt;颁发者密钥标识符hex&gt; &lt;CRL顺序号&gt;
+     *  例如: A000001 ABCDABCDABCDABCD... 1
+     *  未登记过该颁发者时从 1 起始；每次发布递增 1。读改写在同一个
+     *  synchronized 块内完成，避免并发生成 CRL 时序号重复。 */
+    private static synchronized BigInteger nextCrlNumber(String webCrlDir,
+                                                         String issuerSerial,
+                                                         String akiHex) throws Exception {
+        java.nio.file.Path p = java.nio.file.Paths.get(webCrlDir, "num.txt");
+        java.util.List<String> original = new ArrayList<>();
+        java.math.BigInteger current = java.math.BigInteger.ZERO;
+        boolean found = false;
+        if (java.nio.file.Files.exists(p)) {
+            original = java.nio.file.Files.readAllLines(p,
+                    java.nio.charset.StandardCharsets.UTF_8);
+            for (String raw : original) {
+                String line = raw.trim();
+                if (line.isEmpty() || line.startsWith("#")) {
+                    continue;
+                }
+                String[] cols = line.split("\\s+");
+                if (cols.length >= 3 && cols[0].equals(issuerSerial)) {
+                    try {
+                        current = new BigInteger(cols[2].trim());
+                        found = true;
+                    } catch (NumberFormatException ignore) {
+                    }
+                }
+            }
+        }
+        java.math.BigInteger next = current.add(java.math.BigInteger.ONE);
+        StringBuilder sb = new StringBuilder();
+        boolean replaced = false;
+        for (String raw : original) {
+            String line = raw.trim();
+            if (!line.isEmpty() && !line.startsWith("#")) {
+                String[] cols = line.split("\\s+");
+                if (cols.length >= 3 && cols[0].equals(issuerSerial)) {
+                    sb.append(issuerSerial).append(" ").append(akiHex).append(" ")
+                            .append(next).append("\r\n");
+                    replaced = true;
+                    continue;
+                }
+            }
+            sb.append(raw).append("\r\n");
+        }
+        if (!replaced) {
+            sb.append(issuerSerial).append(" ").append(akiHex).append(" ")
+                    .append(next).append("\r\n");
+        }
+        java.nio.file.Files.write(p, sb.toString().getBytes(
+                java.nio.charset.StandardCharsets.UTF_8));
+        return next;
+    }
+
     /** CERTS.txt 内部时间（本地时间）转 Date。 */
     private static Date parseModTime(LocalDateTime t) {
         return Date.from(t.toInstant(ZoneOffset.ofHours(8))); // 按 UTC+8 解析（对齐 Go 文本时间）
@@ -133,6 +198,10 @@ public final class RootGetCrl {
     /** 由证书签名算法 OID 推导哈希算法。 */
     private static String certHashFromSigAlg(X509Certificate cert) {
         ASN1ObjectIdentifier oid = new ASN1ObjectIdentifier(cert.getSigAlgOID());
+        // RSASSA-PSS: 1.2.840.113549.1.1.10 → 从 PSS 参数 hashAlgorithm 推导哈希
+        if (oid.equals(new ASN1ObjectIdentifier("1.2.840.113549.1.1.10"))) {
+            return pssHashFromSigParams(cert);
+        }
         if (oid.equals(new ASN1ObjectIdentifier("1.2.156.10197.1.501"))) {
             return "sm3";
         }
@@ -149,6 +218,19 @@ public final class RootGetCrl {
         if (oid.equals(new ASN1ObjectIdentifier("1.2.840.113549.1.1.13"))) {
             return "sha512";
         }
+        // RSA-SHA3: 2.16.840.1.101.3.4.3.{1,2,3,4}
+        if (oid.equals(new ASN1ObjectIdentifier("2.16.840.1.101.3.4.3.1"))) {
+            return "sha3-224";
+        }
+        if (oid.equals(new ASN1ObjectIdentifier("2.16.840.1.101.3.4.3.2"))) {
+            return "sha3-256";
+        }
+        if (oid.equals(new ASN1ObjectIdentifier("2.16.840.1.101.3.4.3.3"))) {
+            return "sha3-384";
+        }
+        if (oid.equals(new ASN1ObjectIdentifier("2.16.840.1.101.3.4.3.4"))) {
+            return "sha3-512";
+        }
         // ECDSA: 1.2.840.10045.4.1 / 4.3.2 / 4.3.3 / 4.3.4
         if (oid.equals(new ASN1ObjectIdentifier("1.2.840.10045.4.1"))) {
             return "sha1";
@@ -162,6 +244,75 @@ public final class RootGetCrl {
         if (oid.equals(new ASN1ObjectIdentifier("1.2.840.10045.4.3.4"))) {
             return "sha512";
         }
+        // ECDSA-SHA3: 2.16.840.1.101.3.4.3.{9,10,11,12}
+        if (oid.equals(new ASN1ObjectIdentifier("2.16.840.1.101.3.4.3.9"))) {
+            return "sha3-224";
+        }
+        if (oid.equals(new ASN1ObjectIdentifier("2.16.840.1.101.3.4.3.10"))) {
+            return "sha3-256";
+        }
+        if (oid.equals(new ASN1ObjectIdentifier("2.16.840.1.101.3.4.3.11"))) {
+            return "sha3-384";
+        }
+        if (oid.equals(new ASN1ObjectIdentifier("2.16.840.1.101.3.4.3.12"))) {
+            return "sha3-512";
+        }
+        // DSA: SHA1withDSA 1.2.840.10040.4.3；dsa_with_sha224/256/384/512 2.16.840.1.101.3.4.3.{5,6,7,8}
+        if (oid.equals(new ASN1ObjectIdentifier("1.2.840.10040.4.3"))) {
+            return "sha1";
+        }
+        if (oid.equals(new ASN1ObjectIdentifier("2.16.840.1.101.3.4.3.5"))) {
+            return "sha224";
+        }
+        if (oid.equals(new ASN1ObjectIdentifier("2.16.840.1.101.3.4.3.6"))) {
+            return "sha256";
+        }
+        if (oid.equals(new ASN1ObjectIdentifier("2.16.840.1.101.3.4.3.7"))) {
+            return "sha384";
+        }
+        if (oid.equals(new ASN1ObjectIdentifier("2.16.840.1.101.3.4.3.8"))) {
+            return "sha512";
+        }
+        // DSA-SHA3: 2.16.840.1.101.3.4.3.{13,14,15,16}
+        if (oid.equals(new ASN1ObjectIdentifier("2.16.840.1.101.3.4.3.13"))) {
+            return "sha3-224";
+        }
+        if (oid.equals(new ASN1ObjectIdentifier("2.16.840.1.101.3.4.3.14"))) {
+            return "sha3-256";
+        }
+        if (oid.equals(new ASN1ObjectIdentifier("2.16.840.1.101.3.4.3.15"))) {
+            return "sha3-384";
+        }
+        if (oid.equals(new ASN1ObjectIdentifier("2.16.840.1.101.3.4.3.16"))) {
+            return "sha3-512";
+        }
         return "sha256";
     }
+
+
+    /** 从 RSASSA-PSS 证书签名参数（RSASSAPSSparams）解析哈希算法名。 */
+    private static String pssHashFromSigParams(X509Certificate cert) {
+        try {
+            byte[] params = cert.getSigAlgParams();
+            if (params != null) {
+                org.bouncycastle.asn1.pkcs.RSASSAPSSparams pss =
+                        org.bouncycastle.asn1.pkcs.RSASSAPSSparams.getInstance(params);
+                String h = pss.getHashAlgorithm().getAlgorithm().getId();
+                switch (h) {
+                    case "1.3.14.3.2.26": return "sha1";
+                    case "2.16.840.1.101.3.4.2.4": return "sha224";
+                    case "2.16.840.1.101.3.4.2.1": return "sha256";
+                    case "2.16.840.1.101.3.4.2.2": return "sha384";
+                    case "2.16.840.1.101.3.4.2.3": return "sha512";
+                    case "2.16.840.1.101.3.4.2.7": return "sha3-224";
+                    case "2.16.840.1.101.3.4.2.8": return "sha3-256";
+                    case "2.16.840.1.101.3.4.2.9": return "sha3-384";
+                    case "2.16.840.1.101.3.4.2.10": return "sha3-512";
+                    default: return "sha256";
+                }
+            }
+        } catch (Exception ignore) { /* 参数缺失/解析失败回退 sha256 */ }
+        return "sha256";
+    }
+
 }

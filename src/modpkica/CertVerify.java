@@ -127,7 +127,7 @@ public final class CertVerify {
             serialHex = "0" + serialHex;
         }
         System.out.println("      序列号： " + serialHex);
-        String[] ht = getHashType(cert.getSigAlgName());
+        String[] ht = getHashType(cert);
         System.out.println("    签名算法： " + sigAlgDisplay(cert.getSigAlgName()) + " (" + cert.getSigAlgOID() + ")");
         System.out.println("签名哈希算法： " + ht[0] + "\n");
         System.out.println("颁发者： " + cert.getIssuerX500Principal());
@@ -232,6 +232,14 @@ public final class CertVerify {
                 .replace("WITH", "-")
                 .replace("_", "");
         return s.isEmpty() ? (jcaName == null ? "" : jcaName) : s;
+    }
+
+    private static String[] getHashType(X509Certificate cert) {
+        // RSASSA-PSS：BC 的 getSigAlgName() 通常为 "RSASSA-PSS"，须从签名参数解析哈希
+        if ("1.2.840.113549.1.1.10".equals(cert.getSigAlgOID())) {
+            return new String[]{pssHashName(cert), "RSA"};
+        }
+        return getHashType(cert.getSigAlgName());
     }
 
     private static String[] getHashType(String sigAlgName) {
@@ -648,6 +656,13 @@ public final class CertVerify {
                 byte[] sig = cert.getSignature();
                 return signer.verifySignature(sig);
             }
+            // RSASSA-PSS（RFC 4055）：从证书签名参数解析哈希，用 *withRSAandMGF1 验签
+            if ("1.2.840.113549.1.1.10".equals(cert.getSigAlgOID())) {
+                Signature s = Signature.getInstance(pssHashName(cert) + "withRSAandMGF1", "BC");
+                s.initVerify(pub);
+                s.update(cert.getTBSCertificate());
+                return s.verify(cert.getSignature());
+            }
             Signature s = Signature.getInstance(sigAlg, "BC");
             s.initVerify(pub);
             s.update(cert.getTBSCertificate());
@@ -657,44 +672,58 @@ public final class CertVerify {
         }
     }
 
-    /** 静默拉取颁发者证书（不打印证书链/信任状态），供 SCT 验签等内部使用。 */
+    /** 静默拉取颁发者证书（不打印证书链/信任状态），供 SCT 验签等内部使用。
+     *  优先 AIA caIssuers，AIA 缺失/失败时回退本地 PKI/ROOT、PKI/CA、PKI/MY、java cacerts。 */
     private static X509Certificate fetchIssuerSilent(X509Certificate cert) {
         try {
             List<String> urls = aiaCaIssuers(cert);
-            if (urls.isEmpty()) {
-                return null;
+            if (!urls.isEmpty()) {
+                byte[] data = httpGet(urls.get(0), 10000);
+                if (data != null) {
+                    return parseCert(data);
+                }
             }
-            byte[] data = httpGet(urls.get(0), 10000);
-            return data == null ? null : parseCert(data);
         } catch (Exception e) {
-            return null;
         }
+        return findLocalIssuer(cert);
     }
 
-    /** 从 AIA caIssuers URL 拉取颁发者证书（打印完整证书链 CA→…→Root，返回直接颁发者用于验签）。 */
+    /** 获取颁发者证书：优先 AIA caIssuers URL；AIA 缺失/下载失败时回退本地
+     *  PKI/ROOT、PKI/CA、PKI/MY、java cacerts（按 Subject DN + 验签匹配）。
+     *  返回直接颁发者用于验签，并打印证书链。 */
     private static X509Certificate fetchIssuer(X509Certificate cert) {
+        X509Certificate issuer = null;
+        boolean fromLocal = false;
         try {
             List<String> urls = aiaCaIssuers(cert);
-            if (urls.isEmpty()) {
+            if (!urls.isEmpty()) {
+                byte[] data = httpGet(urls.get(0), 10000);
+                if (data != null) {
+                    issuer = parseCert(data);
+                }
+            }
+        } catch (Exception e) {
+        }
+        if (issuer == null) {
+            issuer = findLocalIssuer(cert);
+            if (issuer == null) {
                 System.out.println("验证签名： 无法验证签名 |无法找到上级证书链~ ");
                 return null;
             }
-            byte[] data = httpGet(urls.get(0), 10000);
-            if (data == null) {
-                System.out.println("验证签名： 失败 |请求失败无法找到上级证书链~ ");
-                return null;
-            }
-            X509Certificate issuer = parseCert(data);
-            // 递归打印证书链（CA → … → Root）与信任状态（对齐 Go 版 GetSubPublicKey）
-            printChain(issuer);
-            return issuer;
-        } catch (Exception e) {
-            System.out.println("验证签名： 失败 |解析CA证书失败~ ");
-            return null;
+            fromLocal = true;
         }
+        if (fromLocal) {
+            System.out.println("验证签名： 颁发者证书来自本地 PKI 目录/cacerts（AIA 缺失或不可用）");
+        }
+        // 递归打印证书链（CA → … → Root）与信任状态（对齐 Go 版 GetSubPublicKey）
+        printChain(issuer);
+        return issuer;
     }
 
-    /** 递归打印证书链：中间证书 CA --> SKI，根证书 Root --> SKI，并输出信任状态。 */
+    /** 递归打印证书链：中间证书 CA --> SKI，根证书 Root --> SKI，并输出信任状态。
+     *  每级都做 child.verify(parent.publicKey) 逐级验签，且上级必须为 CA
+     *  （BasicConstraints >= 0）；上级优先 AIA，AIA 缺失/失败时回退本地
+     *  PKI/ROOT、PKI/CA、PKI/MY、java cacerts（PKI-004/PKI-005）。 */
     private static void printChain(X509Certificate issuer) {
         String ski = subjectKeyIdHex(issuer);
         if (isSelfSigned(issuer)) {
@@ -707,24 +736,114 @@ public final class CertVerify {
             return;
         }
         System.out.println("       CA   --> " + ski);
+        X509Certificate parent = null;
         try {
             List<String> urls = aiaCaIssuers(issuer);
-            if (urls.isEmpty()) {
-                System.out.println("       CA   -->????????????????????");
-                System.out.println("信任状态： 不可信 (由于无法找到上级证书链 或 证书链验证失败，所以它不受信任。)\n");
-                return;
+            if (!urls.isEmpty()) {
+                byte[] data = httpGet(urls.get(0), 10000);
+                if (data != null) {
+                    parent = parseCert(data);
+                }
             }
-            byte[] data = httpGet(urls.get(0), 10000);
-            if (data == null) {
-                System.out.println("       CA   -->????????????????????");
-                System.out.println("信任状态： 不可信 (由于无法找到上级证书链 或 证书链验证失败，所以它不受信任。)\n");
-                return;
+        } catch (Exception ignore) {
+        }
+        if (parent == null) {
+            parent = findLocalIssuer(issuer);
+            if (parent != null) {
+                System.out.println("       (上级证书来自本地 PKI/ROOT|PKI/CA|PKI/MY|cacerts)");
             }
-            printChain(parseCert(data));
-        } catch (Exception e) {
+        }
+        if (parent == null) {
             System.out.println("       CA   -->????????????????????");
             System.out.println("信任状态： 不可信 (由于无法找到上级证书链 或 证书链验证失败，所以它不受信任。)\n");
+            return;
         }
+        // 逐级验签 + 上级必须为 CA
+        if (!verifySignature(issuer, parent.getPublicKey()) || parent.getBasicConstraints() < 0) {
+            System.out.println("信任状态： 不可信 (证书链验证失败：本级签名未通过上级公钥验证或上级不是 CA。)\n");
+            return;
+        }
+        printChain(parent);
+    }
+
+    /** 本地颁发者查找：按证书 Issuer DN 匹配 PKI/ROOT、PKI/CA、PKI/MY 及 java cacerts，
+     *  并用候选公钥验签当前证书；无验签成功者退回第一个 DN 匹配（用于链显示）。 */
+    private static X509Certificate findLocalIssuer(X509Certificate cert) {
+        String issuerDn = cert.getIssuerX500Principal().getName();
+        java.util.List<String> dirs = new java.util.ArrayList<>();
+        dirs.add(AppPaths.baseDir() + "/PKI/ROOT");
+        dirs.add(AppPaths.baseDir() + "/PKI/CA");
+        dirs.add(AppPaths.baseDir() + "/PKI/MY");
+        X509Certificate firstDnMatch = null;
+        for (String dir : dirs) {
+            java.io.File d = new java.io.File(dir);
+            java.io.File[] files = d.listFiles();
+            if (files == null) {
+                continue;
+            }
+            for (java.io.File f : files) {
+                String n = f.getName().toLowerCase();
+                if (!n.endsWith(".crt") && !n.endsWith(".cer")
+                        && !n.endsWith(".pem") && !n.endsWith(".der")) {
+                    continue;
+                }
+                try {
+                    X509Certificate cand = parseCert(java.nio.file.Files.readAllBytes(f.toPath()));
+                    if (!cand.getSubjectX500Principal().getName().equals(issuerDn)) {
+                        continue;
+                    }
+                    if (firstDnMatch == null) {
+                        firstDnMatch = cand;
+                    }
+                    if (verifySignature(cert, cand.getPublicKey())) {
+                        return cand;
+                    }
+                } catch (Exception ignore) {
+                }
+            }
+        }
+        X509Certificate cac = findLocalIssuerInCacerts(cert, issuerDn);
+        if (cac != null) {
+            return cac;
+        }
+        return firstDnMatch;
+    }
+
+    /** 在 JAVA cacerts 中查找能验证当前证书签名的同 DN 证书。 */
+    private static X509Certificate findLocalIssuerInCacerts(X509Certificate cert, String issuerDn) {
+        try {
+            java.io.File cac = new java.io.File(System.getProperty("java.home"), "lib/security/cacerts");
+            if (!cac.exists()) {
+                return null;
+            }
+            char[] pw = "changeit".toCharArray();
+            for (String ksType : new String[]{"JKS", "PKCS12"}) {
+                try {
+                    java.security.KeyStore ks = java.security.KeyStore.getInstance(ksType);
+                    try (java.io.FileInputStream in = new java.io.FileInputStream(cac)) {
+                        ks.load(in, pw);
+                    }
+                    java.util.Enumeration<String> aliases = ks.aliases();
+                    while (aliases.hasMoreElements()) {
+                        java.security.cert.Certificate c = ks.getCertificate(aliases.nextElement());
+                        if (!(c instanceof X509Certificate)) {
+                            continue;
+                        }
+                        X509Certificate cand = (X509Certificate) c;
+                        if (!cand.getSubjectX500Principal().getName().equals(issuerDn)) {
+                            continue;
+                        }
+                        if (verifySignature(cert, cand.getPublicKey())) {
+                            return cand;
+                        }
+                    }
+                    break;
+                } catch (Exception ignore) {
+                }
+            }
+        } catch (Exception ignore) {
+        }
+        return null;
     }
 
     /**
@@ -748,7 +867,10 @@ public final class CertVerify {
                 }
                 try {
                     X509Certificate root = parseCert(java.nio.file.Files.readAllBytes(f.toPath()));
-                    if (java.util.Arrays.equals(root.getPublicKey().getEncoded(), spki)) {
+                    // Trust anchor identity = SPKI + subject DN（PKI-006：仅比 SPKI 会误认）
+                    if (java.util.Arrays.equals(root.getPublicKey().getEncoded(), spki)
+                            && root.getSubjectX500Principal().getName()
+                                .equals(cert.getSubjectX500Principal().getName())) {
                         return true;
                     }
                 } catch (Exception ignore) {
@@ -782,7 +904,9 @@ public final class CertVerify {
                     while (aliases.hasMoreElements()) {
                         java.security.cert.Certificate c = ks.getCertificate(aliases.nextElement());
                         if (c instanceof X509Certificate
-                                && java.util.Arrays.equals(c.getPublicKey().getEncoded(), spki)) {
+                                && java.util.Arrays.equals(c.getPublicKey().getEncoded(), spki)
+                                && ((X509Certificate) c).getSubjectX500Principal().getName()
+                                    .equals(cert.getSubjectX500Principal().getName())) {
                             return true;
                         }
                     }
@@ -924,7 +1048,13 @@ public final class CertVerify {
             org.bouncycastle.cert.ocsp.BasicOCSPResp basic =
                     (org.bouncycastle.cert.ocsp.BasicOCSPResp) ocspResp.getResponseObject();
             // 响应签名验证（responder 授权：内嵌 OCSP 证书或签发者直接应答）
-            PublicKey respKey = ocspResponderKey(basic, issuerCert);
+            PublicKey respKey;
+            try {
+                respKey = ocspResponderKey(basic, issuerCert);
+            } catch (Exception e) {
+                System.out.println("        OCSP响应者授权验证失败: " + e.getMessage() + "~ ");
+                return;
+            }
             if (!basic.isSignatureValid(
                     new org.bouncycastle.operator.jcajce.JcaContentVerifierProviderBuilder()
                             .setProvider("BC").build(respKey))) {
@@ -1001,9 +1131,32 @@ public final class CertVerify {
             X509Certificate issuerCert) throws Exception {
         org.bouncycastle.cert.X509CertificateHolder[] holders = basic.getCerts();
         if (holders != null && holders.length > 0) {
-            return new JcaX509CertificateConverter().setProvider("BC")
-                    .getCertificate(holders[0]).getPublicKey();
+            X509Certificate respCert = new JcaX509CertificateConverter().setProvider("BC")
+                    .getCertificate(holders[0]);
+            // Responder authorization (RFC 6960 SS4.2.2.2): validity window + id-kp-OCSPSigning EKU
+            java.util.Date now = new java.util.Date();
+            if (now.before(respCert.getNotBefore()) || now.after(respCert.getNotAfter())) {
+                throw new Exception("OCSP responder certificate not within validity period");
+            }
+            boolean hasOcspEku = false;
+            try {
+                java.util.List<String> ekus = respCert.getExtendedKeyUsage();
+                if (ekus != null) {
+                    for (String eku : ekus) {
+                        if ("1.3.6.1.5.5.7.3.9".equals(eku)) {
+                            hasOcspEku = true;
+                            break;
+                        }
+                    }
+                }
+            } catch (Exception ignore) {
+            }
+            if (!hasOcspEku) {
+                throw new Exception("OCSP responder certificate lacks id-kp-OCSPSigning EKU (1.3.6.1.5.5.7.3.9)");
+            }
+            return respCert.getPublicKey();
         }
+        // No embedded responder cert: issuer directly signed the response
         return issuerCert.getPublicKey();
     }
 
@@ -1573,6 +1726,33 @@ public final class CertVerify {
         for (int i = 7; i >= 0; i--) {
             bos.write((int) ((v >>> (8 * i)) & 0xff));
         }
+    }
+
+
+
+    /** 从 RSASSA-PSS 证书签名参数解析哈希名（大写，SHA3 带连字符，供 JCA 算法名使用）。 */
+    private static String pssHashName(X509Certificate cert) {
+        try {
+            byte[] params = cert.getSigAlgParams();
+            if (params != null) {
+                org.bouncycastle.asn1.pkcs.RSASSAPSSparams pss =
+                        org.bouncycastle.asn1.pkcs.RSASSAPSSparams.getInstance(params);
+                String h = pss.getHashAlgorithm().getAlgorithm().getId();
+                switch (h) {
+                    case "1.3.14.3.2.26": return "SHA1";
+                    case "2.16.840.1.101.3.4.2.4": return "SHA224";
+                    case "2.16.840.1.101.3.4.2.1": return "SHA256";
+                    case "2.16.840.1.101.3.4.2.2": return "SHA384";
+                    case "2.16.840.1.101.3.4.2.3": return "SHA512";
+                    case "2.16.840.1.101.3.4.2.7": return "SHA3-224";
+                    case "2.16.840.1.101.3.4.2.8": return "SHA3-256";
+                    case "2.16.840.1.101.3.4.2.9": return "SHA3-384";
+                    case "2.16.840.1.101.3.4.2.10": return "SHA3-512";
+                    default: return "SHA256";
+                }
+            }
+        } catch (Exception ignore) { /* 参数缺失/解析失败回退 SHA256 */ }
+        return "SHA256";
     }
 
 }

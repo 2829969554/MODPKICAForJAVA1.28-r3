@@ -330,6 +330,23 @@ public class X509JsonConverter {
         SIG_ALG_NAMES.put("1.2.840.10045.4.3.4", "SHA512withECDSA");
         SIG_ALG_NAMES.put("1.3.101.112", "Ed25519");
         SIG_ALG_NAMES.put("1.3.101.113", "Ed448");
+        SIG_ALG_NAMES.put("2.16.840.1.101.3.4.3.1", "SHA3-224withRSA");
+        SIG_ALG_NAMES.put("2.16.840.1.101.3.4.3.2", "SHA3-256withRSA");
+        SIG_ALG_NAMES.put("2.16.840.1.101.3.4.3.3", "SHA3-384withRSA");
+        SIG_ALG_NAMES.put("2.16.840.1.101.3.4.3.4", "SHA3-512withRSA");
+        SIG_ALG_NAMES.put("2.16.840.1.101.3.4.3.9", "SHA3-224withECDSA");
+        SIG_ALG_NAMES.put("2.16.840.1.101.3.4.3.10", "SHA3-256withECDSA");
+        SIG_ALG_NAMES.put("2.16.840.1.101.3.4.3.11", "SHA3-384withECDSA");
+        SIG_ALG_NAMES.put("2.16.840.1.101.3.4.3.12", "SHA3-512withECDSA");
+        SIG_ALG_NAMES.put("1.2.840.10040.4.3", "SHA1withDSA");
+        SIG_ALG_NAMES.put("2.16.840.1.101.3.4.3.5", "SHA224withDSA");
+        SIG_ALG_NAMES.put("2.16.840.1.101.3.4.3.6", "SHA256withDSA");
+        SIG_ALG_NAMES.put("2.16.840.1.101.3.4.3.7", "SHA384withDSA");
+        SIG_ALG_NAMES.put("2.16.840.1.101.3.4.3.8", "SHA512withDSA");
+        SIG_ALG_NAMES.put("2.16.840.1.101.3.4.3.13", "SHA3-224withDSA");
+        SIG_ALG_NAMES.put("2.16.840.1.101.3.4.3.14", "SHA3-256withDSA");
+        SIG_ALG_NAMES.put("2.16.840.1.101.3.4.3.15", "SHA3-384withDSA");
+        SIG_ALG_NAMES.put("2.16.840.1.101.3.4.3.16", "SHA3-512withDSA");
 
         KEY_ALG_NAMES.put("1.2.840.113549.1.1.1", "RSA");
         KEY_ALG_NAMES.put("1.2.840.10045.2.1", "EC");
@@ -382,8 +399,10 @@ public class X509JsonConverter {
 
         ASN1BitString iuid = tbs.getIssuerUniqueId();
         root.put("issuerUniqueId", iuid != null ? toHex(iuid.getBytes()) : null);
+        if (iuid != null && iuid.getPadBits() != 0) root.put("issuerUniqueIdUnusedBits", iuid.getPadBits());
         ASN1BitString suid = tbs.getSubjectUniqueId();
         root.put("subjectUniqueId", suid != null ? toHex(suid.getBytes()) : null);
+        if (suid != null && suid.getPadBits() != 0) root.put("subjectUniqueIdUnusedBits", suid.getPadBits());
 
         // 扩展：OID 主键
         Map<String, Object> exts = new LinkedHashMap<>();
@@ -403,6 +422,17 @@ public class X509JsonConverter {
         root.put("signatureValue", toHex(sigBits.getBytes()));
         if (sigBits.getPadBits() != 0) root.put("signatureValueUnusedBits", sigBits.getPadBits());
 
+        // 终极兜底：整段 TBS 结构化重建往返检测——不一致（未覆盖的罕见编码细节）
+        // 时保留原始 TBS DER hex，jsonToCertPem 优先回用，保证 100% 字节级无损
+        try {
+            DERSequence rebuiltTbs = buildTBSCertificate(root);
+            if (!Arrays.equals(rebuiltTbs.getEncoded(), tbs.getEncoded(ASN1Encoding.DER))) {
+                root.put("tbsRaw", toHex(tbs.getEncoded(ASN1Encoding.DER)));
+            }
+        } catch (Exception e) {
+            root.put("tbsRaw", toHex(tbs.getEncoded(ASN1Encoding.DER)));
+        }
+
         return toJson(root);
     }
 
@@ -414,8 +444,63 @@ public class X509JsonConverter {
         ASN1Encodable p = algId.getParameters();
         if (p == null) r.put("parameters", null);
         else if (p instanceof DERNull) r.put("parameters", "NULL");
-        else r.put("parameters", toHex(p.toASN1Primitive().getEncoded()));
+        else {
+            byte[] paramDer = p.toASN1Primitive().getEncoded();
+            // 自适应精简：ECC/SM2 曲线 OID、DSA p/q/g 等常见结构化参数
+            // 可精确重建时用结构化表示减小体积；否则保留原始 DER hex
+            Map<String, Object> st = tryStructuredParams(p.toASN1Primitive());
+            if (st != null) {
+                try {
+                    if (Arrays.equals(buildParamsFromStruct(st).getEncoded(), paramDer)) {
+                        r.put("parameters", st);
+                        return r;
+                    }
+                } catch (Exception ignore) { /* 回退 hex */ }
+            }
+            r.put("parameters", toHex(paramDer));
+        }
         return r;
+    }
+
+    /** 尝试把 AlgorithmIdentifier parameters 转成结构化表示（可无损重建才返回） */
+    static Map<String, Object> tryStructuredParams(ASN1Primitive p) {
+        if (p instanceof ASN1ObjectIdentifier) {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("type", "oid");
+            m.put("value", ((ASN1ObjectIdentifier) p).getId());
+            return m;
+        }
+        if (p instanceof ASN1Sequence) {
+            ASN1Sequence seq = ASN1Sequence.getInstance(p);
+            if (seq.size() == 3
+                    && seq.getObjectAt(0) instanceof ASN1Integer
+                    && seq.getObjectAt(1) instanceof ASN1Integer
+                    && seq.getObjectAt(2) instanceof ASN1Integer) {
+                Map<String, Object> m = new LinkedHashMap<>();
+                m.put("type", "dsa");
+                m.put("p", ((ASN1Integer) seq.getObjectAt(0)).getPositiveValue().toString(16));
+                m.put("q", ((ASN1Integer) seq.getObjectAt(1)).getPositiveValue().toString(16));
+                m.put("g", ((ASN1Integer) seq.getObjectAt(2)).getPositiveValue().toString(16));
+                return m;
+            }
+        }
+        return null;
+    }
+
+    /** 从结构化 parameters（tryStructuredParams 的产物）重建 ASN.1 */
+    static ASN1Primitive buildParamsFromStruct(Map<String, Object> m) {
+        String type = (String) m.get("type");
+        if ("oid".equals(type)) {
+            return new ASN1ObjectIdentifier((String) m.get("value"));
+        }
+        if ("dsa".equals(type)) {
+            ASN1EncodableVector v = new ASN1EncodableVector();
+            v.add(new ASN1Integer(new BigInteger((String) m.get("p"), 16)));
+            v.add(new ASN1Integer(new BigInteger((String) m.get("q"), 16)));
+            v.add(new ASN1Integer(new BigInteger((String) m.get("g"), 16)));
+            return new DERSequence(v);
+        }
+        throw new RuntimeException("Unknown structured parameters type: " + type);
     }
 
     /**
@@ -466,11 +551,21 @@ public class X509JsonConverter {
         ASN1Primitive p = time.toASN1Primitive();
         String type = p instanceof ASN1UTCTime ? "UTCTime" : "GeneralizedTime";
         r.put("type", type);
-        // raw：时间节点的 DER 编码 hex，保留秒/小数秒/时区细节，确保字节级无损
-        r.put("raw", toHex(p.getEncoded()));
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
         sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
         r.put("value", sdf.format(time.getDate()));
+        // 自适应精简：type+value 结构化重建 DER 与原始一致时省略 raw；
+        // 不一致（小数秒/特殊时区/编码细节）则保留 raw 确保字节级无损
+        try {
+            Date d = time.getDate();
+            ASN1Primitive node = (p instanceof ASN1UTCTime)
+                    ? new ASN1UTCTime(d) : new ASN1GeneralizedTime(d);
+            if (!Arrays.equals(node.getEncoded(), p.getEncoded())) {
+                r.put("raw", toHex(p.getEncoded()));
+            }
+        } catch (Exception e) {
+            r.put("raw", toHex(p.getEncoded()));
+        }
         return r;
     }
 
@@ -486,18 +581,43 @@ public class X509JsonConverter {
         String oid = ext.getExtnId().getId();
         r.put("critical", ext.isCritical());
         r.put("name", EXT_NAMES.getOrDefault(oid, "Unknown"));
+        ASN1Encodable parsed = ext.getParsedValue();
         if ("1.3.6.1.4.1.11129.2.4.2".equals(oid)) {
             // SCT List: extnValue 是双重 OCTET STRING，getParsedValue() 解出内层 TLS 数据
-            byte[] tlsData = ((ASN1OctetString) ext.getParsedValue()).getOctets();
+            byte[] tlsData = ((ASN1OctetString) parsed).getOctets();
             r.putAll(parseSCTList(tlsData));
-        } else {
-            ASN1Encodable parsed = ext.getParsedValue();
-            if (parsed != null) {
-                Map<String, Object> val = parseExtensionValue(oid, parsed.toASN1Primitive());
-                if (val != null) r.putAll(val);
+        } else if (parsed != null) {
+            Map<String, Object> val = parseExtensionValue(oid, parsed.toASN1Primitive());
+            if (val != null) r.putAll(val);
+        }
+        // 自适应精简：已知扩展先结构化重建做往返检测——重建一致则无需 rawHex；
+        // 不一致（罕见编码细节）或重建失败则保留原始 DER hex，保证字节级无损
+        if (parsed != null && isKnownExtension(oid)) {
+            try {
+                ASN1Object rebuilt = buildExtensionValue(oid, r);
+                if (!Arrays.equals(rebuilt.getEncoded(), parsed.toASN1Primitive().getEncoded())) {
+                    r.put("rawHex", toHex(parsed.toASN1Primitive().getEncoded()));
+                }
+            } catch (Exception e) {
+                r.put("rawHex", toHex(parsed.toASN1Primitive().getEncoded()));
             }
         }
         return r;
+    }
+
+    /** 是否有专用结构化解析/重建器（决定往返检测与 rawHex 精简策略） */
+    static boolean isKnownExtension(String oid) {
+        switch (oid) {
+            case "2.5.29.14": case "2.5.29.35": case "2.5.29.17": case "2.5.29.18":
+            case "2.5.29.15": case "2.5.29.37": case "2.5.29.19": case "2.5.29.31":
+            case "2.5.29.46": case "2.5.29.32": case "1.3.6.1.5.5.7.1.1":
+            case "1.3.6.1.5.5.7.1.11": case "2.5.29.30": case "2.5.29.36":
+            case "2.5.29.33": case "2.5.29.54": case "2.5.29.9": case "2.5.29.16":
+            case "2.5.29.28": case "2.16.840.1.113730.1.1": case "1.3.6.1.4.1.11129.2.4.2":
+                return true;
+            default:
+                return false;
+        }
     }
 
     /** 解析扩展值，返回扩展特有字段（不含 critical/name） */
@@ -593,6 +713,13 @@ public class X509JsonConverter {
         List<Object> usages = new ArrayList<>();
         for (int i = 0; i < names.length; i++) if (ku.hasUsages(bits[i])) usages.add(names[i]);
         r.put("keyUsage", usages);
+        // Lossless: keep original BIT STRING unusedBits + data octets so rebuild reproduces exact DER.
+        // Different issuers may encode the same bit set differently (e.g. 00 a8 vs 03 a8).
+        ASN1BitString bitsRaw = ASN1BitString.getInstance(obj);
+        r.put("keyUsageUnusedBits", bitsRaw.getPadBits());
+        // getBytes() (not getOctets()): KeyUsage BIT STRING is often NOT octet-aligned
+        // (padBits > 0, e.g. 03 02 01 06), getOctets() throws in that case.
+        r.put("keyUsageRaw", toHex(bitsRaw.getBytes()));
         return r;
     }
 
@@ -932,9 +1059,16 @@ public class X509JsonConverter {
     // ==================== JSON -> PEM（从结构化数据重建 ASN.1） ====================
 
     @SuppressWarnings("unchecked")
-    static byte[] jsonToCertPem(String json) throws Exception {
+    public static byte[] jsonToCertPem(String json) throws Exception {
         Map<String, Object> root = (Map<String, Object>) new JsonParser(json).parse();
-        DERSequence tbsSeq = buildTBSCertificate(root);
+        ASN1Primitive tbsSeq;
+        String tbsRaw = (String) root.get("tbsRaw");
+        if (tbsRaw != null && !tbsRaw.isEmpty()) {
+            // 终极兜底路径：原始 TBS DER 原样回用（结构化字段仅供查看/编辑）
+            tbsSeq = ASN1Primitive.fromByteArray(fromHex(tbsRaw));
+        } else {
+            tbsSeq = buildTBSCertificate(root);
+        }
 
         // signatureAlgorithm
         AlgorithmIdentifier sigAlg = buildAlgId((Map<String, Object>) root.get("signatureAlgorithm"));
@@ -987,11 +1121,19 @@ public class X509JsonConverter {
 
         // issuerUniqueID [1] IMPLICIT
         String iuid = (String) root.get("issuerUniqueId");
-        if (iuid != null) tv.add(new DERTaggedObject(false, 1, new DERBitString(fromHex(iuid), 0)));
+        if (iuid != null) {
+            int iuidUnused = root.containsKey("issuerUniqueIdUnusedBits")
+                    ? ((Number) root.get("issuerUniqueIdUnusedBits")).intValue() : 0;
+            tv.add(new DERTaggedObject(false, 1, new DERBitString(fromHex(iuid), iuidUnused)));
+        }
 
         // subjectUniqueID [2] IMPLICIT
         String suid = (String) root.get("subjectUniqueId");
-        if (suid != null) tv.add(new DERTaggedObject(false, 2, new DERBitString(fromHex(suid), 0)));
+        if (suid != null) {
+            int suidUnused = root.containsKey("subjectUniqueIdUnusedBits")
+                    ? ((Number) root.get("subjectUniqueIdUnusedBits")).intValue() : 0;
+            tv.add(new DERTaggedObject(false, 2, new DERBitString(fromHex(suid), suidUnused)));
+        }
 
         // extensions [3] EXPLICIT
         Map<String, Object> exts = (Map<String, Object>) root.get("extensions");
@@ -1303,12 +1445,14 @@ public class X509JsonConverter {
                 return kpg.generateKeyPair();
             }
             case "1.2.840.10045.2.1": { // EC
-                // 从 algorithm.parameters(hex) 解析曲线 OID
+                // 从 algorithm.parameters(hex 或结构化 Map) 解析曲线 OID
                 Map<String, Object> alg = (Map<String, Object>) spkiMap.get("algorithm");
-                String paramsHex = (String) alg.get("parameters");
+                Object params = alg.get("parameters");
                 String curveOid;
-                if (paramsHex != null && !paramsHex.isEmpty() && !"NULL".equals(paramsHex)) {
-                    ASN1ObjectIdentifier oid = ASN1ObjectIdentifier.getInstance(fromHex(paramsHex));
+                if (params instanceof Map) { // 结构化 {type:oid, value:...}
+                    curveOid = (String) ((Map<String, Object>) params).get("value");
+                } else if (params instanceof String && !((String) params).isEmpty() && !"NULL".equals(params)) {
+                    ASN1ObjectIdentifier oid = ASN1ObjectIdentifier.getInstance(fromHex((String) params));
                     curveOid = oid.getId();
                 } else {
                     curveOid = "1.2.840.10045.3.1.7"; // 默认 prime256v1
@@ -1330,6 +1474,12 @@ public class X509JsonConverter {
                 KeyPairGenerator kpg = KeyPairGenerator.getInstance("Ed448", BouncyCastleProvider.PROVIDER_NAME);
                 return kpg.generateKeyPair();
             }
+            case "2.16.840.1.101.3.4.3.17": // ML-DSA-44 (FIPS 204)
+                return CertUtil.generatePqcKeyPair("ML-DSA-44");
+            case "2.16.840.1.101.3.4.3.18": // ML-DSA-65
+                return CertUtil.generatePqcKeyPair("ML-DSA-65");
+            case "2.16.840.1.101.3.4.3.19": // ML-DSA-87
+                return CertUtil.generatePqcKeyPair("ML-DSA-87");
             case "1.2.840.10040.4.1": { // DSA
                 KeyPairGenerator kpg = KeyPairGenerator.getInstance("DSA", BouncyCastleProvider.PROVIDER_NAME);
                 kpg.initialize(1024, new SecureRandom());
@@ -1358,9 +1508,26 @@ public class X509JsonConverter {
             case "1.3.101.112":           return "Ed25519";
             case "1.3.101.113":           return "Ed448";
             case "1.2.156.10197.1.501":   return "SM3withSM2";
+            case "2.16.840.1.101.3.4.3.17": return "ML-DSA-44";
+            case "2.16.840.1.101.3.4.3.18": return "ML-DSA-65";
+            case "2.16.840.1.101.3.4.3.19": return "ML-DSA-87";
             case "1.2.840.10040.4.3":     return "SHA1withDSA";
-            case "2.16.840.1.101.3.4.3.1": return "SHA224withDSA";
-            case "2.16.840.1.101.3.4.3.2": return "SHA256withDSA";
+            case "2.16.840.1.101.3.4.3.1": return "SHA3-224withRSA";
+            case "2.16.840.1.101.3.4.3.2": return "SHA3-256withRSA";
+            case "2.16.840.1.101.3.4.3.3": return "SHA3-384withRSA";
+            case "2.16.840.1.101.3.4.3.4": return "SHA3-512withRSA";
+            case "2.16.840.1.101.3.4.3.5": return "SHA224withDSA";
+            case "2.16.840.1.101.3.4.3.6": return "SHA256withDSA";
+            case "2.16.840.1.101.3.4.3.7": return "SHA384withDSA";
+            case "2.16.840.1.101.3.4.3.8": return "SHA512withDSA";
+            case "2.16.840.1.101.3.4.3.9": return "SHA3-224withECDSA";
+            case "2.16.840.1.101.3.4.3.10": return "SHA3-256withECDSA";
+            case "2.16.840.1.101.3.4.3.11": return "SHA3-384withECDSA";
+            case "2.16.840.1.101.3.4.3.12": return "SHA3-512withECDSA";
+            case "2.16.840.1.101.3.4.3.13": return "SHA3-224withDSA";
+            case "2.16.840.1.101.3.4.3.14": return "SHA3-256withDSA";
+            case "2.16.840.1.101.3.4.3.15": return "SHA3-384withDSA";
+            case "2.16.840.1.101.3.4.3.16": return "SHA3-512withDSA";
             default:
                 throw new RuntimeException("Unsupported signature algorithm for rekey: " + oid);
         }
@@ -1371,6 +1538,13 @@ public class X509JsonConverter {
         Object p = m.get("parameters");
         if (p == null) return new AlgorithmIdentifier(oid);
         if ("NULL".equals(p)) return new AlgorithmIdentifier(oid, DERNull.INSTANCE);
+        if (p instanceof Map) { // 结构化参数（curve OID / DSA p-q-g）
+            try {
+                return new AlgorithmIdentifier(oid, buildParamsFromStruct((Map<String, Object>) p));
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to build structured algorithm parameters: " + p, e);
+            }
+        }
         // hex 编码的参数
         try {
             return new AlgorithmIdentifier(oid, ASN1Primitive.fromByteArray(fromHex((String) p)));
@@ -1458,6 +1632,10 @@ public class X509JsonConverter {
     }
 
     static ASN1Object buildExtensionValue(String oid, Map<String, Object> em) throws Exception {
+        String rawHex = (String) em.get("rawHex");
+        if (rawHex != null && !rawHex.isEmpty()) {
+            return ASN1Primitive.fromByteArray(fromHex(rawHex));
+        }
         switch (oid) {
             case "2.5.29.14": return buildSKI(em);
             case "2.5.29.35": return buildAKI(em);
@@ -1478,7 +1656,6 @@ public class X509JsonConverter {
             case "2.16.840.1.113730.1.1": return buildNetscapeCertType(em);
             case "1.3.6.1.4.1.11129.2.4.2": return buildSCTList(em);
             default:
-                String rawHex = (String) em.get("rawHex");
                 if (rawHex != null) return ASN1Primitive.fromByteArray(fromHex(rawHex));
                 throw new RuntimeException("Unknown extension without rawHex: " + oid);
         }
@@ -1536,7 +1713,7 @@ public class X509JsonConverter {
         return new GeneralName(tag, name);
     }
 
-    static KeyUsage buildKeyUsage(Map<String, Object> em) {
+    static ASN1Object buildKeyUsage(Map<String, Object> em) {
         List<String> usages = (List<String>) em.get("keyUsage");
         int value = 0;
         for (String u : usages) {
@@ -1550,9 +1727,42 @@ public class X509JsonConverter {
                 case "cRLSign": value |= KeyUsage.cRLSign; break;
                 case "encipherOnly": value |= KeyUsage.encipherOnly; break;
                 case "decipherOnly": value |= KeyUsage.decipherOnly; break;
+                default: throw new RuntimeException("Unknown KeyUsage: " + u);
+            }
+        }
+        // Lossless: rebuild exact DER when raw encoding was saved and semantics still match
+        // (e.g. 00 a8 vs 03 a8). Falls back to compact BC encoding when user edited bits.
+        String raw = (String) em.get("keyUsageRaw");
+        if (raw != null && !raw.isEmpty() && em.get("keyUsageUnusedBits") != null) {
+            int unused = ((Number) em.get("keyUsageUnusedBits")).intValue();
+            byte[] octets = fromHex(raw);
+            if (decodeKeyUsageBits(octets, unused) == value) {
+                // BC DERBitString(data, padBits) refuses non-octet-aligned data;
+                // rebuild the raw BIT STRING DER manually (03 len pad data) then parse.
+                byte[] der = new byte[2 + octets.length];
+                der[0] = 0x03;
+                der[1] = (byte) (octets.length + 1);
+                der[2] = (byte) unused;
+                System.arraycopy(octets, 0, der, 3, octets.length);
+                try {
+                    return (KeyUsage) KeyUsage.getInstance(ASN1Primitive.fromByteArray(der));
+                } catch (java.io.IOException e) {
+                    throw new IllegalStateException("cannot rebuild KeyUsage BIT STRING", e);
+                }
             }
         }
         return new KeyUsage(value);
+    }
+
+    /** Decode BIT STRING octets + unusedBits back into the KeyUsage int bit mask (bits 0..8). */
+    static int decodeKeyUsageBits(byte[] octets, int unused) {
+        int totalBits = octets.length * 8 - unused;
+        int value = 0;
+        for (int i = 0; i < totalBits && i < 9; i++) {
+            int byteIdx = i / 8, bitIdx = i % 8;
+            if ((octets[byteIdx] & (0x80 >> bitIdx)) != 0) value |= (1 << i);
+        }
+        return value;
     }
 
     static ExtendedKeyUsage buildEKU(Map<String, Object> em) {

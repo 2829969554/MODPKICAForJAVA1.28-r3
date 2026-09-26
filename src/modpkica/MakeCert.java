@@ -123,7 +123,28 @@ public final class MakeCert {
             {"46", "1.2.840.113635.100.4.2"}
     };
 
+    /** 服务模式安静开关：由 WebAdmin / MAIN 置位后，生成成功信息不再打印到控制台
+     *  （避免服务控制台刷屏/卡死），改写入 PKI/logs.log 日志文件；CLI 直接运行不受影响。 */
+    private static volatile boolean quiet = false;
+
+    /** 设置安静模式（服务进程内调用，执行完应恢复 false）。 */
+    public static void setQuiet(boolean q) {
+        quiet = q;
+    }
+
     private MakeCert() {
+    }
+
+    /** 生成结果输出：控制台（非安静模式）+ 操作日志（始终写入，保证服务模式有据可查）。 */
+    private void out(String msg) {
+        if (!quiet) {
+            System.out.println(msg);
+        }
+        try {
+            MLog.append(baseDir, "MakeCert输出", "签发证书", msg);
+        } catch (Exception ignore) {
+            // 日志写入失败不影响签发主流程
+        }
     }
 
     public static void main(String[] args) throws Exception {
@@ -173,7 +194,19 @@ public final class MakeCert {
         String issuerPath = resolveIssuer(issuerId);
         X509Certificate issuerCert = PemIO.readCert(issuerPath + ".crt");
         String rootAlgo = PemIO.detectKeyType(issuerPath + ".key");
+        // RSA-PSS：RSA 私钥文件本身无法区分 PSS 与 PKCS#1，必须按 CERTS.txt 中
+        // 颁发者登记算法列判断，否则会退化为 PKCS#1 v1.5 签名。
+        {
+            CertsDB db0 = new CertsDB();
+            db0.load(baseDir);
+            CertsDB.CertEntry ie0 = db0.findBySerial(issuerId);
+            if (ie0 != null && "RSA-PSS".equalsIgnoreCase(ie0.algo)) {
+                rootAlgo = "RSA-PSS";
+            }
+        }
         java.security.PrivateKey issuerKey = CertUtil.readJcaPrivateKey(issuerPath + ".key");
+        // PKI-009: revoke/expired/non-CA issuer must not be able to sign new certificates
+        checkIssuerUsable(issuerCert, issuerId);
 
         // ---- 使用者算法与密钥 ----
         String certAlgo;
@@ -251,6 +284,11 @@ public final class MakeCert {
             keyUsage = goKeyUsageToBc(1 | 2 | 32 | 64);
         } else {
             keyUsage = goKeyUsageToBc(parseKeyUsage(a.length >= 4 ? a[3] : null));
+            // PKI-010: End Entity (CA=false) MUST NOT assert keyCertSign
+            if ((keyUsage & KeyUsage.keyCertSign) != 0) {
+                throw new IllegalArgumentException(
+                        "terminal certificate (End Entity, CA=false) cannot carry keyCertSign KeyUsage");
+            }
         }
 
         // ---- ExtKeyUsage ----
@@ -393,8 +431,36 @@ public final class MakeCert {
         throw new IllegalArgumentException("此ID既不是根证书也不是中间CA证书: " + id);
     }
 
+    /** 签发前校验颁发者可用性（PKI-009/PKI-010）：有效期、CA 属性、keyCertSign、吊销状态。
+     *  "文件存在"不能等于"允许作为 CA 继续签发"。 */
+    private void checkIssuerUsable(X509Certificate issuerCert, String issuerId) throws Exception {
+        java.util.Date now = new java.util.Date();
+        if (now.before(issuerCert.getNotBefore())) {
+            throw new IllegalArgumentException("issuer certificate not yet valid: " + issuerCert.getNotBefore());
+        }
+        if (now.after(issuerCert.getNotAfter())) {
+            throw new IllegalArgumentException("issuer certificate expired: " + issuerCert.getNotAfter());
+        }
+        if (issuerCert.getBasicConstraints() < 0) {
+            throw new IllegalArgumentException("issuer certificate is not a CA (BasicConstraints CA=false), cannot sign");
+        }
+        boolean[] ku = issuerCert.getKeyUsage();
+        if (ku != null && (ku.length <= 5 || !ku[5])) {
+            throw new IllegalArgumentException("issuer certificate KeyUsage lacks keyCertSign, cannot sign certificates");
+        }
+        CertsDB db = new CertsDB();
+        db.load(baseDir);
+        CertsDB.CertEntry entry = db.findBySerial(issuerId);
+        if (entry != null && entry.status == 'R') {
+            throw new IllegalArgumentException("issuer certificate is revoked (status=R), signing forbidden");
+        }
+    }
+
     private int defaultBit(String algo) {
-        if ("RSA".equals(algo)) {
+        if ("RSA".equals(algo) || "RSA-PSS".equals(algo)) {
+            return 2048;
+        }
+        if ("DSA".equals(algo)) {
             return 2048;
         }
         return 256;
@@ -407,7 +473,7 @@ public final class MakeCert {
         } catch (NumberFormatException e) {
             bit = 0;
         }
-        if ("RSA".equals(algo)) {
+        if ("RSA".equals(algo) || "RSA-PSS".equals(algo)) {
             if (bit < 1024) {
                 bit = 2048;
             }
@@ -425,17 +491,39 @@ public final class MakeCert {
             }
             return 521;
         }
+        if ("DSA".equals(algo)) {
+            // FIPS 186-4：L 取 1024/2048/3072 三档
+            if (bit <= 0) {
+                return 2048;
+            }
+            if (bit >= 3072) {
+                return 3072;
+            }
+            if (bit >= 2048) {
+                return 2048;
+            }
+            return 1024;
+        }
+        if ("EDDSA".equalsIgnoreCase(algo)) {
+            return 256; // Ed25519 固定 256，忽略输入
+        }
         return 256;
     }
 
     private KeyPair generateKeyPair(String algo, int bit) throws Exception {
+        algo = algo.toUpperCase(Locale.ROOT); // 统一归一化，避免 EdDSA/EDDSA 大小写不一致
         switch (algo) {
             case "RSA":
+            case "RSA-PSS":
                 return CertUtil.generateRsaKeyPair(bit);
             case "ECC":
                 return CertUtil.generateEccKeyPair(bit);
             case "SM2":
                 return CertUtil.generateSm2KeyPair();
+            case "DSA":
+                return CertUtil.generateDsaKeyPair(bit);
+            case "EDDSA":
+                return CertUtil.generateEd25519KeyPair();
             case "PQC":
                 return CertUtil.generatePqcKeyPair(String.valueOf(bit));
             default:
@@ -449,7 +537,7 @@ public final class MakeCert {
         if (isOcsp || isTsa) {
             return "sha256"; // OCSP/TSA 证书签名统一 SHA256（微软拒绝 sha1 签名的证书）
         }
-        String h = a.length >= 3 ? a[2] : "sha256";
+        String h = a.length >= 3 ? a[2].toLowerCase(Locale.ROOT) : "sha256";
         switch (h) {
             case "sha1":
                 return "sha1";
@@ -457,8 +545,16 @@ public final class MakeCert {
                 return "sha384";
             case "sha512":
                 return "sha512";
-            case "SM3":
-            case "SM2":
+            case "sha3-224":
+                return "sha3-224";
+            case "sha3-256":
+                return "sha3-256";
+            case "sha3-384":
+                return "sha3-384";
+            case "sha3-512":
+                return "sha3-512";
+            case "sm3":
+            case "sm2":
                 return "SM2".equals(rootAlgo) ? "sm3" : "sha256";
             default:
                 return "sha256";
@@ -924,7 +1020,7 @@ public final class MakeCert {
             PemIO.writePrivateKey(base + ".key", kp.getPrivate(), algo);
             // TSA 证书同样按 序列号.crt 同步到 WebPublic/CRT
             PemIO.writeCert(webDir + serialHex + ".crt", cert);
-            System.out.println("TSA专用证书生成成功！" + base + ".crt");
+            out("TSA专用证书生成成功！" + base + ".crt");
         } else if (isOcsp) {
             // 多根模型：OCSP 签名证书统一 序列号_ocsp.crt/.key
             String ocspBase = issuerId + "_ocsp";
@@ -938,16 +1034,16 @@ public final class MakeCert {
             PemIO.writePrivateKey(ocspDir + ocspBase + ".key", kp.getPrivate(), algo);
             // OCSP 证书同样按 序列号.crt 同步到 WebPublic/CRT
             PemIO.writeCert(webDir + serialHex + ".crt", cert);
-            System.out.println("OCSP专用证书生成成功！" + ocspDir + ocspBase + ".crt");
+            out("OCSP专用证书生成成功！" + ocspDir + ocspBase + ".crt");
         } else {
             if (isCa) {
                 PemIO.writeCert(caDir + serialHex + ".crt", cert);
                 PemIO.writePrivateKey(caDir + serialHex + ".key", kp.getPrivate(), algo);
-                System.out.println("中间CA证书生成成功！");
+                out("中间CA证书生成成功！");
             } else {
                 PemIO.writeCert(certDir + serialHex + ".crt", cert);
                 PemIO.writePrivateKey(keyDir + serialHex + ".key", kp.getPrivate(), algo);
-                System.out.println("用户证书生成成功！");
+                out("用户证书生成成功！");
             }
             PemIO.writeCert(webDir + serialHex + ".crt", cert);
         }

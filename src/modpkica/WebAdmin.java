@@ -558,11 +558,18 @@ public final class WebAdmin {
             Map<String, Object> m = parseJsonObject(bodyStr);
             String path = ex.getRequestURI().getPath();
             try {
-                String out = invoker.run(m);
-                // 完整命令 = 方法 + 路径 + 提交数据（JSON 原文，可视化）
-                MLog.append(baseDir, "WebAdmin " + path,
-                        "POST " + path + " 提交数据=" + bodyStr, out);
-                sendJson(ex, 200, Map.of("ok", true, "message", out));
+                // 服务模式安静：管理动作（签发/吊销/CRL/TSA 等）执行期间
+                // 不向服务控制台打印生成信息（避免刷屏/卡死），结果由前端展示并写入日志
+                MakeCert.setQuiet(true);
+                try {
+                    String out = invoker.run(m);
+                    // 完整命令 = 方法 + 路径 + 提交数据（JSON 原文，可视化）
+                    MLog.append(baseDir, "WebAdmin " + path,
+                            "POST " + path + " 提交数据=" + bodyStr, out);
+                    sendJson(ex, 200, Map.of("ok", true, "message", out));
+                } finally {
+                    MakeCert.setQuiet(false);
+                }
             } catch (Exception e) {
                 MLog.appendErr(baseDir, "WebAdmin " + path + " 异常",
                         "POST " + path + " 提交数据=" + bodyStr, String.valueOf(e));
@@ -599,6 +606,14 @@ public final class WebAdmin {
                 return "2.16.840.1.101.3.4.2.3";
             case "sm3":
                 return Sm2Util.OID_SM3;
+            case "sha3-224":
+                return "2.16.840.1.101.3.4.2.7";
+            case "sha3-256":
+                return "2.16.840.1.101.3.4.2.8";
+            case "sha3-384":
+                return "2.16.840.1.101.3.4.2.9";
+            case "sha3-512":
+                return "2.16.840.1.101.3.4.2.10";
             case "sha256":
             default:
                 return "2.16.840.1.101.3.4.2.1";
@@ -619,6 +634,14 @@ public final class WebAdmin {
                 return "SHA-512";
             case "sm3":
                 return "SM3";
+            case "sha3-224":
+                return "SHA3-224";
+            case "sha3-256":
+                return "SHA3-256";
+            case "sha3-384":
+                return "SHA3-384";
+            case "sha3-512":
+                return "SHA3-512";
             default:
                 return "SHA-256";
         }
@@ -2289,6 +2312,18 @@ public final class WebAdmin {
             if (up.contains("SM3")) {
                 return "sm3";
             }
+            if (up.contains("SHA3-224") || up.contains("SHA3_224")) {
+                return "sha3-224";
+            }
+            if (up.contains("SHA3-256") || up.contains("SHA3_256")) {
+                return "sha3-256";
+            }
+            if (up.contains("SHA3-384") || up.contains("SHA3_384")) {
+                return "sha3-384";
+            }
+            if (up.contains("SHA3-512") || up.contains("SHA3_512")) {
+                return "sha3-512";
+            }
             if (up.contains("SHA512")) {
                 return "sha512";
             }
@@ -2298,6 +2333,9 @@ public final class WebAdmin {
             if (up.contains("SHA256")) {
                 return "sha256";
             }
+            if (up.contains("SHA224")) {
+                return "sha224";
+            }
             if (up.contains("SHA1") || up.contains("SHA-1")) {
                 return "sha1";
             }
@@ -2306,11 +2344,27 @@ public final class WebAdmin {
             }
             return alg;
         }
-        // 兜底：从签名算法 OID 推导
+        // fallback: derive from signature algorithm OID (match SHA3 sig OIDs first)
         String oid = c.getSigAlgOID();
         if (oid != null) {
             if (oid.equals(Sm2Util.OID_SM3_WITH_SM2)) {
                 return "sm3";
+            }
+            if (oid.endsWith(".101.3.4.3.1") || oid.endsWith(".101.3.4.3.5")
+                    || oid.endsWith(".101.3.4.3.9") || oid.endsWith(".101.3.4.3.13")) {
+                return "sha3-224";
+            }
+            if (oid.endsWith(".101.3.4.3.2") || oid.endsWith(".101.3.4.3.6")
+                    || oid.endsWith(".101.3.4.3.10") || oid.endsWith(".101.3.4.3.14")) {
+                return "sha3-256";
+            }
+            if (oid.endsWith(".101.3.4.3.3") || oid.endsWith(".101.3.4.3.7")
+                    || oid.endsWith(".101.3.4.3.11") || oid.endsWith(".101.3.4.3.15")) {
+                return "sha3-384";
+            }
+            if (oid.endsWith(".101.3.4.3.4") || oid.endsWith(".101.3.4.3.8")
+                    || oid.endsWith(".101.3.4.3.12") || oid.endsWith(".101.3.4.3.16")) {
+                return "sha3-512";
             }
             if (oid.contains(".11") || oid.endsWith(".2.1")) {
                 return "sha256";
@@ -2628,7 +2682,21 @@ public final class WebAdmin {
         if (boundary == null || boundary.isEmpty()) {
             throw new IllegalArgumentException("缺少 multipart boundary");
         }
+        // PKI-020: cap request body size before buffering it all (memory DoS guard)
+        String lenH = ex.getRequestHeaders().getFirst("Content-Length");
+        if (lenH != null) {
+            try {
+                long len = Long.parseLong(lenH.trim());
+                if (len > 512L * 1024 * 1024) {
+                    throw new IllegalArgumentException("上传内容过大（上限 512MB）");
+                }
+            } catch (NumberFormatException ignore) {
+            }
+        }
         byte[] body = readAll(ex.getRequestBody());
+        if (body.length > 512L * 1024 * 1024) {
+            throw new IllegalArgumentException("上传内容过大（上限 512MB）");
+        }
         byte[] delim = ("--" + boundary).getBytes(StandardCharsets.ISO_8859_1);
         Map<String, byte[]> fields = new LinkedHashMap<>();
         int pos = 0;
@@ -2754,6 +2822,17 @@ public final class WebAdmin {
                 cert = e == null ? null : SignTool.loadCertBySerial(base, serial);
                 key = e == null ? null : SignTool.loadKeyBySerial(base, serial);
                 chain = e == null ? null : SignTool.loadChain(base, serial);
+            }
+            if (cert != null) {
+                // PKI-019: signing cert must be within validity window and not revoked
+                java.util.Date now = new java.util.Date();
+                if (now.before(cert.getNotBefore()) || now.after(cert.getNotAfter())) {
+                    throw new IllegalArgumentException("签名证书已过期或尚未生效: "
+                            + cert.getNotBefore() + " ~ " + cert.getNotAfter());
+                }
+                if (e != null && e.status == 'R') {
+                    throw new IllegalArgumentException("签名证书已吊销（状态=R），禁止签名");
+                }
             }
 
             byte[] result;
@@ -2901,7 +2980,8 @@ public final class WebAdmin {
         List<Map<String, Object>> list = new ArrayList<>();
         java.util.Set<String> seenMy = new java.util.HashSet<>();
         for (CertsDB.CertEntry e : db.getAll()) {
-            if (e.type != 'E') {
+            if (e.type != 'E' || "PQC".equals(e.algo)) {
+                // User requirement: PQC certs must not appear in the signing dropdowns
                 continue;
             }
             seenMy.add(e.serial.toLowerCase());
@@ -2936,8 +3016,9 @@ public final class WebAdmin {
                     if (t.isEmpty() || t.startsWith("#")) {
                         continue;
                     }
-                    String[] p = t.split("\\s+");
-                    if (p.length < 4 || !"Y".equals(p[2])) {
+                    String[] p = t.split("\s+");
+                    if (p.length < 4 || !"Y".equals(p[2]) || "PQC".equals(p[3])) {
+                        // User requirement: PQC certs must not appear in the signing dropdowns
                         continue;
                     }
                     String mySerial = p[0].toLowerCase();
@@ -3513,8 +3594,8 @@ public final class WebAdmin {
                 <h2>签发根证书（MakeRoot）</h2>
                 <div class="row">
                   <div style="grid-column:1/-1"><label>证书 DN（逗号分隔 key=value）</label><input id="mkDn" placeholder="根证书 DN（key=value 逗号分隔，key 可为标准属性或 OID），如 CN=My Root CA,O=My Org,C=CN"></div>
-                  <div><label>密钥算法</label><select id="mkAlgo" onchange="extAlgoChanged('mk')"><option>RSA</option><option>ECC</option><option>SM2</option><option>PQC</option></select></div>
-                  <div><label>哈希算法</label><select id="mkHash"><option>sha256</option><option>sha1</option><option>sha384</option><option>sha512</option><option>SM3</option><option>NULL</option></select></div>
+                  <div><label>密钥算法</label><select id="mkAlgo" onchange="extAlgoChanged('mk')"><option>RSA</option><option>RSA-PSS</option><option>ECC</option><option>SM2</option><option>DSA</option><option>EdDSA</option><option>PQC</option></select></div>
+                  <div><label>哈希算法</label><select id="mkHash"><option>sha256</option><option>sha1</option><option>sha384</option><option>sha512</option><option>SHA3-224</option><option>SHA3-256</option><option>SHA3-384</option><option>SHA3-512</option><option>SM3</option><option>NULL</option></select></div>
                   <div><label>密钥位数</label><select id="mkBits"></select></div>
                 </div>
                 <div class="fsec" style="margin-top:14px">
@@ -3629,9 +3710,9 @@ public final class WebAdmin {
                 <div class="fsec"><div class="fsec-title">密钥与算法</div>
                   <div class="row">
                     <div><label>证书类型</label><select id="scCa"><option value="0">终端证书</option><option value="1">中间 CA</option></select></div>
-                    <div><label>密钥算法</label><select id="scAlgo" onchange="algoChanged()"><option>RSA</option><option>ECC</option><option>SM2</option><option>PQC</option></select></div>
+                    <div><label>密钥算法</label><select id="scAlgo" onchange="algoChanged()"><option>RSA</option><option>RSA-PSS</option><option>ECC</option><option>SM2</option><option>DSA</option><option>EdDSA</option><option>PQC</option></select></div>
                     <div><label>密钥位数</label><select id="scBits"></select></div>
-                    <div><label>哈希算法</label><select id="scHash"><option>sha256</option><option>sha1</option><option>sha384</option><option>sha512</option><option>SM3</option><option>NULL</option></select></div>
+                    <div><label>哈希算法</label><select id="scHash"><option>sha256</option><option>sha1</option><option>sha384</option><option>sha512</option><option>SHA3-224</option><option>SHA3-256</option><option>SHA3-384</option><option>SHA3-512</option><option>SM3</option><option>NULL</option></select></div>
                   </div>
                 </div>
 
@@ -3774,6 +3855,10 @@ public final class WebAdmin {
                     <option value="sha1">SHA1</option>
                     <option value="sha384">SHA384</option>
                     <option value="sha512">SHA512</option>
+                    <option value="sha3-224">SHA3-224</option>
+                    <option value="sha3-256">SHA3-256</option>
+                    <option value="sha3-384">SHA3-384</option>
+                    <option value="sha3-512">SHA3-512</option>
                     <option value="sm3">SM3</option>
                   </select></div>
                   <div style="align-self:end"><button onclick="sendDebugOcsp()">发送模拟请求</button></div>
@@ -3789,6 +3874,10 @@ public final class WebAdmin {
                     <option value="sha1">SHA1</option>
                     <option value="sha384">SHA384</option>
                     <option value="sha512">SHA512</option>
+                    <option value="sha3-224">SHA3-224</option>
+                    <option value="sha3-256">SHA3-256</option>
+                    <option value="sha3-384">SHA3-384</option>
+                    <option value="sha3-512">SHA3-512</option>
                     <option value="sm3">SM3</option>
                   </select></div>
                   <div style="align-self:end"><button onclick="sendDebugTsa()">对随机数据签名</button></div>
@@ -3889,8 +3978,8 @@ public final class WebAdmin {
                 <div class="hint">注意：会备份现有 CERTS.txt 为 .old.时间戳，然后写入模板、签发根证书、全量 OCSP 与时间戳证书。仅在全新环境或确认无业务数据时执行。</div>
                 <div class="row">
                   <div style="grid-column:1/-1"><label>根证书 DN</label><input id="inDn" placeholder="根证书 DN（key=value 逗号分隔，key 可为标准属性或 OID），如 CN=My Root CA,O=My Org,C=CN"></div>
-                  <div><label>密钥算法</label><select id="inAlgo" onchange="extAlgoChanged('in')"><option>RSA</option><option>ECC</option><option>SM2</option><option>PQC</option></select></div>
-                  <div><label>哈希算法</label><select id="inHash"><option>sha256</option><option>sha1</option><option>sha384</option><option>sha512</option><option>SM3</option><option>NULL</option></select></div>
+                  <div><label>密钥算法</label><select id="inAlgo" onchange="extAlgoChanged('in')"><option>RSA</option><option>RSA-PSS</option><option>ECC</option><option>SM2</option><option>DSA</option><option>EdDSA</option><option>PQC</option></select></div>
+                  <div><label>哈希算法</label><select id="inHash"><option>sha256</option><option>sha1</option><option>sha384</option><option>sha512</option><option>SHA3-224</option><option>SHA3-256</option><option>SHA3-384</option><option>SHA3-512</option><option>SM3</option><option>NULL</option></select></div>
                   <div><label>密钥位数</label><select id="inBits"></select></div>
                 </div>
                 <div class="fsec" style="margin-top:14px">
@@ -5380,10 +5469,11 @@ const $ = id => document.getElementById(id);
         }
 
         // ===== 密钥位数联动（RSA 可编辑下拉 / ECC·SM2 只读固定） =====
-        const BITS_OPT = { RSA: [1024, 2048, 3072, 4096, 5120, 6144, 7168, 8192], ECC: [256, 384, 521], SM2: [256], PQC: ['ML-DSA-44','ML-DSA-65','ML-DSA-87'] };
+        const BITS_OPT = { RSA: [1024, 2048, 3072, 4096, 5120, 6144, 7168, 8192], 'RSA-PSS': [1024, 2048, 3072, 4096, 5120, 6144, 7168, 8192], ECC: [256, 384, 521], SM2: [256], DSA: [1024, 2048, 3072], EdDSA: [256], PQC: ['ML-DSA-44','ML-DSA-65','ML-DSA-87'] };
         function syncHashForAlgo(algo, hashSel) {
           if (!hashSel) return;
-          if (algo === 'PQC') {
+          if (algo === 'PQC' || algo === 'EdDSA') {
+            // PQC internally embeds its hash; Ed25519 is a pure signature algorithm (RFC 8032)
             hashSel.value = 'NULL';
             hashSel.disabled = true;
           } else {
@@ -5406,7 +5496,7 @@ const $ = id => document.getElementById(id);
 
         // ===== 密钥位数联动（扩展列表：签发根证书/初始化环境共用） =====
         // RSA 可编辑下拉 1024..8192（含 5120/6144/7168）；ECC 固定 256/384/521；SM2 固定 256
-        const BITS_OPT_EXT = { RSA: [1024, 2048, 3072, 4096, 5120, 6144, 7168, 8192], ECC: [256, 384, 521], SM2: [256], PQC: ['ML-DSA-44','ML-DSA-65','ML-DSA-87'] };
+        const BITS_OPT_EXT = { RSA: [1024, 2048, 3072, 4096, 5120, 6144, 7168, 8192], 'RSA-PSS': [1024, 2048, 3072, 4096, 5120, 6144, 7168, 8192], ECC: [256, 384, 521], SM2: [256], DSA: [1024, 2048, 3072], EdDSA: [256], PQC: ['ML-DSA-44','ML-DSA-65','ML-DSA-87'] };
         function extAlgoChanged(p) {
           const algo = $(p + 'Algo').value;
           const opts = BITS_OPT_EXT[algo] || [];
@@ -6207,6 +6297,17 @@ const $ = id => document.getElementById(id);
     "2.16.840.1.101.3.4.3.2":"SHA224withDSA",
     "2.16.840.1.101.3.4.3.3":"SHA256withDSA",
     "1.2.156.10197.1.501":   "SM2withSM3",
+    "1.2.840.10040.4.3":"SHA1withDSA",
+    "2.16.840.1.101.3.4.3.1":"SHA3-224withRSA",
+    "2.16.840.1.101.3.4.3.2":"SHA3-256withRSA",
+    "2.16.840.1.101.3.4.3.3":"SHA3-384withRSA",
+    "2.16.840.1.101.3.4.3.4":"SHA3-512withRSA",
+    "2.16.840.1.101.3.4.3.9":"SHA3-224withECDSA",
+    "2.16.840.1.101.3.4.3.10":"SHA3-256withECDSA",
+    "2.16.840.1.101.3.4.3.11":"SHA3-384withECDSA",
+    "2.16.840.1.101.3.4.3.12":"SHA3-512withECDSA",
+    "1.3.101.112":"Ed25519",
+    "1.3.101.113":"Ed448",
     "2.16.840.1.101.3.4.3.17":"ML-DSA-44",
     "2.16.840.1.101.3.4.3.18":"ML-DSA-65",
     "2.16.840.1.101.3.4.3.19":"ML-DSA-87",
