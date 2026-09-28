@@ -365,6 +365,9 @@ public final class WebAdmin {
                         sendJson(ex, 405, Map.of("ok", false, "message", "仅支持 GET"));
                     }
                     return;
+                case "/api/certs/delete":
+                    runAction(ex, m -> certsDelete(str(m, "serial")));
+                    return;
                 case "/api/certs/cacerts":
                     if ("GET".equalsIgnoreCase(method)) {
                         sendJson(ex, 200, cacertsJson());
@@ -447,7 +450,8 @@ public final class WebAdmin {
                             str(m, "dn"), str(m, "bits"), str(m, "hash"),
                             str(m, "keyusage"), str(m, "exusage"), str(m, "isca"),
                             str(m, "days"), str(m, "dns"), str(m, "ips"),
-                            str(m, "issuer"), str(m, "algo")));
+                            str(m, "issuer"), str(m, "algo"),
+                            str(m, "pathlen"), str(m, "policy")));
                     return;
                 case "/api/revoke":
                     runAction(ex, m -> Admin.doRevoke(baseDir,
@@ -568,7 +572,12 @@ public final class WebAdmin {
                 sendJson(ex, 405, Map.of("ok", false, "message", "仅支持 POST"));
                 return;
             }
-            String bodyStr = new String(readAll(ex.getRequestBody()), StandardCharsets.UTF_8);
+            // P2-03：JSON 管理请求体上限 4MB（内存 DoS 防护）
+            byte[] bodyBytes = readAll(ex.getRequestBody());
+            if (bodyBytes.length > 4L * 1024 * 1024) {
+                throw new IllegalArgumentException("JSON 请求体过大（上限 4MB）");
+            }
+            String bodyStr = new String(bodyBytes, StandardCharsets.UTF_8);
             Map<String, Object> m = parseJsonObject(bodyStr);
             String path = ex.getRequestURI().getPath();
             try {
@@ -684,7 +693,7 @@ public final class WebAdmin {
         if (port == null || port.isEmpty() || "未配置".equals(port)) {
             port = "80";
         }
-        URL url = new URL("http://127.0.0.1:" + port + path);
+        URL url = new java.net.URI("http://127.0.0.1:" + port + path).toURL();
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("POST");
         conn.setRequestProperty("Content-Type", contentType);
@@ -1845,6 +1854,54 @@ public final class WebAdmin {
             lines.add(line);
         }
         Files.write(f, lines, StandardCharsets.UTF_8);
+    }
+
+    /** /api/certs/delete：将 CERTS.txt 中指定序列号行加 # 注释（忽略该行；生成 CRL/OCSP 时 CertsDB 自动跳过），不删除任何文件。 */
+    private static String certsDelete(String serial) throws Exception {
+        if (serial == null || serial.isEmpty()) {
+            throw new IllegalArgumentException("缺少序列号");
+        }
+        String s = serial.toLowerCase();
+        Path f = Paths.get(baseDir, "PKI", "CERTS.txt");
+        if (!Files.exists(f)) {
+            throw new IllegalArgumentException("CERTS.txt 不存在");
+        }
+        java.util.List<String> lines = Files.readAllLines(f, StandardCharsets.UTF_8);
+        java.util.List<String> out = new java.util.ArrayList<>();
+        boolean found = false;
+        for (String line : lines) {
+            String t = line.trim();
+            if (t.isEmpty() || t.startsWith("#")) {
+                out.add(line);
+                continue;
+            }
+            String[] p = t.split("\\s+");
+            if (p.length >= 1 && p[0].equalsIgnoreCase(s)) {
+                found = true;
+                out.add("# " + line);
+                continue;
+            }
+            out.add(line);
+        }
+        if (!found) {
+            throw new IllegalArgumentException("CERTS.txt 未找到序列号 " + serial);
+        }
+        // 原子写回（tmp → fsync → .bak → move，对齐 CertsDB.rewriteAll）
+        Path tmp = f.resolveSibling("CERTS.txt.tmp");
+        Files.writeString(tmp, String.join(System.lineSeparator(), out) + System.lineSeparator(),
+                StandardCharsets.UTF_8, java.nio.file.StandardOpenOption.CREATE,
+                java.nio.file.StandardOpenOption.TRUNCATE_EXISTING);
+        try (java.io.FileOutputStream fos = new java.io.FileOutputStream(tmp.toString(), true)) {
+            fos.getFD().sync();
+        }
+        if (Files.exists(f)) {
+            Files.copy(f, f.resolveSibling("CERTS.txt.bak"), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        }
+        Files.move(tmp, f, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        MLog.append(baseDir, "WebAdmin /api/certs/delete",
+                "POST 删除证书(注释行) serial=" + serial,
+                "CERTS.txt 行已加 # 注释（忽略），序列号=" + serial);
+        return "已删除证书 " + serial + "（CERTS.txt 该行已加 # 注释，生成 CRL/OCSP 时跳过）";
     }
 
     /** /api/certs/cacerts：列出 JAVA 环境 cacerts 中的可信证书（结构同 /api/certs，只读）。 */
@@ -3105,20 +3162,21 @@ public final class WebAdmin {
         if (boundary == null || boundary.isEmpty()) {
             throw new IllegalArgumentException("缺少 multipart boundary");
         }
-        // PKI-020: cap request body size before buffering it all (memory DoS guard)
+        // P2-04: cap request body size before buffering it all (memory DoS guard).
+        // 总请求体上限 256MB（兼容批量多文件），单个文件字段上限 20MB。
         String lenH = ex.getRequestHeaders().getFirst("Content-Length");
         if (lenH != null) {
             try {
                 long len = Long.parseLong(lenH.trim());
-                if (len > 512L * 1024 * 1024) {
-                    throw new IllegalArgumentException("上传内容过大（上限 512MB）");
+                if (len > 256L * 1024 * 1024) {
+                    throw new IllegalArgumentException("上传内容过大（总上限 256MB）");
                 }
             } catch (NumberFormatException ignore) {
             }
         }
         byte[] body = readAll(ex.getRequestBody());
-        if (body.length > 512L * 1024 * 1024) {
-            throw new IllegalArgumentException("上传内容过大（上限 512MB）");
+        if (body.length > 256L * 1024 * 1024) {
+            throw new IllegalArgumentException("上传内容过大（总上限 256MB）");
         }
         byte[] delim = ("--" + boundary).getBytes(StandardCharsets.ISO_8859_1);
         Map<String, byte[]> fields = new LinkedHashMap<>();
@@ -3171,6 +3229,10 @@ public final class WebAdmin {
                 dataEnd -= 1;
             }
             if (name != null) {
+                // P2-04：单文件 20MB 上限（签名专区/证书导入等上传）
+                if (dataEnd - dataStart > 20L * 1024 * 1024) {
+                    throw new IllegalArgumentException("单个文件超过 20MB 上传上限");
+                }
                 fields.put(name, Arrays.copyOfRange(body, dataStart, dataEnd));
                 String fname = null;
                 java.util.regex.Matcher fm = java.util.regex.Pattern
@@ -3504,7 +3566,7 @@ public final class WebAdmin {
         return sb.toString();
     }
 
-    /** 发送 JSON 响应。 */
+    /* 发送 JSON 响应。 */
     // ============================================================
     // SCT 服务管理（CT 日志密钥 + 请求日志）
     // ============================================================
@@ -3735,6 +3797,7 @@ public final class WebAdmin {
     // 内嵌前端页面（单文件原生 HTML/CSS/JS，无任何外部依赖，离线可用）
     // ============================================================
 
+    @SuppressWarnings("text-blocks")
     private static final String PAGE_P1 = """
         <!DOCTYPE html>
         <html lang="zh-CN">
@@ -4132,7 +4195,8 @@ public final class WebAdmin {
                 </div>
                 <div class="fsec"><div class="fsec-title">密钥与算法</div>
                   <div class="row">
-                    <div><label>证书类型</label><select id="scCa"><option value="0">终端证书</option><option value="1">中间 CA</option></select></div>
+                    <div><label>证书类型</label><select id="scCa" onchange="scCaChanged()"><option value="0">终端证书</option><option value="1">中间 CA</option></select></div>
+                    <div id="scPathLenWrap" style="display:none"><label>路径长度</label><select id="scPathLen" title="中间CA 的 BasicConstraints pathLenConstraint；null 表示不限制"><option value="">null</option><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option></select></div>
                     <div><label>密钥算法</label><select id="scAlgo" onchange="algoChanged()"><option>RSA</option><option>RSA-PSS</option><option>ECC</option><option>SM2</option><option>DSA</option><option>EdDSA</option><option>PQC</option></select></div>
                     <div><label>密钥位数</label><select id="scBits"></select></div>
                     <div><label>哈希算法</label><select id="scHash"><option>sha256</option><option>sha1</option><option>sha384</option><option>sha512</option><option>SHA3-224</option><option>SHA3-256</option><option>SHA3-384</option><option>SHA3-512</option><option>SM3</option><option>NULL</option></select></div>
@@ -4167,6 +4231,19 @@ public final class WebAdmin {
                   </div>
                 </div>
 
+                <div class="fsec" id="scPolWrap" style="display:none"><div class="fsec-title">证书策略（仅终端证书，勾选的策略才写入证书策略扩展）</div>
+                  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(235px,1fr));gap:8px 16px;padding-top:6px">
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="scPolDv"><span>SSL DV（2.23.140.1.2.1）</span></label>
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="scPolIv"><span>SSL IV（2.23.140.1.2.3）</span></label>
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="scPolOv"><span>SSL OV（2.23.140.1.2.2）</span></label>
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="scPolEv"><span>SSL EV（2.23.140.1.1）</span></label>
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="scPolCsStd"><span>代码签名-标准（2.23.140.1.4.1）</span></label>
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="scPolCsEv"><span>代码签名-EV（2.23.140.1.3）</span></label>
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="scPolDoc"><span>文档签名（1.3.6.1.5.5.7.3.36）</span></label>
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="scPolTsa"><span>TSA 策略（2.23.140.1.4.2）</span></label>
+                  </div>
+                </div>
+
                 <div class="fsec"><div class="fsec-title">有效期</div>
                   <div class="row">
                     <div><label>有效期（年数或 起始T截至）</label>
@@ -4193,7 +4270,7 @@ public final class WebAdmin {
                   </div>
                 </div>
 
-                <div style="margin-top:16px"><button onclick="postForm('/api/signcert', {dn:v('scDn'),bits:bitsVal(),hash:v('scHash'),keyusage:kuVal(),exusage:v('scEu'),isca:v('scCa'),days:v('scDays'),dns:v('scDns'),ips:v('scIps'),issuer:v('scIssuer'),algo:v('scAlgo')}, 'scOut')">签发证书</button></div>
+                <div style="margin-top:16px"><button onclick="postForm('/api/signcert', {dn:v('scDn'),bits:bitsVal(),hash:v('scHash'),keyusage:kuVal(),exusage:v('scEu'),isca:v('scCa'),days:v('scDays'),dns:v('scDns'),ips:v('scIps'),issuer:v('scIssuer'),algo:v('scAlgo'),pathlen:pathLenVal(),policy:policyVal()}, 'scOut')">签发证书</button></div>
                 <pre class="out" id="scOut"></pre>
               </div>
             </div>
@@ -4424,6 +4501,7 @@ public final class WebAdmin {
       <div class="ctx-item" data-needkey onclick="ctxExport('key_b64')">导出私钥到剪辑板(Base64)</div>
     </div>
   </div>
+  <div class="ctx-item" data-ctxsrc="certs" onclick="ctxDeleteCert()" style="color:#dc2626;font-weight:700">删除证书</div>
 </div>
 <!-- 证书库右键下载 pfx/jks：密码输入 -->
 <div class="modal-mask" id="ctxPwdModal" style="display:none" onclick="if(event.target===this)closeCtxPwd()">
@@ -4457,6 +4535,20 @@ public final class WebAdmin {
     <div class="modal-foot">
       <button onclick="ctxCopyTextarea()">复制</button>
       <button class="ghost" onclick="closeCtxCopy()">关闭</button>
+    </div>
+  </div>
+</div>
+<!-- 证书库 CERTS.txt：右键删除证书（注释行忽略）确认 -->
+<div class="modal-mask" id="ctxDelModal" style="display:none" onclick="if(event.target===this)ctxDelCancel()">
+  <div class="modal" style="width:min(460px,92vw)">
+    <div class="modal-head"><h3>删除证书</h3><button class="ghost" onclick="ctxDelCancel()">取消</button></div>
+    <div class="modal-body">
+      <p class="cfg-hint" style="margin-bottom:6px">是否删除选中当前行序列号为 <b id="ctxDelSerial" style="color:#dc2626"></b> 的证书？</p>
+      <p class="cfg-hint">确定后将在 CERTS.txt 中为该行添加 # 注释（代表忽略此行数据），生成 CRL / OCSP 证书时将自动跳过。</p>
+    </div>
+    <div class="modal-foot">
+      <button onclick="ctxDelOk()">确定</button>
+      <button class="ghost" onclick="ctxDelCancel()">取消</button>
     </div>
   </div>
 </div>
@@ -4778,7 +4870,7 @@ public final class WebAdmin {
         </div>
 
 
-    
+
             <!-- SCT 服务管理 -->
             <div class="page" id="page-ctlog">
               <style>
@@ -4855,6 +4947,7 @@ public final class WebAdmin {
               </div>
             </div>
 """;
+    @SuppressWarnings("text-blocks")
     private static final String PAGE_P2 = """
         <script>
         // ===== 工具 =====
@@ -5975,6 +6068,19 @@ const $ = id => document.getElementById(id);
             if (hashSel.value === 'NULL') hashSel.value = 'sha256';
           }
         }
+        function scCaChanged() {
+          const isCa = $('scCa').value === '1';
+          $('scPathLenWrap').style.display = isCa ? '' : 'none';
+          $('scPolWrap').style.display = isCa ? 'none' : '';
+        }
+        function pathLenVal() {
+          return $('scPathLen').value || 'null';
+        }
+        function policyVal() {
+          const ids = ['scPolDv','scPolIv','scPolOv','scPolEv','scPolCsStd','scPolCsEv','scPolDoc','scPolTsa'];
+          const OIDS = {scPolDv:'2.23.140.1.2.1',scPolIv:'2.23.140.1.2.3',scPolOv:'2.23.140.1.2.2',scPolEv:'2.23.140.1.1',scPolCsStd:'2.23.140.1.4.1',scPolCsEv:'2.23.140.1.3',scPolDoc:'1.3.6.1.5.5.7.3.36',scPolTsa:'2.23.140.1.4.2'};
+          return ids.filter(id => $(id) && $(id).checked).map(id => OIDS[id]).join(',');
+        }
         function algoChanged() {
           const algo = $('scAlgo').value;
           const opts = BITS_OPT[algo] || [];
@@ -6006,6 +6112,7 @@ const $ = id => document.getElementById(id);
         algoChanged();
         extAlgoChanged('mk');
         extAlgoChanged('in');
+        scCaChanged();
 
         // ===== 有效期选择器 =====
         // 前端 datetime-local: '2026-09-12T10:30:00' ↔ 后端格式 '2026/09/12-10:30:00'
@@ -6312,6 +6419,9 @@ const $ = id => document.getElementById(id);
           document.querySelectorAll('#ctxMenu [data-needkey]').forEach(function (el) {
             el.classList.toggle('disabled', noKey);
           });
+          document.querySelectorAll('#ctxMenu [data-ctxsrc]').forEach(function (el) {
+            el.style.display = el.getAttribute('data-ctxsrc') === src ? '' : 'none';
+          });
         }
         function ctxMenuHide() { const m = $('ctxMenu'); if (m) m.style.display = 'none'; }
         function ctxDownload(kind, needPwd) {
@@ -6408,6 +6518,27 @@ const $ = id => document.getElementById(id);
           closeCtxPwd();
           doCtxDownload(ctxKind, p);
         }
+        // 右键删除证书（仅 CERTS.txt）：确定后在台账中注释该行，不删除任何文件
+        function ctxDeleteCert() {
+          if (ctxSrc !== 'certs' || !ctxSerial) return;
+          $('ctxDelSerial').textContent = ctxSerial;
+          $('ctxDelModal').style.display = 'flex';
+        }
+        function ctxDelCancel() { $('ctxDelModal').style.display = 'none'; }
+        async function ctxDelOk() {
+          const s = ($('ctxDelSerial').textContent || '').trim();
+          ctxDelCancel();
+          if (!s) return;
+          try {
+            const r = await api('/api/certs/delete', { serial: s });
+            if (r.ok) {
+              ctxToast('已删除证书 ' + s + '（CERTS.txt 行已注释，生成 CRL/OCSP 时跳过）');
+              loadCerts();
+            } else {
+              ctxToast(r.message || '删除失败', false);
+            }
+          } catch (e) { ctxToast('删除请求异常：' + e, false); }
+        }
         // 三个证书库列表：右键菜单绑定
         [['certsTable', 'certs'], ['caTable', 'cacerts'], ['myTable', 'my']].forEach(function (p) {
           const tb = document.getElementById(p[0]).querySelector('tbody');
@@ -6440,7 +6571,7 @@ const $ = id => document.getElementById(id);
         window.addEventListener('resize', ctxMenuHide);
         </script>
         </body>
-        
+
 
 
 

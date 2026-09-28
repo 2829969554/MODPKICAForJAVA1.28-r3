@@ -44,7 +44,8 @@ echo   MODPKICA Java One-Click Build (offline)
 echo ============================================
 
 echo [1/2] Compiling shared library and all 7 main programs...
-javac -encoding UTF-8 -cp "%RUN_CP%" -d out src\modpkica\*.java
+rem -Xlint:all surfaces every warning; build still succeeds unless it is an error.
+javac -Xlint:all -encoding UTF-8 -cp "%RUN_CP%" -d out src\modpkica\*.java
 if errorlevel 1 (
     echo [ERROR] Compilation FAILED. See messages above.
     echo         Build aborted. Command #%1 was NOT executed.
@@ -155,7 +156,7 @@ goto :eof
 :run_9
 rem compile unit tests, then run them (no run when test compile fails)
 if not exist debug_test\classes mkdir debug_test\classes
-javac -encoding UTF-8 -cp "out;BC185\*;lib\*" -d debug_test\classes debug_test\ModpkicaUnitTest.java
+javac -Xlint:all -encoding UTF-8 -cp "out;BC185\*;lib\*" -d debug_test\classes debug_test\ModpkicaUnitTest.java
 if errorlevel 1 (
     echo [ERROR] Unit test compilation FAILED. Command #9 NOT executed.
     exit /b 1

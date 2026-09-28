@@ -275,6 +275,21 @@ public final class MakeCert {
         boolean isCa = !isOcsp && !isTsa && a.length >= 6 && "1".equals(a[5]);
         BigInteger serial = buildSerial(isCa);
 
+        // ---- 中间CA 路径长度 / 终端证书策略 OID（Web 面板扩展参数 a[12]/a[13]） ----
+        // a[12]=pathlen：null 或 0-9（仅中间CA 生效）；a[13]=policy：逗号分隔的策略 OID（仅终端证书生效）
+        Integer pathLen = null;
+        if (!isOcsp && !isTsa && a.length >= 13 && a[12] != null) {
+            String pl = a[12].trim();
+            if (!pl.isEmpty() && !"null".equalsIgnoreCase(pl)) {
+                try {
+                    pathLen = Integer.valueOf(pl);
+                } catch (NumberFormatException ignore) {
+                    pathLen = null;
+                }
+            }
+        }
+        String policyArg = (!isOcsp && !isTsa && a.length >= 14 && a[13] != null) ? a[13].trim() : null;
+
         // ---- KeyUsage ----
         // 注意：Go 版 x509.KeyUsage 位定义与 BC 不同，统一用 goKeyUsageToBc 转换
         int keyUsage;
@@ -289,6 +304,11 @@ public final class MakeCert {
                 throw new IllegalArgumentException(
                         "terminal certificate (End Entity, CA=false) cannot carry keyCertSign KeyUsage");
             }
+        }
+        // P2-09：CA 模式强制 keyCertSign，拒绝 BasicConstraints=CA 但 KU 缺 keyCertSign 的矛盾证书
+        if (isCa && (keyUsage & KeyUsage.keyCertSign) == 0) {
+            throw new IllegalArgumentException(
+                    "CA certificate must carry keyCertSign KeyUsage");
         }
 
         // ---- ExtKeyUsage ----
@@ -366,7 +386,18 @@ public final class MakeCert {
         } else if (isTsa) {
             cpsOids = new String[]{"1.3.6.1.4.1.4146.1.95", "2.23.140.1.1", "2.23.140.1.3", "2.23.140.1.4.2"};
         } else {
-            cpsOids = new String[]{"1.3.6.1.4.1.4146.1.95", "2.23.140.1.1", "2.23.140.1.3"};
+            // 终端证书：基础策略 4146.1.95（带 CPS+UserNotice）+ 面板勾选的策略 OID（勾选才写入）
+            java.util.List<String> pol = new java.util.ArrayList<>();
+            pol.add("1.3.6.1.4.1.4146.1.95");
+            if (policyArg != null && !policyArg.isEmpty() && !"null".equalsIgnoreCase(policyArg)) {
+                for (String o : policyArg.split(",")) {
+                    String t = o.trim();
+                    if (!t.isEmpty() && !pol.contains(t)) {
+                        pol.add(t);
+                    }
+                }
+            }
+            cpsOids = pol.toArray(new String[0]);
         }
         // 用户通告默认文本：对齐 Go 版——CONFIG 未显式配置 CPS_Nonice 时用默认通告，
         // 显式写 null 才留空（Go 版 makecert MODSUCPS_Nonice 逻辑）
@@ -391,7 +422,7 @@ public final class MakeCert {
             // 1) SCT 预证书：全部扩展 + poison（critical，RFC 6962 §3.1）
             JcaX509v3CertificateBuilder cbPre = buildCertBuilder(
                     issuerName, serial, notBefore, notAfter, subject, certKp.getPublic(),
-                    isCa, keyUsage, issuerSki, userSki, eku, unknownEku, isTsa, isOcsp,
+                    isCa, pathLen, keyUsage, issuerSki, userSki, eku, unknownEku, isTsa, isOcsp,
                     ocspUrl, crtUrl, crlUrl, certPolicies, dnsArg, ipsArg, true);
             X509CertificateHolder precert = cbPre.build(signer);
             // 2) 提交自身 CT 日志服务 /ct/add（PEM 预证书 + PEM 颁发者），取回 SCT 列表
@@ -399,7 +430,7 @@ public final class MakeCert {
             // 3) 最终证书：重建（无 poison）+ SCT 列表扩展（1.3.6.1.4.1.11129.2.4.2）
             JcaX509v3CertificateBuilder cbFin = buildCertBuilder(
                     issuerName, serial, notBefore, notAfter, subject, certKp.getPublic(),
-                    isCa, keyUsage, issuerSki, userSki, eku, unknownEku, isTsa, isOcsp,
+                    isCa, pathLen, keyUsage, issuerSki, userSki, eku, unknownEku, isTsa, isOcsp,
                     ocspUrl, crtUrl, crlUrl, certPolicies, dnsArg, ipsArg, false);
             cbFin.addExtension(new ASN1ObjectIdentifier(CtLog.OID_SCT), false,
                     new DEROctetString(sctList));
@@ -407,7 +438,7 @@ public final class MakeCert {
         } else {
             holder = buildCertBuilder(
                     issuerName, serial, notBefore, notAfter, subject, certKp.getPublic(),
-                    isCa, keyUsage, issuerSki, userSki, eku, unknownEku, isTsa, isOcsp,
+                    isCa, pathLen, keyUsage, issuerSki, userSki, eku, unknownEku, isTsa, isOcsp,
                     ocspUrl, crtUrl, crlUrl, certPolicies, dnsArg, ipsArg, false)
                     .build(signer);
         }
@@ -451,8 +482,21 @@ public final class MakeCert {
         CertsDB db = new CertsDB();
         db.load(baseDir);
         CertsDB.CertEntry entry = db.findBySerial(issuerId);
-        if (entry != null && entry.status == 'R') {
+        if (entry == null) {
+            throw new IllegalArgumentException("issuer not registered in CERTS.txt: " + issuerId
+                    + "（仅允许台账中已登记的 R/C 证书作为颁发者）");
+        }
+        if (entry.type != 'R' && entry.type != 'C') {
+            throw new IllegalArgumentException("issuer type in CERTS.txt must be R or C, got: " + entry.type);
+        }
+        if (entry.status == 'R') {
             throw new IllegalArgumentException("issuer certificate is revoked (status=R), signing forbidden");
+        }
+        // 文件证书序列号必须与台账一致（防止文件与台账编号错位）
+        String fileSerial = issuerCert.getSerialNumber().toString(16);
+        if (!fileSerial.equalsIgnoreCase(issuerId)) {
+            throw new IllegalArgumentException("issuer file serial mismatch: file=" + fileSerial
+                    + " ledger=" + issuerId);
         }
     }
 
@@ -960,7 +1004,7 @@ public final class MakeCert {
      */
     private JcaX509v3CertificateBuilder buildCertBuilder(X500Name issuer, BigInteger serial,
             Date notBefore, Date notAfter, X500Name subject,
-            java.security.PublicKey pubKey, boolean isCa, int keyUsage,
+            java.security.PublicKey pubKey, boolean isCa, Integer pathLen, int keyUsage,
             byte[] issuerSki, byte[] userSki,
             List<KeyPurposeId> eku, List<ASN1ObjectIdentifier> unknownEku,
             boolean isTsa, boolean isOcsp, String ocspUrl, String crtUrl, String crlUrl,
@@ -968,7 +1012,9 @@ public final class MakeCert {
             boolean addPoison) throws Exception {
         JcaX509v3CertificateBuilder cb = new JcaX509v3CertificateBuilder(
                 issuer, serial, notBefore, notAfter, subject, pubKey);
-        cb.addExtension(Extension.basicConstraints, true, new BasicConstraints(isCa));
+        BasicConstraints bc = (pathLen == null) ? new BasicConstraints(isCa)
+                : new BasicConstraints(pathLen.intValue());
+        cb.addExtension(Extension.basicConstraints, true, bc);
         cb.addExtension(Extension.keyUsage, true, new KeyUsage(keyUsage));
         cb.addExtension(Extension.authorityKeyIdentifier, false,
                 new AuthorityKeyIdentifier(issuerSki));

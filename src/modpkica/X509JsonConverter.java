@@ -661,7 +661,7 @@ public class X509JsonConverter {
     static Map<String, Object> parseAKI(ASN1Primitive obj) throws Exception {
         Map<String, Object> r = new LinkedHashMap<>();
         AuthorityKeyIdentifier aki = AuthorityKeyIdentifier.getInstance(obj);
-        if (aki.getKeyIdentifier() != null) r.put("keyIdentifier", toHex(aki.getKeyIdentifier()));
+        if (aki.getKeyIdentifierOctets() != null) r.put("keyIdentifier", toHex(aki.getKeyIdentifierOctets()));
         if (aki.getAuthorityCertIssuer() != null) {
             List<Object> list = new ArrayList<>();
             for (GeneralName gn : aki.getAuthorityCertIssuer().getNames()) list.add(gnToJson(gn));
@@ -1165,6 +1165,7 @@ public class X509JsonConverter {
      * 密钥替换（使用现有密钥对）：privKeyHex = PKCS#8 PrivateKeyInfo DER 的 hex，
      * pubKeyHex = SubjectPublicKeyInfo DER 的 hex。用外部密钥对替换公钥并重签。
      */
+    @SuppressWarnings("unchecked")
     static byte[] rekeyJsonToPem(String json, String privKeyHex, String pubKeyHex) throws Exception {
         Map<String, Object> root = (Map<String, Object>) new JsonParser(json).parse();
         KeyPair kp = hexToKeyPair(privKeyHex, pubKeyHex);
@@ -1226,6 +1227,7 @@ public class X509JsonConverter {
      * @param issuerKeyType  "RSA" / "ECC" / "SM2"
      * @return 续签后证书 PEM（byte[]）
      */
+    @SuppressWarnings("unchecked")
     public static byte[] renewJsonToPemByIssuer(String json, Date notBefore, Date notAfter,
                                                 PrivateKey issuerKey, String issuerKeyType) throws Exception {
         Map<String, Object> root = (Map<String, Object>) new JsonParser(json).parse();
@@ -1533,6 +1535,7 @@ public class X509JsonConverter {
         }
     }
 
+    @SuppressWarnings("unchecked")
     static AlgorithmIdentifier buildAlgId(Map<String, Object> m) {
         ASN1ObjectIdentifier oid = new ASN1ObjectIdentifier((String) m.get("algorithm"));
         Object p = m.get("parameters");
@@ -1612,12 +1615,14 @@ public class X509JsonConverter {
         return Time.getInstance(new ASN1GeneralizedTime(date));
     }
 
+    @SuppressWarnings("unchecked")
     static SubjectPublicKeyInfo buildSPKI(Map<String, Object> m) {
         AlgorithmIdentifier alg = buildAlgId((Map<String, Object>) m.get("algorithm"));
         byte[] keyBytes = fromHex((String) m.get("publicKey"));
         return new SubjectPublicKeyInfo(alg, keyBytes);
     }
 
+    @SuppressWarnings("unchecked")
     static Extensions buildExtensions(Map<String, Object> exts) throws Exception {
         List<Extension> extList = new ArrayList<>();
         for (Map.Entry<String, Object> e : exts.entrySet()) {
@@ -1665,6 +1670,7 @@ public class X509JsonConverter {
         return new SubjectKeyIdentifier(fromHex((String) em.get("keyIdentifier")));
     }
 
+    @SuppressWarnings("unchecked")
     static AuthorityKeyIdentifier buildAKI(Map<String, Object> em) {
         byte[] keyId = em.containsKey("keyIdentifier") ? fromHex((String) em.get("keyIdentifier")) : null;
         GeneralNames issuer = null;
@@ -1679,6 +1685,7 @@ public class X509JsonConverter {
         return new AuthorityKeyIdentifier(keyId, issuer, serial);
     }
 
+    @SuppressWarnings("unchecked")
     static GeneralNames buildGeneralNames(Map<String, Object> em) {
         List<Map<String, Object>> list = (List<Map<String, Object>>) em.get("generalNames");
         GeneralName[] gns = new GeneralName[list.size()];
@@ -1713,6 +1720,7 @@ public class X509JsonConverter {
         return new GeneralName(tag, name);
     }
 
+    @SuppressWarnings("unchecked")
     static ASN1Object buildKeyUsage(Map<String, Object> em) {
         List<String> usages = (List<String>) em.get("keyUsage");
         int value = 0;
@@ -1745,7 +1753,7 @@ public class X509JsonConverter {
                 der[2] = (byte) unused;
                 System.arraycopy(octets, 0, der, 3, octets.length);
                 try {
-                    return (KeyUsage) KeyUsage.getInstance(ASN1Primitive.fromByteArray(der));
+                    return KeyUsage.getInstance(ASN1Primitive.fromByteArray(der));
                 } catch (java.io.IOException e) {
                     throw new IllegalStateException("cannot rebuild KeyUsage BIT STRING", e);
                 }
@@ -1765,6 +1773,7 @@ public class X509JsonConverter {
         return value;
     }
 
+    @SuppressWarnings("unchecked")
     static ExtendedKeyUsage buildEKU(Map<String, Object> em) {
         List<Map<String, Object>> usages = (List<Map<String, Object>>) em.get("extendedKeyUsage");
         KeyPurposeId[] kpis = new KeyPurposeId[usages.size()];
@@ -1780,6 +1789,7 @@ public class X509JsonConverter {
         return new BasicConstraints(cA);
     }
 
+    @SuppressWarnings("unchecked")
     static CRLDistPoint buildCRLDP(Map<String, Object> em) {
         List<Map<String, Object>> points = (List<Map<String, Object>>) em.get("crlDistributionPoints");
         DistributionPoint[] dps = new DistributionPoint[points.size()];
@@ -1812,6 +1822,7 @@ public class X509JsonConverter {
         return new CRLDistPoint(dps);
     }
 
+    @SuppressWarnings("unchecked")
     static CertificatePolicies buildCertPolicies(Map<String, Object> em) throws Exception {
         List<Map<String, Object>> policies = (List<Map<String, Object>>) em.get("certificatePolicies");
         PolicyInformation[] pis = new PolicyInformation[policies.size()];
@@ -1845,6 +1856,7 @@ public class X509JsonConverter {
 
     // UserNotice ::= SEQUENCE { noticeRef NoticeReference OPTIONAL, explicitText DisplayText OPTIONAL }
     // NoticeReference ::= SEQUENCE { organization DisplayText, noticeNumbers SEQUENCE OF INTEGER }
+    @SuppressWarnings("unchecked")
     static UserNotice buildUserNotice(Map<String, Object> qm) throws Exception {
         // JSON 中 userNotice 字段嵌套在 "userNotice" 键下；兼容平铺写法
         Map<String, Object> un = (Map<String, Object>) qm.get("userNotice");
@@ -1880,6 +1892,7 @@ public class X509JsonConverter {
         return def;
     }
 
+    @SuppressWarnings("unchecked")
     static AuthorityInformationAccess buildAIA(Map<String, Object> em) {
         List<Map<String, Object>> descs = (List<Map<String, Object>>) em.get("authorityInfoAccess");
         AccessDescription[] ads = new AccessDescription[descs.size()];
@@ -1892,6 +1905,7 @@ public class X509JsonConverter {
         return new AuthorityInformationAccess(ads);
     }
 
+    @SuppressWarnings("unchecked")
     static NameConstraints buildNameConstraints(Map<String, Object> em) {
         GeneralSubtree[] permitted = null;
         GeneralSubtree[] excluded = null;
@@ -1900,6 +1914,7 @@ public class X509JsonConverter {
         return new NameConstraints(permitted, excluded);
     }
 
+    @SuppressWarnings("unchecked")
     static GeneralSubtree[] buildSubtrees(List<Map<String, Object>> list) {
         GeneralSubtree[] gss = new GeneralSubtree[list.size()];
         for (int i = 0; i < list.size(); i++) {
@@ -1920,6 +1935,7 @@ public class X509JsonConverter {
         return new PolicyConstraints(require, inhibit);
     }
 
+    @SuppressWarnings("unchecked")
     static PolicyMappings buildPolicyMappings(Map<String, Object> em) {
         List<Map<String, Object>> mappings = (List<Map<String, Object>>) em.get("policyMappings");
         ASN1EncodableVector v = new ASN1EncodableVector();
@@ -1932,6 +1948,7 @@ public class X509JsonConverter {
         return PolicyMappings.getInstance(new DERSequence(v));
     }
 
+    @SuppressWarnings("unchecked")
     static ASN1Sequence buildSubjectDirAttrs(Map<String, Object> em) throws Exception {
         List<Map<String, Object>> attrs = (List<Map<String, Object>>) em.get("subjectDirectoryAttributes");
         ASN1EncodableVector v = new ASN1EncodableVector();
@@ -1969,6 +1986,7 @@ public class X509JsonConverter {
         return PrivateKeyUsagePeriod.getInstance(new DERSequence(v));
     }
 
+    @SuppressWarnings("unchecked")
     static IssuingDistributionPoint buildIssuingDP(Map<String, Object> em) {
         DistributionPointName dpn = null;
         if (em.containsKey("distributionPoint")) {
@@ -2024,6 +2042,7 @@ public class X509JsonConverter {
         return mask;
     }
 
+    @SuppressWarnings("unchecked")
     static DERBitString buildNetscapeCertType(Map<String, Object> em) {
         List<String> types = (List<String>) em.get("netscapeCertType");
         String[] names = {"client","server","email","objsign","reserved","sslCA","emailCA","objCA"};
@@ -2038,6 +2057,7 @@ public class X509JsonConverter {
     // ==================== SCT List (RFC 6962) 重建 ====================
 
     /** 构建 TLS 编码的 SCT List，返回 DEROctetString(TLS数据) */
+    @SuppressWarnings("unchecked")
     static DEROctetString buildSCTList(Map<String, Object> em) throws Exception {
         List<Map<String, Object>> scts = (List<Map<String, Object>>) em.get("sctList");
         ByteArrayOutputStream inner = new ByteArrayOutputStream();

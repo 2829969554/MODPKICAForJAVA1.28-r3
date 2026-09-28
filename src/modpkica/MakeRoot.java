@@ -431,10 +431,10 @@ public final class MakeRoot {
                 new CRLDistPoint(new DistributionPoint[]{dp1, dp2}));
     }
 
-    /**
+    /*
      * CABF Organization Identifier 扩展 OID。
      *
-     * <p>2019 SC27 ballot 曾使用 IANA 57264 arc：1.3.6.1.4.1.57264.1.8；
+     * 2019 SC27 ballot 曾使用 IANA 57264 arc：1.3.6.1.4.1.57264.1.8；
      * 最新 EVG 2.0.1 / BR 已将扩展迁移到 CA/B Forum 自有 arc：2.23.140.3.1。
      * 两者 ASN.1 结构相同；依赖方按旧 OID 校验请保持现状，如需新版改此常量即可。
      */

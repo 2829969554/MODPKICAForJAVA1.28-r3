@@ -1,4 +1,4 @@
-# MODPKICA Java 复刻版 v1.26（BC 1.85 离线）
+# MODPKICA Java 复刻版 v1.28（BC 1.85 离线）
 
 > 使用 **Java + BouncyCastle 1.85** 离线复刻 Go 版 MODPKICA 全套 PKI 功能：X.509 证书签发、CRL 吊销列表、OCSP 在线状态、RFC3161 / Authenticode 时间戳、RFC 6962 CT 日志服务（SCT 服务管理）、WebAdmin 浏览器管理面板。
 >
@@ -51,7 +51,7 @@
 
 ### 证书库（选择夹：证书库 CERTS.txt / 可信公网证书库 cacerts）
 
-**「证书库 CERTS.txt」页**：序列号 / 类型 / 状态 / 原因 / 时间 / 颁发者 ID / 算法 / 操作，支持筛选与刷新；类型中文显示（R=根证书 / C=CA证书 / E=终端证书），状态三色（V 正常绿 / R 已吊销深红 / N 未知橙）；序列号与颁发者序列号悬停显示证书简要信息；每行含详情 / 验证 / 操作三个按钮（验证弹窗按状态显示绿/红/橙标题）。
+**「证书库 CERTS.txt」页**：序列号 / 类型 / 状态 / 原因 / 时间 / 颁发者 ID / 算法 / 操作，支持筛选与刷新；类型中文显示（R=根证书 / C=CA证书 / E=终端证书），状态三色（V 正常绿 / R 已吊销深红 / N 未知橙）；序列号与颁发者序列号悬停显示证书简要信息；每行含详情 / 验证 / 操作三个按钮（验证弹窗按状态显示绿/红/橙标题）；行**鼠标右键**弹出「下载证书 / 导出证书 / 删除证书」菜单——下载含单证书、证书链（crt/p7b）、私钥、pfx/jks 密钥库；导出含 PEM / HEX / Base64 剪贴板复制；**删除证书**经二次确认后**不删除文件**，只在 CERTS.txt 中为该行加 `#` 注释（忽略此行数据），生成 CRL / OCSP 证书时自动跳过。
 
 **「可信公网证书库 cacerts」页**：读取 JAVA 环境 `cacerts`（JKS 信任库）全部证书，列表列 = 序列号 / 算法 / 生效日期 / 失效日期 / DN字段（时间格式 `yyyy/MM/dd HH:mm:ss`，序列号列收窄超长省略）；点击「详情」从 cacerts 导出 PEM 并转 JSON 结构化弹窗展示（X509JsonConverter 解析）。
 
@@ -260,10 +260,10 @@ build.cmd
 **编号参数（编译后自动运行）：**
 
 ```bat
-build.cmd [1-8]
+build.cmd [1-9]
 ```
 
-`build.cmd` 后跟 1~8 的编号，编译**成功后**自动执行对应编号的命令；编译**失败**则跳过，不运行任何命令。编号非法（非 1-8）会在编译前直接报错退出。
+`build.cmd` 后跟 1~9 的编号，编译**成功后**自动执行对应编号的命令；编译**失败**则跳过，不运行任何命令。编号非法（非 1-9）会在编译前直接报错退出。
 
 | 编号 | 自动运行的命令（等价于手敲 java 命令） |
 |---|---|
@@ -275,6 +275,7 @@ build.cmd [1-8]
 | `6` | `java ... modpkica.RootGetCrl`（刷新全部 CRL） |
 | `7` | `java ... modpkica.CertVerify cert.crt`（验证**示例文件** cert.crt） |
 | `8` | `java ... modpkica.Auto revoke 1234567890 1`（吊销**示例序列号**） |
+| `9` | `ModpkicaUnitTest`（单元测试：先编译 debug_test\ModpkicaUnitTest.java，编译失败则不运行） |
 
 > **注意**：编号 4/5/7/8 自动运行的是脚本内置的**固定示例参数**，不会透传额外参数（如 `build.cmd 8 revoke xxx 5` 中的 `revoke xxx 5` 会被忽略）。实际业务参数请改脚本 `:run_4`~`:run_8` 段落，或直接手敲完整 `java` 命令。
 
@@ -283,7 +284,7 @@ build.cmd [1-8]
 ```bash
 chmod +x build.sh
 ./build.sh        # 只编译
-./build.sh 1      # 编译成功后自动运行 MAIN（编号 1-8，与 build.cmd 完全一致）
+./build.sh 1      # 编译成功后自动运行 MAIN（编号 1-9，与 build.cmd 完全一致）
 ```
 
 > 编译成功后所有类在 `out/` 目录。
@@ -402,9 +403,9 @@ java ... modpkica.Auto newcert 序列号 E V 0 null 13fbe86586d1bca RSA
 | SCT服务管理 | CT日志密钥管理（生成 ECDSA/RSA/SM2 密钥对、密钥列表 删除/启用/暂停，写 PKI/CTLOG/modpkica_ct_list.json）+ CT请求日志（只读 ctlogs.txt） |
 | 签名专区 | EXE 代码签名（时间戳类型 RFC3161/Authenticode + 时间戳地址可编辑下拉）+ PDF 文档签名（签章类型 Adobe/国密 35275/国密 38540/国密 0031 + 时间戳地址可编辑下拉），均含签名与验证 |
 
-### API（32 个）
+### API（33 个）
 
-`/api/status`、`/api/certs`、`/api/logs`、`/api/config`、`/api/chain`、`/api/certjson`、`/api/version`、`/api/issuers`、`/api/init`、`/api/makeroot`、`/api/signcert`、`/api/revoke`、`/api/restore`、`/api/rekey`、`/api/renew`、`/api/crl`、`/api/initocsp`、`/api/inittimestamp`、`/api/verify`、`/api/signcerts?kind=exe|pdf`（GET）、`/api/sign/exe`、`/api/sign/pdf`、`/api/verify/exe`、`/api/verify/pdf`、`/api/debug/ocsp`、`/api/debug/tsa`、`/api/ctlog/list`、`/api/ctlog/logs`、`/api/ctlog/gen`、`/api/ctlog/delete`、`/api/ctlog/enable`、`/api/ctlog/pause`
+`/api/status`、`/api/certs`、`/api/certs/delete`、`/api/logs`、`/api/config`、`/api/chain`、`/api/certjson`、`/api/version`、`/api/issuers`、`/api/init`、`/api/makeroot`、`/api/signcert`、`/api/revoke`、`/api/restore`、`/api/rekey`、`/api/renew`、`/api/crl`、`/api/initocsp`、`/api/inittimestamp`、`/api/verify`、`/api/signcerts?kind=exe|pdf`（GET）、`/api/sign/exe`、`/api/sign/pdf`、`/api/verify/exe`、`/api/verify/pdf`、`/api/debug/ocsp`、`/api/debug/tsa`、`/api/ctlog/list`、`/api/ctlog/logs`、`/api/ctlog/gen`、`/api/ctlog/delete`、`/api/ctlog/enable`、`/api/ctlog/pause`
 
 ---
 
@@ -438,6 +439,7 @@ java ... modpkica.Auto newcert 序列号 E V 0 null 13fbe86586d1bca RSA
 | TSA 专用 | 时间戳签名 | `TIMSTAMP/类型_哈希.crt/.key` | `WebPublic/CRT/序列号.crt` |
 
 > 所有证书签发后同时按 `序列号.crt` 同步到 `WebPublic/CRT/`，供 `/CRT/{CID}.crt` 下载。
+> CERTS.txt 中行首加 `#` 的证书（Web 面板右键「删除证书」）会被**忽略**：CRL 生成、OCSP 查询、时间戳处理均自动跳过（CertsDB 统一跳过 `#` 行）。
 
 ---
 
@@ -523,6 +525,13 @@ A：离线 / 无外网环境会请求失败，但签名**不中断**——时间
 ---
 
 ## 更新记录
+- **v1.28（2026-09-28）——审计修复收尾 + 签发证书策略/路径长度 + 右键删除证书（注释式）**
+  - **基于 20260927 逐文件逐函数源码审计报告的修复**：完成 P1-01 / P1-03 / P1-05 三项更新（证书验证与解析的时间无关性——证书过期不影响信任关系，满足"一百年后仍可用此证书验证现在验证的数据与证书链"的离线验证要求）与 P2 系列优化（签名专区单文件上传上限按需求提升至 **20MB**、总请求体上限 **256MB**、JSON 4MB；`javac -Xlint:all` 编译警告从 396 条**清零**；build.cmd / build.sh 保留并完善 1-9 编号自动运行）
+  - **签发证书页增强**：证书类型「中间CA」时新增「路径长度」可编辑下拉（默认 `null`，可选 0-9）→ 后端 `MakeCert` 新增 `a[12]=pathlen`，按 `BasicConstraints(pathLen)` 写入中间 CA 证书；证书类型「终端证书」时新增「证书策略」分区，8 个多选框（SSL `DV/IV/OV/EV`、代码签名 `标准/EV`、文档签名、TSA 对应 OID）——**仅勾选的策略才写入证书策略扩展**，基础策略 `1.3.6.1.4.1.4146.1.95`（CPS + 用户通告）始终保留；`Admin.doSignCert` 新增 14 参重载，原 12 参 CLI 入口保持兼容
+  - **证书链验证提示中文化**：`CertVerify.chainConstraintsOk` 对 `parent pathLenConstraint=0 forbids issuing CA certificates` 改为中文提示「因为证书路径中有一个证书颁发机构似乎没有颁发证书的权限或不允许用作终端实体证书,所以此证书无效」
+  - **证书库 CERTS.txt 右键「删除证书」**：右键菜单新增红色加粗「删除证书」项（仅 CERTS.txt 库显示）→ 二次确认「是否删除选中当前行序列号为 xxxx 的证书？」→ 确定后**不删除文件**，仅在 CERTS.txt 中为该行加 `# ` 前缀注释（保留原行内容，原子写回 tmp→fsync→.bak→move）；`CertsDB.load` 已统一跳过 `#` 开头行，故 CRL 生成、OCSP 查询、时间戳处理自动忽略被注释证书，无需改动下游代码；新增 API `/api/certs/delete`（WebAdmin API 33 个）；操作写入 logs.log
+  - **验证**：全量编译 `-Xlint:all` 零警告；新增冒烟测试 `debug_test/TestCertsDelete.java` 8 项全 PASS（删除返回成功 / 行已注释 / 行不再激活 / 根、CA 行保留 / 列表不含已删除序列号 / CRL 正常生成）；单元测试 `131 passed, 0 failed`（含新增 PSS/SHA3 用例）
+
 - **v1.27（2026-09-26）——服务安静模式 + Ed25519（EDDSA）签发修复**
   - **服务安静模式（修复 MAIN 控制台刷屏/卡死）**：MAIN（`build.cmd 1`）服务运行期间，WebAdmin 面板操作（签发时间戳 / OCSP / 证书、CRL、吊销等）不再向服务控制台打印「TSA专用证书生成成功！…」等生成信息——`MakeCert` 新增 quiet 服务模式开关（`setQuiet` / `out` 方法，生成成功信息统一写入 `PKI/logs.log`），`WebAdmin.runAction` 管理动作执行期间自动置位 / 复位 quiet；CLI 直接运行 `Admin` / `MakeCert` 仍正常打印结果；面板操作日志完整留痕 logs.log
   - **Ed25519（EDDSA）签发修复**：修复签发 Ed25519 证书报「不支持的算法: EDDSA」——根因是算法参数 `toUpperCase` 归一化为 `EDDSA` 后与分发代码大小写敏感的 `"EdDSA"` 不匹配；`MakeRoot` 算法分发 `case "EdDSA"→"EDDSA"`、`parseKeyBits` 改 `equalsIgnoreCase`；`MakeCert.generateKeyPair` 方法内统一 `toUpperCase` 归一化、`case "EDDSA"`、`defaultBit` 改 `equalsIgnoreCase`；实测 CLI 全大写 `EDDSA` 签根 / 签叶（含 SCT 流程，自动选 RSA/ECDSA CT 日志密钥）成功，`CertVerify` 根 / 叶验证通过，单元测试 163 passed / 0 failed

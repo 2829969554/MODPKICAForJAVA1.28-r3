@@ -118,6 +118,23 @@ public final class Auto {
             String backup = certs + ".old." + (System.currentTimeMillis() / 1000L);
             Files.move(certs, Paths.get(backup));
         }
+        // 清理历史 .old 备份：仅保留最近一份，避免 init 多次后堆积
+        try {
+            Path pkiDir = certs.getParent();
+            java.util.List<java.nio.file.Path> olds = new java.util.ArrayList<>();
+            if (pkiDir != null && java.nio.file.Files.isDirectory(pkiDir)) {
+                try (java.util.stream.Stream<java.nio.file.Path> st = java.nio.file.Files.list(pkiDir)) {
+                    st.filter(p2 -> p2.getFileName().toString().startsWith("CERTS.txt.old."))
+                      .forEach(olds::add);
+                }
+                olds.sort(java.util.Comparator.comparing(p2 -> p2.getFileName().toString()));
+                for (int i = 0; i < olds.size() - 1; i++) {
+                    java.nio.file.Files.deleteIfExists(olds.get(i));
+                }
+            }
+        } catch (Exception ignore) {
+            // 清理失败不影响初始化主流程
+        }
         Files.write(certs, CERTS_TEMPLATE.getBytes(StandardCharsets.UTF_8));
         Files.write(Paths.get(baseDir, "PKI", "CERTS.txt.sm"),
                 CERTS_TEMPLATE.getBytes(StandardCharsets.UTF_8));
@@ -153,7 +170,7 @@ public final class Auto {
             System.out.println("吊销失败:CERTS.txt证书库不存在此编号");
             return;
         }
-        Files.write(certs, sb.toString().getBytes(StandardCharsets.UTF_8));
+        atomicWrite(certs, sb.toString());
         System.out.println("吊销成功");
     }
 
@@ -186,7 +203,7 @@ public final class Auto {
             System.out.println("恢复失败:CERTS.txt证书库不存在此编号");
             return;
         }
-        Files.write(certs, sb.toString().getBytes(StandardCharsets.UTF_8));
+        atomicWrite(certs, sb.toString());
         System.out.println("恢复成功");
     }
 
@@ -199,5 +216,20 @@ public final class Auto {
         Files.write(certs, newline.getBytes(StandardCharsets.UTF_8),
                 StandardOpenOption.CREATE, StandardOpenOption.APPEND);
         System.out.println("增加证书成功: " + serial);
+    }
+
+    /** 原子写 CERTS.txt（tmp → fsync → .bak → move），与 CertsDB.rewriteAll 同策略。 */
+    private static void atomicWrite(Path p, String content) throws Exception {
+        Path tmp = Paths.get(p.toString() + ".tmp");
+        java.nio.file.Files.writeString(tmp, content, StandardCharsets.UTF_8,
+                StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+        try (java.io.FileOutputStream fos = new java.io.FileOutputStream(tmp.toString(), true)) {
+            fos.getFD().sync();
+        }
+        if (java.nio.file.Files.exists(p)) {
+            java.nio.file.Files.copy(p, Paths.get(p.toString() + ".bak"),
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        }
+        java.nio.file.Files.move(tmp, p, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
     }
 }

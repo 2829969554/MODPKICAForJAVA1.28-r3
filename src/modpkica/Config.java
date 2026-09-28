@@ -54,7 +54,7 @@ public class Config {
      *
      * @param baseDir MODPKICA 根目录
      */
-    public void load(String baseDir) {
+    public final void load(String baseDir) {
         Path path = Paths.get(baseDir, "PKI", "CONFIG.txt");
         crlUrl = "";
         crtUrl = "";

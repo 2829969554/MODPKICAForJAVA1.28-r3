@@ -34,7 +34,7 @@ import java.util.Scanner;
 public final class Admin {
 
     /** 版本信息。 */
-    public static final String VERSION = "MODPKICA Java 复刻版 v1.0 (BC 1.85 离线)";
+    public static final String VERSION = "MODPKICA Java 复刻版 v1.28 (BC 1.85 离线)";
 
     private Admin() {
     }
@@ -221,17 +221,23 @@ public final class Admin {
     // 公共操作入口（控制台与 WebAdmin 共用，行为一致）
     // ============================================================
 
-    /** 捕获被调程序输出到 stdout 的内容，返回字符串。 */
+    /** 捕获被调程序输出到 stdout 的内容，返回字符串。
+     *  P2-05：System.setOut 是全局替换，多个请求并发 capture 会互相污染 stdout，
+     *  故用进程内互斥锁串行化 capture 段（可重入，同一线程嵌套调用安全）。 */
+    private static final Object STDOUT_LOCK = new Object();
+
     static String captureStdout(ThrowingRunnable r) throws Exception {
-        ByteArrayOutputStream buf = new ByteArrayOutputStream();
-        PrintStream old = System.out;
-        System.setOut(new PrintStream(buf, true, StandardCharsets.UTF_8));
-        try {
-            r.run();
-        } finally {
-            System.setOut(old);
+        synchronized (STDOUT_LOCK) {
+            ByteArrayOutputStream buf = new ByteArrayOutputStream();
+            PrintStream old = System.out;
+            System.setOut(new PrintStream(buf, true, StandardCharsets.UTF_8));
+            try {
+                r.run();
+            } finally {
+                System.setOut(old);
+            }
+            return buf.toString(StandardCharsets.UTF_8);
         }
-        return buf.toString(StandardCharsets.UTF_8);
     }
 
     /** 无返回值、可抛异常的动作（避免到处写 try/catch）。 */
@@ -291,12 +297,23 @@ public final class Admin {
     public static String doSignCert(String baseDir, String dn, String bit, String hash,
             String keyUsage, String exUsage, String isCa, String days, String dns,
             String ips, String issuer, String algo) throws Exception {
-        String[] a = {dn, bit, hash, keyUsage, exUsage, isCa, days, dns, ips, "null", issuer, algo};
+        return doSignCert(baseDir, dn, bit, hash, keyUsage, exUsage, isCa, days, dns,
+                ips, issuer, algo, null, null);
+    }
+
+    /** signCERT 扩展版：pathLen=中间CA路径长度(null/0-9)；policy=终端证书策略OID(逗号分隔，勾选才写入)。 */
+    public static String doSignCert(String baseDir, String dn, String bit, String hash,
+            String keyUsage, String exUsage, String isCa, String days, String dns,
+            String ips, String issuer, String algo, String pathLen, String policy)
+            throws Exception {
+        String[] a = {dn, bit, hash, keyUsage, exUsage, isCa, days, dns, ips, "null", issuer, algo,
+                pathLen == null || pathLen.isEmpty() ? "null" : pathLen,
+                policy == null || policy.isEmpty() ? "" : policy};
         String out = captureStdout(() -> MakeCert.run(baseDir, a));
         MLog.append(baseDir, "ADMIN signCERT",
                 "signCERT \"" + dn + "\" " + bit + " " + hash + " " + keyUsage + " "
                         + exUsage + " " + isCa + " " + days + " " + dns + " " + ips
-                        + " " + issuer + " " + algo,
+                        + " " + issuer + " " + algo + " pathLen=" + pathLen + " policy=" + policy,
                 "签发证书 " + dn + " 算法=" + algo + " 颁发者=" + issuer);
         return out;
     }

@@ -672,6 +672,52 @@ public final class CertVerify {
         }
     }
 
+    /** PKIX 链约束检查（不含有效期——离线/长期验证：证书过期不影响信任关系）。
+     *  a) child.issuer DN == parent.subject DN
+     *  b) child AKI(若存在) == parent SKI
+     *  c) parent KeyUsage(若存在) 必须含 keyCertSign
+     *  d) parent 必须是 CA；child 为 CA 时 parent pathLenConstraint 不能为 0
+     *  @return {ok, reason} */
+    private static String[] chainConstraintsOk(X509Certificate child, X509Certificate parent) {
+        if (!child.getIssuerX500Principal().getName()
+                .equals(parent.getSubjectX500Principal().getName())) {
+            return new String[]{"false", "child.issuer DN != parent.subject DN"};
+        }
+        byte[] aki = child.getExtensionValue(Extension.authorityKeyIdentifier.getId());
+        if (aki != null) {
+            byte[] pSki = parent.getExtensionValue(Extension.subjectKeyIdentifier.getId());
+            if (pSki != null) {
+                byte[] akiV = authorityKeyIdValue(aki);
+                byte[] pSkiV = subjectKeyIdValue(pSki);
+                if (!java.util.Arrays.equals(akiV, pSkiV)) {
+                    return new String[]{"false", "child AKI != parent SKI"};
+                }
+            }
+        }
+        if (parent.getBasicConstraints() < 0) {
+            return new String[]{"false", "parent is not a CA (BasicConstraints CA=false)"};
+        }
+        boolean[] ku = parent.getKeyUsage();
+        if (ku != null && (ku.length <= 5 || !ku[5])) {
+            return new String[]{"false", "parent KeyUsage lacks keyCertSign"};
+        }
+        boolean childIsCa = child.getBasicConstraints() >= 0;
+        if (childIsCa && parent.getBasicConstraints() == 0) {
+            return new String[]{"false", "因为证书路径中有一个证书颁发机构似乎没有颁发证书的权限或不允许用作终端实体证书,所以此证书无效"};
+        }
+        return new String[]{"true", ""};
+    }
+
+    /** child AKI 是否与 parent SKI 匹配（两者都存在时）。 */
+    private static boolean akiMatches(X509Certificate child, X509Certificate parent) {
+        byte[] aki = child.getExtensionValue(Extension.authorityKeyIdentifier.getId());
+        byte[] pSki = parent.getExtensionValue(Extension.subjectKeyIdentifier.getId());
+        if (aki == null || pSki == null) {
+            return false;
+        }
+        return java.util.Arrays.equals(authorityKeyIdValue(aki), subjectKeyIdValue(pSki));
+    }
+
     /** 静默拉取颁发者证书（不打印证书链/信任状态），供 SCT 验签等内部使用。
      *  优先 AIA caIssuers，AIA 缺失/失败时回退本地 PKI/ROOT、PKI/CA、PKI/MY、java cacerts。 */
     private static X509Certificate fetchIssuerSilent(X509Certificate cert) {
@@ -699,7 +745,10 @@ public final class CertVerify {
             if (!urls.isEmpty()) {
                 byte[] data = httpGet(urls.get(0), 10000);
                 if (data != null) {
-                    issuer = parseCert(data);
+                    X509Certificate cand = parseCert(data);
+                    if ("true".equals(chainConstraintsOk(cert, cand)[0])) {
+                        issuer = cand;
+                    }
                 }
             }
         } catch (Exception e) {
@@ -758,9 +807,14 @@ public final class CertVerify {
             System.out.println("信任状态： 不可信 (由于无法找到上级证书链 或 证书链验证失败，所以它不受信任。)\n");
             return;
         }
-        // 逐级验签 + 上级必须为 CA
-        if (!verifySignature(issuer, parent.getPublicKey()) || parent.getBasicConstraints() < 0) {
-            System.out.println("信任状态： 不可信 (证书链验证失败：本级签名未通过上级公钥验证或上级不是 CA。)\n");
+        // 逐级验签 + PKIX 链约束（不含有效期——离线/长期验证）
+        if (!verifySignature(issuer, parent.getPublicKey())) {
+            System.out.println("信任状态： 不可信 (证书链验证失败：本级签名未通过上级公钥验证。)\n");
+            return;
+        }
+        String[] ck = chainConstraintsOk(issuer, parent);
+        if (!"true".equals(ck[0])) {
+            System.out.println("信任状态： 不可信 (证书链验证失败：" + ck[1] + "。)\n");
             return;
         }
         printChain(parent);
@@ -775,6 +829,7 @@ public final class CertVerify {
         dirs.add(AppPaths.baseDir() + "/PKI/CA");
         dirs.add(AppPaths.baseDir() + "/PKI/MY");
         X509Certificate firstDnMatch = null;
+        X509Certificate verifyOk = null;
         for (String dir : dirs) {
             java.io.File d = new java.io.File(dir);
             java.io.File[] files = d.listFiles();
@@ -795,8 +850,22 @@ public final class CertVerify {
                     if (firstDnMatch == null) {
                         firstDnMatch = cand;
                     }
-                    if (verifySignature(cert, cand.getPublicKey())) {
+                    // 上级必须是 CA，且（KeyUsage 存在时）须含 keyCertSign
+                    if (cand.getBasicConstraints() < 0) {
+                        continue;
+                    }
+                    boolean[] ku = cand.getKeyUsage();
+                    if (ku != null && (ku.length <= 5 || !ku[5])) {
+                        continue;
+                    }
+                    if (!verifySignature(cert, cand.getPublicKey())) {
+                        continue;
+                    }
+                    if (akiMatches(cert, cand)) {
                         return cand;
+                    }
+                    if (verifyOk == null) {
+                        verifyOk = cand;
                     }
                 } catch (Exception ignore) {
                 }
@@ -806,7 +875,7 @@ public final class CertVerify {
         if (cac != null) {
             return cac;
         }
-        return firstDnMatch;
+        return verifyOk != null ? verifyOk : firstDnMatch;
     }
 
     /** 在 JAVA cacerts 中查找能验证当前证书签名的同 DN 证书。 */
@@ -833,7 +902,17 @@ public final class CertVerify {
                         if (!cand.getSubjectX500Principal().getName().equals(issuerDn)) {
                             continue;
                         }
-                        if (verifySignature(cert, cand.getPublicKey())) {
+                        if (cand.getBasicConstraints() < 0) {
+                            continue;
+                        }
+                        boolean[] ku = cand.getKeyUsage();
+                        if (ku != null && (ku.length <= 5 || !ku[5])) {
+                            continue;
+                        }
+                        if (!verifySignature(cert, cand.getPublicKey())) {
+                            continue;
+                        }
+                        if (akiMatches(cert, cand) || cand.getBasicConstraints() >= 0) {
                             return cand;
                         }
                     }
@@ -1027,7 +1106,7 @@ public final class CertVerify {
             byte[][] reqAndNonce = buildOcspRequest(cert, issuerCert);
             byte[] req = reqAndNonce[0];
             byte[] reqNonce = reqAndNonce[1];
-            HttpURLConnection conn = (HttpURLConnection) new URL(urls.get(0)).openConnection();
+            HttpURLConnection conn = (HttpURLConnection) new java.net.URI(urls.get(0)).toURL().openConnection();
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-Type", "application/ocsp-request");
             conn.setRequestProperty("Accept", "application/ocsp-response");
@@ -1133,10 +1212,21 @@ public final class CertVerify {
         if (holders != null && holders.length > 0) {
             X509Certificate respCert = new JcaX509CertificateConverter().setProvider("BC")
                     .getCertificate(holders[0]);
-            // Responder authorization (RFC 6960 SS4.2.2.2): validity window + id-kp-OCSPSigning EKU
+            // Responder authorization (RFC 6960 SS4.2.2.2): 授权链 + id-kp-OCSPSigning EKU。
+            // 有效期仅提示、不作为拒绝条件——离线/长期验证，证书过期不影响信任关系。
             java.util.Date now = new java.util.Date();
             if (now.before(respCert.getNotBefore()) || now.after(respCert.getNotAfter())) {
-                throw new Exception("OCSP responder certificate not within validity period");
+                System.out.println("（提示：OCSP responder 证书已不在有效期窗口内，按离线验证继续）");
+            }
+            // 授权验证：responder 必须由 issuer CA 签发（或与 issuer 为同一证书）
+            if (!respCert.getSubjectX500Principal().getName()
+                    .equals(issuerCert.getSubjectX500Principal().getName())) {
+                try {
+                    respCert.verify(issuerCert.getPublicKey());
+                } catch (Exception e) {
+                    throw new Exception("OCSP responder certificate not issued by this CA "
+                            + "(delegated responder authorization failed)");
+                }
             }
             boolean hasOcspEku = false;
             try {
@@ -1358,7 +1448,7 @@ public final class CertVerify {
             org.bouncycastle.asn1.x509.AuthorityKeyIdentifier aki =
                     org.bouncycastle.asn1.x509.AuthorityKeyIdentifier.getInstance(
                             ASN1Primitive.fromByteArray(unwrapOctets(extValue)));
-            byte[] kid = aki.getKeyIdentifier();
+            byte[] kid = aki.getKeyIdentifierOctets();
             return kid != null ? kid : new byte[0];
         } catch (Exception e) {
             return unwrapOctets(extValue);

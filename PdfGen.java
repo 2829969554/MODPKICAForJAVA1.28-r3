@@ -38,9 +38,9 @@ public class PdfGen {
 
         newPage(false);
         // ---- 封面 ----
-        coverTitle = "MODPKICA Java 复刻版 v1.27";
+        coverTitle = "MODPKICA Java 复刻版 v1.28";
         String sub1 = "开发助手 · 源码分析";
-        String sub2 = "2026-09-26 第二版";
+        String sub2 = "2026-09-28";
         String sub3 = "基于 Java + BouncyCastle 1.85 离线构建";
         String sub4 = "作者：@魔帝本尊（QQ：2829969554）";
         drawCentered(titleFont, 22f, coverTitle, 300f);
@@ -54,7 +54,7 @@ public class PdfGen {
                 "一、项目概述      二、源码结构总览      三、运行流程解析      四、关键常量与数据格式",
                 96f);
         drawCentered(bodyFont, 9.5f,
-                "五、v1.27 今日更新      六、构建与测试", 78f);
+                "五、v1.28 今日更新      六、构建与测试", 78f);
 
         // ---- 正文 ----
         boolean first = true;

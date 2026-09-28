@@ -702,7 +702,7 @@ public final class SignTool {
         byte[] reqDer = new DERSequence(ci).getEncoded("DER");
         byte[] payload = Base64.getEncoder().encodeToString(reqDer).getBytes(StandardCharsets.UTF_8);
 
-        HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+        HttpURLConnection conn = (HttpURLConnection) new java.net.URI(url).toURL().openConnection();
         conn.setRequestMethod("POST");
         conn.setDoOutput(true);
         conn.setConnectTimeout(10000);
@@ -859,7 +859,7 @@ public final class SignTool {
         byte[] payload = auth
                 ? Base64.getEncoder().encodeToString(reqDer).getBytes(StandardCharsets.UTF_8) : reqDer;
 
-        HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+        HttpURLConnection conn = (HttpURLConnection) new java.net.URI(url).toURL().openConnection();
         conn.setRequestMethod("POST");
         conn.setDoOutput(true);
         conn.setConnectTimeout(10000);
@@ -935,6 +935,7 @@ public final class SignTool {
      * eContent 为直接 SEQUENCE（无 OCTET STRING），故先手工提取内容字节，再以带 signedContent
      * 的 CMSSignedData 构造验证（BC 才能按内容字节计算 messageDigest 比对）。
      */
+    @SuppressWarnings("unchecked")
     public static String verifyExe(byte[] exe) throws Exception {
         StringBuilder sb = new StringBuilder();
         if (exe.length < 0x40 || exe[0] != 'M' || exe[1] != 'Z') {
@@ -1595,7 +1596,7 @@ public final class SignTool {
         return new DERSequence(v).getEncoded("DER");
     }
 
-    /** GB/T 38540-2020：构造 SES_Signature（toSign TBS_Sign + cert + signatureAlgID + signature）。 */
+    /* GB/T 38540-2020：构造 SES_Signature（toSign TBS_Sign + cert + signatureAlgID + signature）。 */
     /**
      * GB/T 38540-2020 电子签章。时间戳支持（标准 7.1.6）：SES_Signature 可选第 5 字段
      * <b>timeStamp</b>（OCTET STRING）——对签名值的时间戳，符合 GB/T 20520（= RFC3161），
@@ -1652,7 +1653,7 @@ public final class SignTool {
         return new DERSequence(sesSig).getEncoded("DER");
     }
 
-    /**
+    /*
      * GB/T 35275-2017：构造 CMS SignedData（detached）。
      * signedAttrs = { contentType, messageDigest, signingTime, 私有OID(SESeal-DER) }，
      * 签名算法 SM3withSM2；证书链完整写入 CMS certificates。
@@ -1860,8 +1861,8 @@ public final class SignTool {
             }
             // VRI key：ByteRange 覆盖内容 SHA-1 十六进制大写
             MessageDigest md = MessageDigest.getInstance("SHA-1");
-            md.update(signedPdf, (int) br[0], (int) br[1]);
-            md.update(signedPdf, (int) br[2], (int) br[3]);
+            md.update(signedPdf, br[0], br[1]);
+            md.update(signedPdf, br[2], br[3]);
             String vriKey = Hex.toHexString(md.digest()).toUpperCase();
 
             LtvData ltv = collectLtvData(chain, baseDir);
@@ -2088,7 +2089,7 @@ public final class SignTool {
     /** HTTP POST（二进制），非 200 或异常返回 null。 */
     private static byte[] httpPost(String url, String contentType, byte[] body) {
         try {
-            HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+            HttpURLConnection conn = (HttpURLConnection) new java.net.URI(url).toURL().openConnection();
             conn.setRequestMethod("POST");
             conn.setDoOutput(true);
             conn.setConnectTimeout(8000);
@@ -2119,7 +2120,7 @@ public final class SignTool {
     /** HTTP GET，非 200 或异常返回 null。 */
     private static byte[] httpGet(String url) {
         try {
-            HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+            HttpURLConnection conn = (HttpURLConnection) new java.net.URI(url).toURL().openConnection();
             conn.setRequestMethod("GET");
             conn.setConnectTimeout(8000);
             conn.setReadTimeout(20000);
@@ -2174,6 +2175,7 @@ public final class SignTool {
     // ============================ PDF 验证 ============================
 
     /** 验证 PDF 签名：逐个签名字段（DocTimeStamp / 数字签名 / 国密），CMS 验签、ByteRange 摘要比对、证书链。 */
+    @SuppressWarnings("unchecked")
     public static String verifyPdf(byte[] pdf) throws Exception {
         StringBuilder sb = new StringBuilder();
         try (PDDocument doc = Loader.loadPDF(pdf)) {
@@ -2257,8 +2259,8 @@ public final class SignTool {
                     .append(", ").append(br[2]).append(", ").append(br[3]).append("]\n");
 
             ByteArrayOutputStream rangeOut = new ByteArrayOutputStream();
-            rangeOut.write(pdf, (int) br[0], (int) br[1]);
-            rangeOut.write(pdf, (int) br[2], (int) br[3]);
+            rangeOut.write(pdf, br[0], br[1]);
+            rangeOut.write(pdf, br[2], br[3]);
             byte[] range = rangeOut.toByteArray();
             sb.append("待签名数据长度: ").append(range.length).append(" 字节\n");
 
@@ -2368,8 +2370,8 @@ public final class SignTool {
                 return false;
             }
             ByteArrayOutputStream rangeOut = new ByteArrayOutputStream();
-            rangeOut.write(pdf, (int) br[0], (int) br[1]);
-            rangeOut.write(pdf, (int) br[2], (int) br[3]);
+            rangeOut.write(pdf, br[0], br[1]);
+            rangeOut.write(pdf, br[2], br[3]);
             byte[] range = rangeOut.toByteArray();
             sb.append("ByteRange: [").append(br[0]).append(", ").append(br[1])
                     .append(", ").append(br[2]).append(", ").append(br[3]).append("]\n");
@@ -2409,6 +2411,7 @@ public final class SignTool {
             boolean sigOk = false;
             try {
                 org.bouncycastle.cms.SignerId sid = tst.getSID();
+                @SuppressWarnings("unchecked")
                 java.util.Collection<X509CertificateHolder> tsaMatch = tst.getCertificates().getMatches(sid);
                 if (!tsaMatch.isEmpty()) {
                     X509Certificate tsaCert = new JcaX509CertificateConverter().setProvider("BC")
@@ -2439,6 +2442,7 @@ public final class SignTool {
      * 1) 解析 SES_Signature；2) dataHash 与 SM3(ByteRange) 比对；
      * 3) 用证书公钥 SM3withSM2 验签 TBS_Sign DER。
      */
+    @SuppressWarnings("unchecked")
     private static String verifyGmSeal38540(StringBuilder sb, byte[] contents,
                                             byte[] range) throws Exception {
         ASN1Sequence sesSig = ASN1Sequence.getInstance(ASN1Primitive.fromByteArray(contents));

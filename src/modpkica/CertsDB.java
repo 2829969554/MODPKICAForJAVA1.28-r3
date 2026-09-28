@@ -1,10 +1,13 @@
 package modpkica;
 
 import java.io.IOException;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -40,6 +43,30 @@ public class CertsDB {
     /** CERTS.txt 的完整路径 */
     private Path dbPath;
 
+    /** 最近一次加载的警告信息（坏行 / IO 失败），空串表示正常（P2-14）。 */
+    public String lastLoadWarning = "";
+
+    /** 进程内互斥（配合跨进程文件锁，见 withLock）。 */
+    private static final Object FILE_LOCK = new Object();
+
+    /** 跨进程 + 进程内双重互斥：通过 CERTS.txt.lock 文件锁实现（P2-02）。
+     *  动作内部抛出的 RuntimeException（含 UncheckedIOException）原样上抛。 */
+    private void withLock(Runnable action) {
+        synchronized (FILE_LOCK) {
+            Path lockPath = Paths.get(dbPath.toString() + ".lock");
+            try (FileChannel lc = FileChannel.open(lockPath,
+                    StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+                 FileLock fl = lc.lock()) {
+                if (!fl.isValid()) {
+                    throw new IOException("lock invalid: " + lockPath);
+                }
+                action.run();
+            } catch (IOException ex) {
+                throw new java.io.UncheckedIOException("lock CERTS.txt failed: " + lockPath, ex);
+            }
+        }
+    }
+
     /**
      * 单条证书台账记录。
      */
@@ -68,6 +95,7 @@ public class CertsDB {
     public void load(String baseDir) {
         dbPath = Paths.get(baseDir, "PKI", "CERTS.txt");
         entries.clear();
+        lastLoadWarning = "";
         if (!Files.exists(dbPath)) {
             return;
         }
@@ -75,8 +103,11 @@ public class CertsDB {
         try {
             lines = Files.readAllLines(dbPath, StandardCharsets.UTF_8);
         } catch (IOException e) {
+            lastLoadWarning = "CERTS.txt 读取失败: " + e;
+            System.err.println("[CertsDB] " + lastLoadWarning);
             return;
         }
+        int bad = 0;
         for (String raw : lines) {
             String line = stripCrLf(raw).trim();
             if (line.isEmpty() || line.startsWith("#")) {
@@ -85,6 +116,7 @@ public class CertsDB {
             // 按空白切分：serial type status reason time issuerId algo
             String[] p = line.split("\\s+");
             if (p.length < 7) {
+                bad++;
                 continue;
             }
             try {
@@ -98,8 +130,12 @@ public class CertsDB {
                 e.algo = p[6];
                 entries.add(e);
             } catch (Exception ignore) {
-                // 单行解析失败跳过，不影响整体
+                bad++;
             }
+        }
+        if (bad > 0) {
+            lastLoadWarning = "CERTS.txt 有 " + bad + " 行无法解析（已跳过）";
+            System.err.println("[CertsDB] " + lastLoadWarning);
         }
     }
 
@@ -170,16 +206,18 @@ public class CertsDB {
      */
     public void addEntry(CertEntry e) {
         String line = formatLine(e);
-        try {
-            Files.createDirectories(dbPath.getParent());
-            Files.writeString(dbPath, line + System.lineSeparator(),
-                    StandardCharsets.UTF_8,
-                    StandardOpenOption.CREATE,
-                    StandardOpenOption.APPEND);
-        } catch (IOException ex) {
-            // 写文件失败必须暴露：否则内存记录与磁盘不一致（重启后记录丢失）
-            throw new java.io.UncheckedIOException("写 CERTS.txt 失败: " + dbPath, ex);
-        }
+        withLock(() -> {
+            try {
+                Files.createDirectories(dbPath.getParent());
+                Files.writeString(dbPath, line + System.lineSeparator(),
+                        StandardCharsets.UTF_8,
+                        StandardOpenOption.CREATE,
+                        StandardOpenOption.APPEND);
+            } catch (IOException ex) {
+                // 写文件失败必须暴露：否则内存记录与磁盘不一致（重启后记录丢失）
+                throw new java.io.UncheckedIOException("写 CERTS.txt 失败: " + dbPath, ex);
+            }
+        });
         entries.add(e); // 写成功后才加入内存
     }
 
@@ -232,20 +270,33 @@ public class CertsDB {
         return entries;
     }
 
-    /** 把内存中全部条目按行重写回文件。 */
+    /** 把内存中全部条目按行重写回文件（P2-01：tmp → fsync → .bak → 原子替换，锁内执行）。 */
     private void rewriteAll() {
         StringBuilder sb = new StringBuilder();
         for (CertEntry e : entries) {
             sb.append(formatLine(e)).append(System.lineSeparator());
         }
-        try {
-            Files.writeString(dbPath, sb.toString(), StandardCharsets.UTF_8,
-                    StandardOpenOption.CREATE,
-                    StandardOpenOption.TRUNCATE_EXISTING);
-        } catch (IOException ex) {
-            // Rewrite failure must NOT be swallowed (PKI-015): memory and disk would diverge.
-            throw new java.io.UncheckedIOException("rewrite CERTS.txt failed: " + dbPath, ex);
-        }
+        String content = sb.toString();
+        withLock(() -> {
+            Path tmp = Paths.get(dbPath.toString() + ".tmp");
+            try {
+                Files.writeString(tmp, content, StandardCharsets.UTF_8,
+                        StandardOpenOption.CREATE,
+                        StandardOpenOption.TRUNCATE_EXISTING);
+                // fsync 落盘，避免断电/崩溃后半文件
+                try (java.io.FileOutputStream fos = new java.io.FileOutputStream(tmp.toString(), true)) {
+                    fos.getFD().sync();
+                }
+                // 保留 .bak 备份
+                if (Files.exists(dbPath)) {
+                    Files.copy(dbPath, Paths.get(dbPath.toString() + ".bak"),
+                            StandardCopyOption.REPLACE_EXISTING);
+                }
+                Files.move(tmp, dbPath, StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException ex) {
+                throw new java.io.UncheckedIOException("rewrite CERTS.txt failed: " + dbPath, ex);
+            }
+        });
     }
 
     /** 把条目格式化为文件中的一行（不补换行）。 */

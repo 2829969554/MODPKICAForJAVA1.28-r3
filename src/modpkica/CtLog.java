@@ -38,6 +38,7 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -95,6 +96,7 @@ public final class CtLog {
     /**
      * 读取可信公网 CT 日志列表（log_list.json，Google log_list v3）。
      * 文件不存在返回空列表；state 为对象形式 {@code {"usable": {...}}} 时提取键名。
+     * P2-12：改用 MiniJson DOM 解析（替代脆弱的正则提取）。
      */
     public static synchronized List<PubLog> loadPublicList(String baseDir) {
         List<PubLog> out = new ArrayList<>();
@@ -104,63 +106,38 @@ public final class CtLog {
         }
         try {
             String json = new String(Files.readAllBytes(p), StandardCharsets.UTF_8);
-            Pattern pid = Pattern.compile("\"log_id\"\\s*:\\s*\"([^\"]+)\"");
-            Matcher m = pid.matcher(json);
-            while (m.find()) {
-                int objStart = json.lastIndexOf("{", m.start());
-                if (objStart < 0) {
-                    objStart = 0;
-                }
-                // 括号配平找到本 log 对象结束 }（Google v3 state 为嵌套对象，不能用第一个 } 截断）
-                int depth = 0;
-                int objEnd = json.length();
-                for (int i = objStart; i < json.length(); i++) {
-                    char c = json.charAt(i);
-                    if (c == '{') {
-                        depth++;
-                    } else if (c == '}') {
-                        depth--;
-                        if (depth == 0) {
-                            objEnd = i;
-                            break;
+            Map<String, Object> root = MiniJson.parse(json);
+            java.util.List<Map<String, Object>> logs = MiniJson.collectLogs(root);
+            if (!logs.isEmpty()) {
+                for (Map<String, Object> lo : logs) {
+                    PubLog k = new PubLog();
+                    k.description = MiniJson.strVal(lo.get("description"));
+                    k.url = MiniJson.strVal(lo.get("url"));
+                    String b64 = MiniJson.strVal(lo.get("log_id"));
+                    if (b64 != null && !b64.isEmpty()) {
+                        try {
+                            byte[] raw = Base64.getDecoder().decode(b64);
+                            StringBuilder sb = new StringBuilder();
+                            for (byte b : raw) {
+                                sb.append(String.format("%02x", b & 0xff));
+                            }
+                            k.logIdHex = sb.toString();
+                        } catch (Exception ex) {
+                            k.logIdHex = b64;
                         }
                     }
-                }
-                String seg = json.substring(objStart, objEnd);
-                PubLog k = new PubLog();
-                k.description = grab(seg, "\"description\"");
-                k.url = grab(seg, "\"url\"");
-                try {
-                    byte[] raw = Base64.getDecoder().decode(m.group(1));
-                    StringBuilder sb = new StringBuilder();
-                    for (byte b : raw) {
-                        sb.append(String.format("%02x", b & 0xff));
+                    Object st = lo.get("state");
+                    if (st instanceof Map) {
+                        for (Object key : ((Map<?, ?>) st).keySet()) {
+                            k.state = String.valueOf(key);
+                            break;
+                        }
+                    } else {
+                        k.state = MiniJson.strVal(st);
                     }
-                    k.logIdHex = sb.toString();
-                } catch (Exception ex) {
-                    k.logIdHex = m.group(1);
-                }
-                int sti = seg.indexOf("\"state\"");
-                if (sti >= 0) {
-                    String rest = seg.substring(sti);
-                    String st = "";
-                    if (rest.contains("\"usable\"")) {
-                        st = "usable";
-                    } else if (rest.contains("\"readonly\"")) {
-                        st = "readonly";
-                    } else if (rest.contains("\"retired\"")) {
-                        st = "retired";
-                    } else if (rest.contains("\"pending\"")) {
-                        st = "pending";
-                    } else if (rest.contains("\"rejected\"")) {
-                        st = "rejected";
+                    if (!k.logIdHex.isEmpty()) {
+                        out.add(k);
                     }
-                    k.state = st;
-                } else {
-                    k.state = grab(seg, "\"state\"");
-                }
-                if (!k.logIdHex.isEmpty()) {
-                    out.add(k);
                 }
             }
         } catch (Exception e) {
@@ -177,8 +154,9 @@ public final class CtLog {
         }
         try {
             String json = new String(Files.readAllBytes(p), StandardCharsets.UTF_8);
-            Matcher m = Pattern.compile("\"log_list_timestamp\"\\s*:\\s*\"([^\"]+)\"").matcher(json);
-            return m.find() ? m.group(1) : "";
+            Object ts = MiniJson.parse(json).get("log_list_timestamp");
+            String v = MiniJson.strVal(ts);
+            return v == null ? "" : v;
         } catch (Exception e) {
             return "";
         }
@@ -186,7 +164,7 @@ public final class CtLog {
 
     /** 从 gstatic 拉取最新 log_list.json 并保存到 PKI/CTLOG/log_list.json。返回结果描述。 */
     public static synchronized String fetchPublicList(String baseDir) throws Exception {
-        HttpURLConnection c = (HttpURLConnection) new URL(PUBLIC_LIST_URL).openConnection();
+        HttpURLConnection c = (HttpURLConnection) new java.net.URI(PUBLIC_LIST_URL).toURL().openConnection();
         c.setConnectTimeout(15000);
         c.setReadTimeout(30000);
         c.setRequestMethod("GET");
@@ -236,7 +214,7 @@ public final class CtLog {
     // 密钥库读写（modpkica_ct_list.json，v3 风格）
     // ============================================================
 
-    /** 读取全部日志密钥对。文件不存在返回空列表。 */
+    /** 读取全部日志密钥对。文件不存在返回空列表。P2-12：MiniJson DOM 解析。 */
     public static synchronized List<LogKey> loadKeys(String baseDir) {
         List<LogKey> out = new ArrayList<>();
         Path p = Paths.get(keysJsonPath(baseDir));
@@ -245,35 +223,256 @@ public final class CtLog {
         }
         try {
             String json = new String(Files.readAllBytes(p), StandardCharsets.UTF_8);
-            Pattern pid = Pattern.compile("\"log_id\"\\s*:\\s*\"([^\"]+)\"");
-            Matcher m = pid.matcher(json);
-            while (m.find()) {
-                // 本条 log 对象起点：log_id 前最近的 {（description 在 log_id 之前）
-                int objStart = json.lastIndexOf("{", m.start());
-                int objEnd = json.indexOf("}", m.end());
-                if (objStart < 0) {
-                    objStart = 0;
-                }
-                String seg = json.substring(objStart, objEnd);
-                LogKey k = new LogKey();
-                k.logId = m.group(1);
-                k.description = grab(seg, "\"description\"");
-                k.key = grab(seg, "\"key\"");
-                k.privateKey = grab(seg, "\"private_key\"");
-                String st = grab(seg, "\"state\"");
-                k.state = st.isEmpty() ? "usable" : st;
-                String ty = grab(seg, "\"type\"");
-                k.type = ty.isEmpty() ? "ECDSA" : ty;
-                k.url = grab(seg, "\"url\"");
-                k.created = grab(seg, "\"created\"");
-                if (!k.key.isEmpty()) {
-                    out.add(k);
+            Map<String, Object> root = MiniJson.parse(json);
+            java.util.List<Map<String, Object>> logs = MiniJson.collectLogs(root);
+            if (!logs.isEmpty()) {
+                for (Map<String, Object> lo : logs) {
+                    LogKey k = new LogKey();
+                    k.logId = MiniJson.strVal(lo.get("log_id"));
+                    k.description = MiniJson.strVal(lo.get("description"));
+                    k.key = MiniJson.strVal(lo.get("key"));
+                    k.privateKey = MiniJson.strVal(lo.get("private_key"));
+                    String st = MiniJson.strVal(lo.get("state"));
+                    k.state = (st == null || st.isEmpty()) ? "usable" : st;
+                    String ty = MiniJson.strVal(lo.get("type"));
+                    k.type = (ty == null || ty.isEmpty()) ? "ECDSA" : ty;
+                    k.url = MiniJson.strVal(lo.get("url"));
+                    k.created = MiniJson.strVal(lo.get("created"));
+                    if (k.key != null && !k.key.isEmpty()) {
+                        out.add(k);
+                    }
                 }
             }
         } catch (Exception e) {
             MLog.appendErr(baseDir, "CTLog密钥库读取异常", keysJsonPath(baseDir), String.valueOf(e));
         }
         return out;
+    }
+
+    /** 极简 JSON DOM 解析器（P2-12：替代脆弱的正则提取，支持对象/数组/字符串转义）。
+     *  仅供本项目离线环境使用，无外部依赖。 */
+    static final class MiniJson {
+        static Map<String, Object> parse(String s) throws Exception {
+            if (s == null) {
+                throw new IllegalArgumentException("JSON 为空");
+            }
+            Ctx c = new Ctx(s);
+            Object v = c.value();
+            if (!(v instanceof Map)) {
+                throw new IllegalArgumentException("JSON 顶层必须是对象");
+            }
+            @SuppressWarnings("unchecked")
+            Map<String, Object> m = (Map<String, Object>) v;
+            return m;
+        }
+
+        static String strVal(Object o) {
+            return o == null ? null : String.valueOf(o);
+        }
+
+        /** 递归收集 JSON 树中所有日志对象（兼容顶层 logs 与 operators[].logs 两种 v3 结构）。 */
+        static java.util.List<Map<String, Object>> collectLogs(Object node) {
+            java.util.List<Map<String, Object>> out = new ArrayList<>();
+            if (node instanceof Map) {
+                Map<?, ?> m = (Map<?, ?>) node;
+                if (m.containsKey("log_id") || m.containsKey("key") || m.containsKey("description")) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> asLog = (Map<String, Object>) m;
+                    out.add(asLog);
+                }
+                for (Object v : m.values()) {
+                    out.addAll(collectLogs(v));
+                }
+            } else if (node instanceof List) {
+                for (Object o : (List<?>) node) {
+                    out.addAll(collectLogs(o));
+                }
+            }
+            return out;
+        }
+
+        private static final class Ctx {
+            final String s;
+            int i;
+
+            Ctx(String s) {
+                this.s = s;
+            }
+
+            void ws() {
+                while (i < s.length() && Character.isWhitespace(s.charAt(i))) {
+                    i++;
+                }
+            }
+
+            Object value() throws Exception {
+                ws();
+                if (i >= s.length()) {
+                    throw new IllegalArgumentException("JSON 意外结尾");
+                }
+                char c = s.charAt(i);
+                if (c == '{') {
+                    return obj();
+                }
+                if (c == '[') {
+                    return arr();
+                }
+                if (c == '"') {
+                    return str();
+                }
+                if (c == 't') {
+                    expect("true");
+                    return Boolean.TRUE;
+                }
+                if (c == 'f') {
+                    expect("false");
+                    return Boolean.FALSE;
+                }
+                if (c == 'n') {
+                    expect("null");
+                    return null;
+                }
+                return num();
+            }
+
+            Map<String, Object> obj() throws Exception {
+                Map<String, Object> m = new java.util.LinkedHashMap<>();
+                i++;
+                ws();
+                if (i < s.length() && s.charAt(i) == '}') {
+                    i++;
+                    return m;
+                }
+                while (true) {
+                    ws();
+                    if (i >= s.length() || s.charAt(i) != '"') {
+                        throw new IllegalArgumentException("JSON 对象键应为字符串");
+                    }
+                    String key = str();
+                    ws();
+                    if (i >= s.length() || s.charAt(i) != ':') {
+                        throw new IllegalArgumentException("JSON 缺冒号");
+                    }
+                    i++;
+                    m.put(key, value());
+                    ws();
+                    if (i >= s.length()) {
+                        throw new IllegalArgumentException("JSON 对象未闭合");
+                    }
+                    char c = s.charAt(i);
+                    if (c == ',') {
+                        i++;
+                        continue;
+                    }
+                    if (c == '}') {
+                        i++;
+                        return m;
+                    }
+                    throw new IllegalArgumentException("JSON 对象分隔符错误: " + c);
+                }
+            }
+
+            List<Object> arr() throws Exception {
+                List<Object> l = new ArrayList<>();
+                i++;
+                ws();
+                if (i < s.length() && s.charAt(i) == ']') {
+                    i++;
+                    return l;
+                }
+                while (true) {
+                    l.add(value());
+                    ws();
+                    if (i >= s.length()) {
+                        throw new IllegalArgumentException("JSON 数组未闭合");
+                    }
+                    char c = s.charAt(i);
+                    if (c == ',') {
+                        i++;
+                        continue;
+                    }
+                    if (c == ']') {
+                        i++;
+                        return l;
+                    }
+                    throw new IllegalArgumentException("JSON 数组分隔符错误: " + c);
+                }
+            }
+
+            String str() throws Exception {
+                if (s.charAt(i) != '"') {
+                    throw new IllegalArgumentException("JSON 应为字符串");
+                }
+                i++;
+                StringBuilder sb = new StringBuilder();
+                while (true) {
+                    if (i >= s.length()) {
+                        throw new IllegalArgumentException("JSON 字符串未闭合");
+                    }
+                    char c = s.charAt(i++);
+                    if (c == '"') {
+                        return sb.toString();
+                    }
+                    if (c == '\\') {
+                        if (i >= s.length()) {
+                            throw new IllegalArgumentException("JSON 转义未闭合");
+                        }
+                        char e = s.charAt(i++);
+                        switch (e) {
+                            case '"': sb.append('"'); break;
+                            case '\\': sb.append('\\'); break;
+                            case '/': sb.append('/'); break;
+                            case 'b': sb.append('\b'); break;
+                            case 'f': sb.append('\f'); break;
+                            case 'n': sb.append('\n'); break;
+                            case 'r': sb.append('\r'); break;
+                            case 't': sb.append('\t'); break;
+                            case 'u': {
+                                if (i + 4 > s.length()) {
+                                    throw new IllegalArgumentException("JSON \\u 转义截断");
+                                }
+                                String h = s.substring(i, i + 4);
+                                i += 4;
+                                sb.append((char) Integer.parseInt(h, 16));
+                                break;
+                            }
+                            default: throw new IllegalArgumentException("JSON 非法转义 \\" + e);
+                        }
+                    } else {
+                        sb.append(c);
+                    }
+                }
+            }
+
+            Object num() throws Exception {
+                int st = i;
+                while (i < s.length() && (Character.isDigit(s.charAt(i))
+                        || s.charAt(i) == '+' || s.charAt(i) == '-'
+                        || s.charAt(i) == '.' || s.charAt(i) == 'e' || s.charAt(i) == 'E')) {
+                    i++;
+                }
+                String t = s.substring(st, i);
+                if (t.isEmpty()) {
+                    throw new IllegalArgumentException("JSON 非法数字");
+                }
+                try {
+                    return Long.parseLong(t);
+                } catch (Exception ignore) {
+                }
+                try {
+                    return Double.parseDouble(t);
+                } catch (Exception e2) {
+                    throw new IllegalArgumentException("JSON 非法数字: " + t);
+                }
+            }
+
+            void expect(String w) throws Exception {
+                if (!s.startsWith(w, i)) {
+                    throw new IllegalArgumentException("JSON 非法字面量: " + w);
+                }
+                i += w.length();
+            }
+        }
     }
 
     /** 从 JSON 片段中提取字符串字段值。 */
@@ -617,6 +816,11 @@ public final class CtLog {
             Path p = Paths.get(logsTxtPath(baseDir));
             if (p.getParent() != null && !Files.exists(p.getParent())) {
                 Files.createDirectories(p.getParent());
+            }
+            // P2-11：轮转——超过 10MB 时归档为 ctlogs.old.txt（覆盖旧档，仅保留最近两份）
+            if (Files.exists(p) && Files.size(p) > 10L * 1024 * 1024) {
+                Path old = Paths.get(logsTxtPath(baseDir) + ".old");
+                Files.move(p, old, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
             }
             Files.writeString(p, line + "\n", StandardCharsets.UTF_8,
                     StandardOpenOption.CREATE, StandardOpenOption.APPEND);

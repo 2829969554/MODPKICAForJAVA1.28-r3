@@ -40,7 +40,8 @@ echo "============================================"
 echo "[1/2] Compiling shared library and all 7 main programs..."
 rm -rf out
 mkdir -p out
-javac -encoding UTF-8 -cp "$RUN_CP" -d out src/modpkica/*.java
+# -Xlint:all surfaces every warning; build still succeeds unless it is an error.
+javac -Xlint:all -encoding UTF-8 -cp "$RUN_CP" -d out src/modpkica/*.java
 
 echo "[2/2] Verifying class output..."
 for cls in MAIN Admin MakeRoot MakeCert RootGetCrl CertVerify Auto WebAdmin; do
@@ -93,7 +94,7 @@ if [ -n "$RUN" ]; then
         9)
             # compile unit tests, then run them (set -e aborts on compile failure)
             mkdir -p debug_test/classes
-            javac -encoding UTF-8 -cp "out:$RUN_CP" -d debug_test/classes debug_test/ModpkicaUnitTest.java
+            javac -Xlint:all -encoding UTF-8 -cp "out:$RUN_CP" -d debug_test/classes debug_test/ModpkicaUnitTest.java
             java "-Dfile.encoding=UTF-8" -cp "out:debug_test/classes:$RUN_CP" ModpkicaUnitTest
             ;;
     esac

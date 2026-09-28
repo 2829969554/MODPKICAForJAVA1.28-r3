@@ -144,6 +144,14 @@ public final class RootGetCrl {
                                                          String issuerSerial,
                                                          String akiHex) throws Exception {
         java.nio.file.Path p = java.nio.file.Paths.get(webCrlDir, "num.txt");
+        // P2-13：读-改-写整体放入跨进程文件锁（num.txt.lock），写盘走 tmp+fsync+原子替换
+        java.nio.file.Path lockPath = java.nio.file.Paths.get(webCrlDir, "num.txt.lock");
+        try (java.nio.channels.FileChannel lc = java.nio.channels.FileChannel.open(lockPath,
+                java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.WRITE);
+             java.nio.channels.FileLock fl = lc.lock()) {
+            if (!fl.isValid()) {
+                throw new java.io.IOException("CRL num.txt lock invalid");
+            }
         java.util.List<String> original = new ArrayList<>();
         java.math.BigInteger current = java.math.BigInteger.ZERO;
         boolean found = false;
@@ -185,9 +193,17 @@ public final class RootGetCrl {
             sb.append(issuerSerial).append(" ").append(akiHex).append(" ")
                     .append(next).append("\r\n");
         }
-        java.nio.file.Files.write(p, sb.toString().getBytes(
-                java.nio.charset.StandardCharsets.UTF_8));
+        java.nio.file.Path tmp = java.nio.file.Paths.get(webCrlDir, "num.txt.tmp");
+        java.nio.file.Files.write(tmp, sb.toString().getBytes(
+                java.nio.charset.StandardCharsets.UTF_8),
+                java.nio.file.StandardOpenOption.CREATE,
+                java.nio.file.StandardOpenOption.TRUNCATE_EXISTING);
+        try (java.io.FileOutputStream fos = new java.io.FileOutputStream(tmp.toString(), true)) {
+            fos.getFD().sync();
+        }
+        java.nio.file.Files.move(tmp, p, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
         return next;
+        } // end of file lock
     }
 
     /** CERTS.txt 内部时间（本地时间）转 Date。 */
