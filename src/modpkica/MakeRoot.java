@@ -223,7 +223,7 @@ public final class MakeRoot {
         PemIO.writeCert(webDir + serialHex + ".crt", cert);
         PemIO.writePrivateKey(rootDir + serialHex + ".key", kp.getPrivate(), keyType);
 
-        // ---- 7. 追加 CERTS.txt 记录（时间=当前-3天，与 Go 版 auto newcert 一致） ----
+        // ---- 7. 追加 CERTS.txt 记录（登记时间=当前真实签发时间） ----
         CertsDB db = new CertsDB();
         db.load(baseDir);
         CertsDB.CertEntry e = new CertsDB.CertEntry();
@@ -231,7 +231,7 @@ public final class MakeRoot {
         e.type = 'R';
         e.status = 'V';
         e.reason = 0;
-        e.time = LocalDateTime.now().minusDays(3);
+        e.time = LocalDateTime.now();
         e.issuerId = serialHex; // 根证书颁发者=自身
         e.algo = keyType;
         db.addEntry(e);

@@ -1,4 +1,4 @@
-# MODPKICA Java 复刻版 v1.28（BC 1.85 离线）
+# MODPKICA Java 复刻版 v1.28-r3（BC 1.85 离线）
 
 > 使用 **Java + BouncyCastle 1.85** 离线复刻 Go 版 MODPKICA 全套 PKI 功能：X.509 证书签发、CRL 吊销列表、OCSP 在线状态、RFC3161 / Authenticode 时间戳、RFC 6962 CT 日志服务（SCT 服务管理）、WebAdmin 浏览器管理面板。
 >
@@ -525,6 +525,39 @@ A：离线 / 无外网环境会请求失败，但签名**不中断**——时间
 ---
 
 ## 更新记录
+- **v1.28-r3（2026-10-03）——CT 日志服务扩展：RFC 6962 §4 标准 HTTP API 全套（/ct/v1）**
+  - **背景**：用户问「/ct/add 是不是太简洁了」，要求在不改动现有 `/ct/add`（及现有任何函数/接口）的前提下，按 RFC 6962 §4 扩展完整 CT 日志 API——**全部为独立新增 function，现有 `signSctList / pickLogKeys / buildSctInput / submitPrecert` 一行未动**
+  - **新增 8 个标准接口（`/ct/v1` 前缀，MAIN.java 新 handler `handleCtV1` 统一分发，未知路径 404，校验错误 400，内部异常 500）**：
+    - `POST /ct/v1/add-chain`：接收 base64(DER) 证书链（叶子+颁发者+根），**拒绝含 poison 扩展的预证书**（提示「正式证书请使用 add-chain 接口」）；逐级校验 issuer/subject 匹配 + 签名，issuerKeyHash = SHA-256(颁发者公钥 SPKI)；返回 RFC 6962 §4.1 格式 SCT（sct_version/id/timestamp/extensions/signature）
+    - `POST /ct/v1/add-pre-chain`：接收预证书链，**必须含 poison 扩展且 ≥2 个证书**；issuerKeyHash 取 chain[1] 公钥 SPKI；SM2 预证书自动选 SM2 日志密钥（`resolveLogKey`：`?log_id=` 精确匹配否则第一个 usable 且类型匹配）
+    - `GET /ct/v1/get-sth`：返回 tree_size / timestamp（取最后条目时间）/ sha256_root_hash / tree_head_signature（version=0 + sig_type=1 + u64 ts + 32B root，用日志密钥签名）
+    - `GET /ct/v1/get-roots`：返回 CERTS.txt 中全部 R 类型根的 **DER** base64 数组（§4.7 要求 DER——修复：ROOT 目录 .crt 为 PEM，首字节检测 `-----BEGIN` 后用 `X509JsonConverter.pemToDer` 转 DER）
+    - `GET /ct/v1/get-entries?start=&end=`：返回 leaf_input + extra_data（x509_entry / precert_entry 双类型），越界返回 400
+    - `GET /ct/v1/get-proof-by-hash?hash=&tree_size=`：返回 leaf_index + audit_path（§3.4.1/3.4.2 审计路径）
+    - `GET /ct/v1/get-sth-consistency?first=&second=`：返回两棵树一致性证明（§3.4.3）——**修复 first=0 边界 bug**：`consNode` 增加 `m==0` 短路，`first=0&second=N` 返回空数组 `[]`（Google CT 行为；原实现递归进单元素子树产生错误节点）
+    - `GET /ct/v1/get-entry-and-proof?leaf_index=&tree_size=`：返回 leaf_input + extra_data + audit_path
+  - **Merkle 树持久化（CtLog.java 新增）**：`PKI/CTLOG/trees/{log_id hex}.json`，JSON Lines 逐行追加 `{"leaf_input":"b64","extra_data":"b64"}`——O(1) 追加、不删除、append-only（对齐 RFC 6962）；新增 `loadTreeEntries / appendTreeEntry / mthNode / mthRoot / auditPath / consistencyProof / treeHeadSignature / signOneSct` 等方法；SCT 签发与 Merkle 树追加同一事务（`signOneSct` 复用现有 `buildSctInput` / `buildSerializedSct` / `signInput`）
+  - **其他修复**：业务校验错误统一返回 **400**（此前 500，RFC 6962 §4 约定 4xx 客户端错误）；MAIN 启动信息补充 `CT日志服务 /ct/add` 与 `CT标准API /ct/v1/...` 说明；新增 `verifyChainLinks / resolveLogKey / parseB64Chain / queryParam / intParam / sendJson / jsonEscape` 等辅助函数
+  - **验证（全部实测）**：`javac -Xlint:all` **零警告**；两次 `add-chain` → tree_size 1→2、SCT timestamp 与 `get-sth` 完全一致；`get-roots` 首字节 `30 82`（DER ✓）；**密码学级独立核验**——用 `get-proof-by-hash` 审计路径独立重算 Merkle 根 == `get-sth` 根（ROOT MATCH: True）、用 `first=0&second=2` 一致性证明独立重算根同样匹配（CONSISTENCY MATCH: True，且修复后 first=0 返回 `[]`、first=1 返回 1 节点）；`add-pre-chain` 传正式证书 → 400 拒绝 ✓；`get-entries` 越界 → 400 ✓；单元测试 `build.cmd 9` → **162 passed / 0 failed**；冒烟产生的测试树数据与临时文件已清理
+  - **铁律遵守**：未运行任何 ResetData / ResetExe 类脚本；现有 `/ct/add` 与 `MakeCert` 的 SCT 提交流程（`CtLog.submitPrecert`）零改动；不加 API 鉴权、不改监听方式、文件明文存储
+
+- **v1.28-r2（2026-10-02）——全项目源码自检修复（18 项）+ 登记时间真实化**
+  - **自检方式**：对 `src/modpkica/` 全部 23 个源码类逐文件审查（Read + Grep），输出 18 项缺陷清单（1 高 H1 / 5 中 M1–M5 / 12 低 L1–L12），并确认无问题区段（MAIN 请求体读中限流 + 路径穿越防护、CertsDB 原子写 + 文件锁、MLog 线程安全、MakeCert 策略/SCT/颁发者校验、CtLog 选组 ≤3、X509JsonConverter 往返检测 + raw 兜底、无 Runtime.exec 等）
+  - **H1 WebAdmin 写接口并发锁补全**：`WRITE_PATHS` 由 15 项补全至 21 项——新增 `/api/certs/delete`、`/api/ctlog/gen|delete|enable|pause|publicFetch`，凡改动 CERTS.txt / myCERTS.txt / CONFIG.txt / modpkica_ct_list.json / log_list.json / CRL / OCSP / TIMSTAMP / 证书私钥文件的接口统一入写锁
+  - **M1 CertsDB 线程安全**：内存 `entries` 改为 `CopyOnWriteArrayList`；`revokeCert` 改为锁内**克隆替换**（读方永不看到半更新字段）；`getAll()` 返回不可变快照；`rewriteAll` 先写回 `preservedLines`（空行 + `#` 注释行）再写条目——保住「右键删除证书 = 行首 `#` 注释不真删」的既有语义
+  - **M2 PemIO 私钥解析与写入健壮性**：`ENCRYPTED PRIVATE KEY` 从 PKCS#8 直通拆出，明确报错「不支持加密私钥…请先解密为标准 PKCS#8 私钥再导入」；`detectKeyType` 补全标准 PKCS#8 算法 OID 映射（RSA `1.2.840.113549.1.1.1`、RSA-PSS `…1.1.10`、SM2 曲线 `1.2.156.10197.1.301` 归 SM2 否则 ECC）——修复标准 PKCS#8 RSA 私钥被误判 ECC；`writePemObject` 改为原子写（新增 `PemIO.atomicWrite`：tmp → fsync → .bak → move，POSIX 权限 600）
+  - **M3 WebAdmin 输入校验与路径规范化**：新增 `normSerial()`（去 `0x` 前缀 + 小写 + `[0-9a-fA-F]+` 白名单，非法返回 null）；`qp()` 改 URLDecoder UTF-8 解码；`certDownload` / `certExport` / `loadCertBySource` / `findCertFile` / `findKeyFile` / `rekeyAction` / `renewAction` / `myDelete` / `saveRekeyFiles` 全部先 normSerial 再拼路径（共 23 处序列号拼路径落点全覆盖）
+  - **M4 MakeCert 并发写安全**：`removeCertsLine` 改 synchronized + `PemIO.atomicWrite` 原子替换，保留 `#`/空行——TSA / OCSP 重跑不再可能半截写坏 CERTS.txt
+  - **M5 MAIN 多线程与资源管理**：`server.setExecutor(Executors.newFixedThreadPool(8))` 替代单线程执行器（落实「服务不能改成多线程吗」的历史诉求；CertsDB 已改 CopyOnWrite + 锁内写，可安全并发 reload / 查询）；`writeFile` 加 synchronized（OCSP / 时间戳 / CT 调试文件并发写串行化）；3 处 500 分支补 `ex.close()`（OCSP / Authenticode / RFC3161）；新增安静模式 `-Dmodpkica.quiet=true`（`log()` 静默，启动信息提示）
+  - **L1/L2/L3**：WebAdmin `readAll` 读中限流（默认 8MB，multipart 256MB）；MAIN 调试文件并发写串行；500 分支连接释放
+  - **L4 tailFile 中文乱码修复**：重写为「仅按块定位换行索引、整段一次性 UTF-8 解码」，删除空操作 normalizeTail——多字节中文不再按块截断
+  - **L5 build 脚本示例过时修复**：`build.cmd` / `build.sh` 的 MakeCert 示例与帮助文本中已废除的 `root` 颁发者别名改为 `ROOTSERIAL` 占位符（注释注明 = CERTS.txt 中 R 类型根证书序列号，多根模型已废除 root 别名）
+  - **L6/L7 CertUtil 修正**：`getSignatureAlgOid` PQC 分支由硬编码 ML-DSA-65 OID 改为按规格映射（`.17`=ML-DSA-44 / `.18`=ML-DSA-65 / `.19`=ML-DSA-87，FIPS 204）；`buildCpsPolicy` 占位 OID `1.2.3.4.1` 改为项目标准 `1.3.6.1.4.1.4146.1.95`
+  - **L8 登记时间真实化（用户确认）**：`MakeRoot` / `MakeCert` 登记 CERTS.txt 的时间、`Auto` 的 `newcert` 默认时间与 `revoke` 吊销时间，由 `LocalDateTime.now().minusDays(3)` 全部改为真实时间 `now()`——`revoke` 与 `restore` 行为统一（此前 revoke 比 restore 早 3 天，属旧 Go 版对齐遗留）
+  - **L9–L12**：PemIO 加密私钥提示信息明确化；WebAdmin 路径拼接前规范序列号；手写 JSON 解析新增 `readJsonString` 统一支持 `\n \r \t \b \f \/ \" \\` 与 `\uXXXX` 十六进制转义；PemIO 原子写落地
+  - **验证**：`javac -Xlint:all` **零警告**；单元测试 `build.cmd 9` → **151 passed / 0 failed**（KeyUsage 无损往返、PQC 44/65/87、RSA-PSS、SHA3、DSA、EdDSA、CRL 扩展、42 个真实证书样本 DER 字节级往返、SCT、JSON 自适应最小化等 17 组）；顺带修复单测 1 处 deprecation 警告（`getKeyIdentifier()` → `getKeyIdentifierOctets()`）
+  - **铁律遵守**：未运行任何 ResetData / ResetExe 类脚本；SHA1 保持可用（仅注释警告、无 alert）；不改监听方式（默认 127.0.0.1）、不改文件存储格式、不加 API 鉴权；证书过期不影响信任链（2001–2099 样本离线验证实测通过）
+
 - **v1.28（2026-09-28）——审计修复收尾 + 签发证书策略/路径长度 + 右键删除证书（注释式）**
   - **基于 20260927 逐文件逐函数源码审计报告的修复**：完成 P1-01 / P1-03 / P1-05 三项更新（证书验证与解析的时间无关性——证书过期不影响信任关系，满足"一百年后仍可用此证书验证现在验证的数据与证书链"的离线验证要求）与 P2 系列优化（签名专区单文件上传上限按需求提升至 **20MB**、总请求体上限 **256MB**、JSON 4MB；`javac -Xlint:all` 编译警告从 396 条**清零**；build.cmd / build.sh 保留并完善 1-9 编号自动运行）
   - **签发证书页增强**：证书类型「中间CA」时新增「路径长度」可编辑下拉（默认 `null`，可选 0-9）→ 后端 `MakeCert` 新增 `a[12]=pathlen`，按 `BasicConstraints(pathLen)` 写入中间 CA 证书；证书类型「终端证书」时新增「证书策略」分区，8 个多选框（SSL `DV/IV/OV/EV`、代码签名 `标准/EV`、文档签名、TSA 对应 OID）——**仅勾选的策略才写入证书策略扩展**，基础策略 `1.3.6.1.4.1.4146.1.95`（CPS + 用户通告）始终保留；`Admin.doSignCert` 新增 14 参重载，原 12 参 CLI 入口保持兼容

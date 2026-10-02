@@ -248,7 +248,7 @@ public class ModpkicaUnitTest {
                     byte[] aki = org.bouncycastle.asn1.x509.AuthorityKeyIdentifier.getInstance(
                             DEROctetString.getInstance(
                                     ASN1Primitive.fromByteArray(akiDer)).getOctets())
-                            .getKeyIdentifier();
+                            .getKeyIdentifierOctets();
                     check(Arrays.equals(aki, akiExpected),
                             "CRL[" + expected + "]: AKI keyIdentifier = CA SKI");
                 }

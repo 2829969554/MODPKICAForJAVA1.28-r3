@@ -321,13 +321,22 @@ public final class WebAdmin {
         sendJson(ex, 404, Map.of("ok", false, "message", "404: " + path));
     }
 
-    /** 写 PKI 数据的管理 API（并发时串行执行，避免文件竞争）。 */
+    /** 写 PKI 数据的管理 API（并发时串行执行，避免文件竞争）。
+     *  注意：凡改动 CERTS.txt / myCERTS.txt / CONFIG.txt / modpkica_ct_list.json /
+     *  log_list.json / CRL / OCSP / TIMSTAMP / 证书与私钥文件 的接口都必须在此登记，
+     *  否则并发时与其它写操作发生文件竞争（tmp→move 互相覆盖）。 */
     private static final java.util.Set<String> WRITE_PATHS = java.util.Set.of(
             "/api/config", "/api/init", "/api/makeroot", "/api/signcert",
             "/api/revoke", "/api/restore", "/api/rekey", "/api/renew",
             "/api/crl", "/api/initocsp", "/api/inittimestamp",
             "/api/sign/exe", "/api/sign/pdf",
-            "/api/my/import", "/api/my/delete");
+            "/api/my/import", "/api/my/delete",
+            // 证书库删除（改 CERTS.txt 注释行）与 CT 日志密钥管理（写 modpkica_ct_list.json / 拉取 log_list.json）
+            "/api/certs/delete",
+            "/api/ctlog/gen", "/api/ctlog/delete",
+            "/api/ctlog/enable", "/api/ctlog/pause", "/api/ctlog/publicFetch",
+            // 模板管理（写 PKI/tamplate/data.json）
+            "/api/template/save", "/api/template/delete", "/api/template/sign");
 
     /** 写操作全局锁：保证 PKI 文件（证书/私钥/CRL/CONFIG/日志）串行修改。 */
     private static final Object WRITE_LOCK = new Object();
@@ -452,6 +461,22 @@ public final class WebAdmin {
                             str(m, "days"), str(m, "dns"), str(m, "ips"),
                             str(m, "issuer"), str(m, "algo"),
                             str(m, "pathlen"), str(m, "policy")));
+                    return;
+                case "/api/template/list":
+                    if ("GET".equalsIgnoreCase(method)) {
+                        sendJson(ex, 200, templateListJson());
+                    } else {
+                        sendJson(ex, 405, Map.of("ok", false, "message", "仅支持 GET"));
+                    }
+                    return;
+                case "/api/template/save":
+                    runAction(ex, m -> templateSave(m));
+                    return;
+                case "/api/template/delete":
+                    runAction(ex, m -> templateDelete(m));
+                    return;
+                case "/api/template/sign":
+                    runAction(ex, m -> templateSign(m));
                     return;
                 case "/api/revoke":
                     runAction(ex, m -> Admin.doRevoke(baseDir,
@@ -1024,10 +1049,10 @@ public final class WebAdmin {
      * 对替换公钥后的 JSON 重建 TBS 并用 CA 私钥重签 → 新证书与私钥写回原位置替换。
      */
     private static String rekeyAction(String serial) throws Exception {
-        if (serial == null || serial.trim().isEmpty()) {
-            throw new IllegalArgumentException("缺少证书序列号");
+        serial = normSerial(serial);
+        if (serial == null) {
+            throw new IllegalArgumentException("缺少或非法证书序列号");
         }
-        serial = serial.trim().toLowerCase();
 
         // 1) 登记表
         CertsDB db = new CertsDB();
@@ -1096,10 +1121,10 @@ public final class WebAdmin {
      * 新证书写回原位置（公钥与扩展保持不变，仅时间更新）。
      */
     private static String renewAction(String serial, String notBeforeStr, String notAfterStr) throws Exception {
-        if (serial == null || serial.trim().isEmpty()) {
-            throw new IllegalArgumentException("缺少证书序列号");
+        serial = normSerial(serial);
+        if (serial == null) {
+            throw new IllegalArgumentException("缺少或非法证书序列号");
         }
-        serial = serial.trim().toLowerCase();
         Date notBefore = parseLocalDateTime(notBeforeStr);
         Date notAfter = parseLocalDateTime(notAfterStr);
         if (!notAfter.after(notBefore)) {
@@ -1239,6 +1264,14 @@ public final class WebAdmin {
      */
     private static String saveRekeyFiles(String serial, CertsDB.CertEntry entry,
                                          byte[] certPem, KeyPair kp, String keyType) throws Exception {
+        serial = normSerial(serial);
+        if (serial == null) {
+            throw new IllegalArgumentException("非法序列号");
+        }
+        String issuerId = normSerial(entry.issuerId);
+        if (issuerId == null) {
+            throw new IllegalArgumentException("登记表颁发者序列号非法: " + entry.issuerId);
+        }
         StringBuilder sb = new StringBuilder();
         Path base = Paths.get(baseDir, "PKI");
         String syncDir = "PKI/WebPublic/CRT/" + serial + ".crt";
@@ -1814,10 +1847,11 @@ public final class WebAdmin {
 
     /** /api/my/delete：删除 PKI/MY/序列号.crt/.key，并从台账移除记录。 */
     private static String myDelete(String serial) throws Exception {
-        if (serial == null || serial.isEmpty()) {
-            throw new IllegalArgumentException("缺少序列号");
+        serial = normSerial(serial);
+        if (serial == null) {
+            throw new IllegalArgumentException("缺少或非法序列号");
         }
-        String s = serial.toLowerCase();
+        String s = serial;
         Path f = myRecordPath();
         if (!Files.exists(f) || !myHasSerial(s)) {
             throw new IllegalArgumentException("未找到序列号 " + serial + "（myCERTS.txt 无此记录）");
@@ -2335,6 +2369,12 @@ public final class WebAdmin {
 
     /** 按序列号查找证书文件（多目录回退；OCSP/TIMSTAMP 按内容扫描匹配）。 */
     static String findCertFile(String serial) {
+        // 路径拼接前白名单校验：仅允许 hex 序列号，防止 ../ 穿越读取任意文件
+        String s = normSerial(serial);
+        if (s == null) {
+            return null;
+        }
+        serial = s;
         String[] dirs = {
             "PKI/WebPublic/CRT/", "PKI/ROOT/", "PKI/CA/", "PKI/CERT/", "PKI/KEY/", "PKI/MY/"
         };
@@ -2539,12 +2579,9 @@ public final class WebAdmin {
     /** /api/certjson?serial=xxx：返回 X509JsonConverter 风格的证书 JSON 文本。 */
     private static Map<String, Object> certJson(HttpExchange ex) throws Exception {
         String q = ex.getRequestURI().getQuery();
-        String serial = null;
-        if (q != null && q.contains("serial=")) {
-            serial = q.substring(q.indexOf("serial=") + 7).split("&")[0];
-        }
-        if (serial == null || serial.isEmpty()) {
-            return Map.of("ok", false, "message", "缺少参数 serial");
+        String serial = normSerial(qp(q, "serial"));
+        if (serial == null) {
+            return Map.of("ok", false, "message", "缺少或非法参数 serial");
         }
         String certPath = findCertFile(serial);
         if (certPath == null) {
@@ -2572,12 +2609,9 @@ public final class WebAdmin {
     /** /api/certchainjson?serial=xxx：按颁发者链递归返回每层证书 JSON（[终端, ..., 根]）。 */
     private static Map<String, Object> certChainJson(HttpExchange ex) throws Exception {
         String q = ex.getRequestURI().getQuery();
-        String serial = null;
-        if (q != null && q.contains("serial=")) {
-            serial = q.substring(q.indexOf("serial=") + 7).split("&")[0];
-        }
-        if (serial == null || serial.isEmpty()) {
-            return Map.of("ok", false, "message", "缺少参数 serial");
+        String serial = normSerial(qp(q, "serial"));
+        if (serial == null) {
+            return Map.of("ok", false, "message", "缺少或非法参数 serial");
         }
         CertsDB db = new CertsDB();
         db.load(baseDir);
@@ -2615,12 +2649,12 @@ public final class WebAdmin {
     /** /api/cert/download?serial=..&kind=..&password=..&src=certs|cacerts|my —— 下载文件（附件）。 */
     private static void certDownload(HttpExchange ex) throws Exception {
         String q = ex.getRequestURI().getQuery();
-        String serial = qp(q, "serial");
+        String serial = normSerial(qp(q, "serial"));
         String kind = qp(q, "kind");
         String password = qp(q, "password");
         String src = qp(q, "src");
-        if (serial == null || serial.isEmpty() || kind == null || kind.isEmpty()) {
-            sendJson(ex, 400, Map.of("ok", false, "message", "缺少参数 serial/kind"));
+        if (serial == null || kind == null || kind.isEmpty()) {
+            sendJson(ex, 400, Map.of("ok", false, "message", "缺少或非法参数 serial/kind"));
             return;
         }
         if (src == null || src.isEmpty()) {
@@ -2699,11 +2733,11 @@ public final class WebAdmin {
     /** /api/cert/export?serial=..&kind=..&src=.. —— 导出文本（剪贴板）。 */
     private static void certExport(HttpExchange ex) throws Exception {
         String q = ex.getRequestURI().getQuery();
-        String serial = qp(q, "serial");
+        String serial = normSerial(qp(q, "serial"));
         String kind = qp(q, "kind");
         String src = qp(q, "src");
-        if (serial == null || serial.isEmpty() || kind == null || kind.isEmpty()) {
-            sendJson(ex, 400, Map.of("ok", false, "message", "缺少参数 serial/kind"));
+        if (serial == null || kind == null || kind.isEmpty()) {
+            sendJson(ex, 400, Map.of("ok", false, "message", "缺少或非法参数 serial/kind"));
             return;
         }
         if (src == null || src.isEmpty()) {
@@ -2764,24 +2798,50 @@ public final class WebAdmin {
         sendJson(ex, 200, Map.of("ok", true, "text", text));
     }
 
-    /** query 参数提取（URL 未解码值）。 */
+    /** query 参数提取（URL 解码，非法编码返回 null）。 */
     private static String qp(String q, String name) {
         if (q == null) {
             return null;
         }
         for (String kv : q.split("&")) {
             if (kv.startsWith(name + "=")) {
-                return kv.substring(name.length() + 1);
+                String v = kv.substring(name.length() + 1);
+                try {
+                    return java.net.URLDecoder.decode(v, StandardCharsets.UTF_8);
+                } catch (IllegalArgumentException e) {
+                    return null;
+                }
             }
         }
         return null;
     }
 
-    /** 按序列号加载证书（src=certs|cacerts|my）。 */
+    /** 序列号规范化：去 0x 前缀 + 小写 + [0-9a-f] 白名单校验。
+     *  返回 null 表示缺失/非法（调用方应返回 400）。所有拼接文件路径的 serial 必须经过本校验，
+     *  防止路径穿越读取任意 .crt/.key。 */
+    private static String normSerial(String serial) {
+        if (serial == null) {
+            return null;
+        }
+        String s = serial.trim();
+        if (s.startsWith("0x") || s.startsWith("0X")) {
+            s = s.substring(2);
+        }
+        if (s.isEmpty() || !s.matches("[0-9a-fA-F]+")) {
+            return null;
+        }
+        return s.toLowerCase();
+    }
+
+    /** 按序列号加载证书（src=certs|cacerts|my）。序列号经 normSerial 白名单校验。 */
     private static java.security.cert.X509Certificate loadCertBySource(String serial, String src)
             throws Exception {
+        serial = normSerial(serial);
+        if (serial == null) {
+            throw new Exception("非法序列号: " + serial);
+        }
         if ("cacerts".equals(src)) {
-            String want = serial.toLowerCase().replace("0x", "");
+            String want = serial;
             for (java.security.cert.X509Certificate c : loadCacertsCerts()) {
                 if (certSerialHex(c).equals(want)) {
                     return c;
@@ -2789,7 +2849,7 @@ public final class WebAdmin {
             }
             throw new Exception("cacerts 未找到序列号: " + serial);
         }
-        String certPath = findCertFile(serial.toLowerCase());
+        String certPath = findCertFile(serial);
         if (certPath == null) {
             throw new Exception("未找到证书文件: " + serial);
         }
@@ -2892,12 +2952,15 @@ public final class WebAdmin {
         return null;
     }
 
-    /** 查找私钥文件路径（相对 baseDir；cacerts 无私钥返回 null）。 */
+    /** 查找私钥文件路径（相对 baseDir；cacerts 无私钥返回 null）。序列号经白名单校验。 */
     private static String findKeyFile(String serial, String src) {
         if ("cacerts".equals(src)) {
             return null;
         }
-        String s = serial.toLowerCase();
+        String s = normSerial(serial);
+        if (s == null) {
+            return null;
+        }
         String[] cands = {
                 "PKI/MY/" + s + ".key",
                 "PKI/KEY/" + s + ".key",
@@ -3072,7 +3135,7 @@ public final class WebAdmin {
         }
     }
 
-    /** 读文件尾部最多 lines 行。 */
+    /** 读文件尾部最多 lines 行（仅定位换行起点，整段一次性 UTF-8 解码，避免分块解码截断多字节中文）。 */
     private static String tailFile(String relPath, int lines) {
         Path f = Paths.get(baseDir, relPath);
         if (!Files.exists(f)) {
@@ -3083,63 +3146,65 @@ public final class WebAdmin {
             long pos = length;
             int newlines = 0;
             long block = Math.min(64 * 1024, length);
-            // 从尾部向前扫描，统计换行
-            StringBuilder sb = new StringBuilder();
             byte[] buf = new byte[(int) block];
+            // 从尾部向前按块扫描，仅定位第 (lines+1) 个换行的字节位置，不在扫描中解码
             while (pos > 0 && newlines <= lines) {
                 long start = Math.max(0, pos - block);
                 int readLen = (int) (pos - start);
                 raf.seek(start);
                 raf.readFully(buf, 0, readLen);
-                // 检查该块中换行数
                 int nl = 0;
+                long cut = -1; // 本块内第 (lines+1) 个换行的下一字节（文件绝对偏移）
                 for (int i = readLen - 1; i >= 0; i--) {
                     if (buf[i] == '\n') {
                         nl++;
                         if (newlines + nl > lines) {
-                            // 找到足够行数的起始点
-                            byte[] tail = new byte[readLen - i - 1];
-                            System.arraycopy(buf, i + 1, tail, 0, tail.length);
-                            sb.insert(0, new String(tail, StandardCharsets.UTF_8));
-                            pos = start + i;
-                            return normalizeTail(sb.toString());
+                            cut = start + i + 1;
+                            break;
                         }
                     }
                 }
+                if (cut >= 0) {
+                    byte[] tail = new byte[(int) (length - cut)];
+                    raf.seek(cut);
+                    raf.readFully(tail);
+                    return new String(tail, StandardCharsets.UTF_8);
+                }
                 newlines += nl;
-                sb.insert(0, new String(buf, 0, readLen, StandardCharsets.UTF_8));
                 pos = start;
                 if (start == 0) {
                     break;
                 }
             }
-            return normalizeTail(sb.toString());
+            // 整个文件不足 lines 行：从头读到尾一次性解码
+            byte[] all = new byte[(int) length];
+            raf.seek(0);
+            raf.readFully(all);
+            return new String(all, StandardCharsets.UTF_8);
         } catch (Exception e) {
             return "(读取日志失败: " + e.getMessage() + ")";
         }
     }
 
-    /** 去掉可能截断的首行（若首行不是以换行结束则说明被切断）。 */
-    private static String normalizeTail(String s) {
-        if (s.isEmpty()) {
-            return s;
-        }
-        int firstNl = s.indexOf('\n');
-        if (firstNl < 0) {
-            return s;
-        }
-        return s;
-    }
-
-    /** 读取请求体全部字节。 */
-    private static byte[] readAll(InputStream in) throws IOException {
+    /** 读取请求体全部字节（读中限流：超过 maxBytes 立即抛 IOException，避免大 body 先占满内存）。 */
+    private static byte[] readAll(InputStream in, long maxBytes) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         byte[] buf = new byte[8192];
+        long total = 0;
         int n;
         while ((n = in.read(buf)) != -1) {
+            total += n;
+            if (total > maxBytes) {
+                throw new IOException("请求体过大（上限 " + (maxBytes / (1024 * 1024)) + "MB）");
+            }
             out.write(buf, 0, n);
         }
         return out.toByteArray();
+    }
+
+    /** 读取请求体全部字节（默认读中上限 8MB，超过即中止）。 */
+    private static byte[] readAll(InputStream in) throws IOException {
+        return readAll(in, 8L * 1024 * 1024);
     }
 
     // ============================================================
@@ -3174,7 +3239,7 @@ public final class WebAdmin {
             } catch (NumberFormatException ignore) {
             }
         }
-        byte[] body = readAll(ex.getRequestBody());
+        byte[] body = readAll(ex.getRequestBody(), 256L * 1024 * 1024);
         if (body.length > 256L * 1024 * 1024) {
             throw new IllegalArgumentException("上传内容过大（总上限 256MB）");
         }
@@ -3639,6 +3704,241 @@ public final class WebAdmin {
         }
         return "usable".equals(state) ? "已启用（usable）" : "已暂停（disable）";
     }
+
+    // ============================================================
+    // 模板管理：PKI/tamplate/data.json（JSON 数组，每条 = 签发参数模板）
+    // 目录名按用户指定拼写 "tamplate"；模板供"签发证书"一键回填与批量签署
+    // ============================================================
+
+    private static Path templatePath() {
+        return Paths.get(baseDir, "PKI", "tamplate", "data.json");
+    }
+
+    private static String fmtTemplateNow() {
+        return new java.text.SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new java.util.Date());
+    }
+
+    /** 读取全部模板（文件不存在/损坏时返回空数组）。 */
+    private static List<Map<String, Object>> templateLoad() {
+        try {
+            Path f = templatePath();
+            if (Files.exists(f)) {
+                String txt = new String(Files.readAllBytes(f), StandardCharsets.UTF_8).trim();
+                if (txt.startsWith("[")) {
+                    return parseJsonArray(txt);
+                }
+            }
+        } catch (Exception e) {
+            MLog.appendErr(baseDir, "模板管理 读取失败", "templateLoad", String.valueOf(e));
+        }
+        return new ArrayList<>();
+    }
+
+    /** 原子写模板文件（先写 tmp 再 move，避免半截 JSON）。 */
+    private static void templateWrite(List<Map<String, Object>> list) throws Exception {
+        Path dir = Paths.get(baseDir, "PKI", "tamplate");
+        Files.createDirectories(dir);
+        StringBuilder sb = new StringBuilder("[");
+        boolean first = true;
+        for (Map<String, Object> e : list) {
+            if (!first) {
+                sb.append(',');
+            }
+            first = false;
+            appendJsonValue(sb, e);
+        }
+        sb.append("]\n");
+        Path f = dir.resolve("data.json");
+        Path tmp = dir.resolve("data.json.tmp");
+        Files.write(tmp, sb.toString().getBytes(StandardCharsets.UTF_8));
+        Files.move(tmp, f, java.nio.file.StandardCopyOption.REPLACE_EXISTING,
+                java.nio.file.StandardCopyOption.ATOMIC_MOVE);
+    }
+
+    /** /api/template/list：模板列表。 */
+    private static Map<String, Object> templateListJson() {
+        return Map.of("ok", true, "data", templateLoad());
+    }
+
+    /** 解析 JSON 对象数组（对象为扁平 key/value，兼容 readJsonString 转义）。 */
+    @SuppressWarnings("unchecked")
+    private static List<Map<String, Object>> parseJsonArray(String json) {
+        List<Map<String, Object>> out = new ArrayList<>();
+        String s = json == null ? "" : json.trim();
+        if (s.isEmpty() || s.charAt(0) != '[') {
+            return out;
+        }
+        int i = 1;
+        while (i < s.length()) {
+            while (i < s.length() && (s.charAt(i) == ' ' || s.charAt(i) == '\t'
+                    || s.charAt(i) == '\n' || s.charAt(i) == '\r' || s.charAt(i) == ',')) {
+                i++;
+            }
+            if (i >= s.length() || s.charAt(i) == ']') {
+                break;
+            }
+            if (s.charAt(i) != '{') {
+                i++;
+                continue;
+            }
+            int depth = 0;
+            int j = i;
+            while (j < s.length()) {
+                char c = s.charAt(j);
+                if (c == '"') {
+                    Object[] r = readJsonString(s, j + 1);
+                    j = (Integer) r[1];
+                    continue;
+                }
+                if (c == '{') {
+                    depth++;
+                } else if (c == '}') {
+                    depth--;
+                    if (depth == 0) {
+                        j++;
+                        break;
+                    }
+                }
+                j++;
+            }
+            Map<String, Object> m = parseJsonObject(s.substring(i, j));
+            if (!m.isEmpty()) {
+                out.add(m);
+            }
+            i = j;
+        }
+        return out;
+    }
+
+    /** /api/template/save：新增（无 id）或更新（带 id）模板。 */
+    private static String templateSave(Map<String, Object> m) throws Exception {
+        String id = str(m, "id");
+        String name = str(m, "name");
+        String ctype = str(m, "ctype");
+        String dn = str(m, "dn");
+        String bits = str(m, "bits");
+        String hash = str(m, "hash");
+        String keyusage = str(m, "keyusage");
+        String exusage = str(m, "exusage");
+        String pathlen = str(m, "pathlen");
+        String policy = str(m, "policy");
+        String days = str(m, "days");
+        String dns = str(m, "dns");
+        String ips = str(m, "ips");
+        String algo = str(m, "algo");
+        if (dn.isEmpty()) {
+            throw new IllegalArgumentException("证书 DN 不能为空");
+        }
+        if (ctype.isEmpty()) ctype = "0";
+        if (algo.isEmpty()) algo = "RSA";
+        if (bits.isEmpty()) bits = "2048";
+        if (hash.isEmpty()) hash = "sha256";
+        // keyusage/exusage 空值 = 证书不携带对应扩展，不得回退默认值
+        if (keyusage == null) keyusage = "";
+        if (exusage == null) exusage = "";
+        if (days.isEmpty()) days = "1";
+        if (dns.isEmpty()) dns = "null";
+        if (ips.isEmpty()) ips = "null";
+        if (pathlen.isEmpty()) pathlen = "null";
+        if (policy == null) policy = "";
+
+        List<Map<String, Object>> list = templateLoad();
+        if (id.isEmpty()) {
+            int maxId = 0;
+            for (Map<String, Object> e : list) {
+                try {
+                    maxId = Math.max(maxId, Integer.parseInt(String.valueOf(e.get("id"))));
+                } catch (Exception ignore) { }
+            }
+            Map<String, Object> rec = new LinkedHashMap<>();
+            rec.put("id", String.valueOf(maxId + 1));
+            rec.put("name", name);
+            rec.put("ctype", ctype);
+            rec.put("dn", dn);
+            rec.put("bits", bits);
+            rec.put("hash", hash);
+            rec.put("keyusage", keyusage);
+            rec.put("exusage", exusage);
+            rec.put("pathlen", pathlen);
+            rec.put("policy", policy);
+            rec.put("days", days);
+            rec.put("dns", dns);
+            rec.put("ips", ips);
+            rec.put("algo", algo);
+            rec.put("createTime", fmtTemplateNow());
+            list.add(rec);
+            templateWrite(list);
+            return "已添加模板 #" + (maxId + 1) + (name.isEmpty() ? "" : "：" + name);
+        }
+        boolean updated = false;
+        for (Map<String, Object> e : list) {
+            if (String.valueOf(e.get("id")).equals(id)) {
+                e.put("name", name);
+                e.put("ctype", ctype);
+                e.put("dn", dn);
+                e.put("bits", bits);
+                e.put("hash", hash);
+                e.put("keyusage", keyusage);
+                e.put("exusage", exusage);
+                e.put("pathlen", pathlen);
+                e.put("policy", policy);
+                e.put("days", days);
+                e.put("dns", dns);
+                e.put("ips", ips);
+                e.put("algo", algo);
+                e.put("createTime", fmtTemplateNow());
+                updated = true;
+                break;
+            }
+        }
+        if (!updated) {
+            throw new IllegalArgumentException("未找到模板 #" + id);
+        }
+        templateWrite(list);
+        return "已更新模板 #" + id + (name.isEmpty() ? "" : "：" + name);
+    }
+
+    /** /api/template/delete：按 id 删除模板。 */
+    private static String templateDelete(Map<String, Object> m) throws Exception {
+        String id = str(m, "id");
+        if (id.isEmpty()) {
+            throw new IllegalArgumentException("缺少模板 id 参数");
+        }
+        List<Map<String, Object>> list = templateLoad();
+        boolean removed = list.removeIf(e -> String.valueOf(e.get("id")).equals(id));
+        if (!removed) {
+            throw new IllegalArgumentException("未找到模板 #" + id);
+        }
+        templateWrite(list);
+        return "已删除模板 #" + id;
+    }
+
+    /** /api/template/sign：按模板参数 + 选中的 R/C 颁发者签发证书（复用 MakeCert 全流程，日志由 runAction/doSignCert 记录）。 */
+    private static String templateSign(Map<String, Object> m) throws Exception {
+        String id = str(m, "id");
+        String issuer = str(m, "issuer");
+        if (id.isEmpty()) {
+            throw new IllegalArgumentException("缺少模板 id 参数");
+        }
+        if (issuer.isEmpty()) {
+            throw new IllegalArgumentException("请选择颁发者证书（类型 R/C）");
+        }
+        Map<String, Object> tpl = null;
+        for (Map<String, Object> e : templateLoad()) {
+            if (String.valueOf(e.get("id")).equals(id)) {
+                tpl = e;
+                break;
+            }
+        }
+        if (tpl == null) {
+            throw new IllegalArgumentException("未找到模板 #" + id);
+        }
+        return Admin.doSignCert(baseDir,
+                str(tpl, "dn"), str(tpl, "bits"), str(tpl, "hash"),
+                str(tpl, "keyusage"), str(tpl, "exusage"), str(tpl, "ctype"),
+                str(tpl, "days"), str(tpl, "dns"), str(tpl, "ips"),
+                issuer, str(tpl, "algo"), str(tpl, "pathlen"), str(tpl, "policy"));
+    }
     private static void sendJson(HttpExchange ex, int code, Map<String, Object> map)
             throws IOException {
         StringBuilder sb = new StringBuilder("{");
@@ -3727,12 +4027,9 @@ public final class WebAdmin {
                 break;
             }
             if (s.charAt(i) == '"') {
-                int end = s.indexOf('"', i + 1);
-                if (end < 0) {
-                    break;
-                }
-                String key = s.substring(i + 1, end);
-                i = end + 1;
+                Object[] kr = readJsonString(s, i + 1);
+                String key = (String) kr[0];
+                i = (Integer) kr[1];
                 while (i < s.length() && s.charAt(i) != ':') {
                     i++;
                 }
@@ -3742,36 +4039,9 @@ public final class WebAdmin {
                 }
                 // 值
                 if (i < s.length() && s.charAt(i) == '"') {
-                    int vEnd = i + 1;
-                    StringBuilder v = new StringBuilder();
-                    while (vEnd < s.length()) {
-                        char c = s.charAt(vEnd);
-                        if (c == '\\' && vEnd + 1 < s.length()) {
-                            char n = s.charAt(vEnd + 1);
-                            if (n == 'n') {
-                                v.append('\n');
-                            } else if (n == 'r') {
-                                v.append('\r');
-                            } else if (n == 't') {
-                                v.append('\t');
-                            } else if (n == '"') {
-                                v.append('"');
-                            } else if (n == '\\') {
-                                v.append('\\');
-                            } else {
-                                v.append(n);
-                            }
-                            vEnd += 2;
-                            continue;
-                        }
-                        if (c == '"') {
-                            break;
-                        }
-                        v.append(c);
-                        vEnd++;
-                    }
-                    out.put(key, v.toString());
-                    i = vEnd + 1;
+                    Object[] vr = readJsonString(s, i + 1);
+                    out.put(key, (String) vr[0]);
+                    i = (Integer) vr[1];
                 } else {
                     int vEnd = i;
                     while (vEnd < s.length() && s.charAt(vEnd) != ',' && s.charAt(vEnd) != '}') {
@@ -3785,6 +4055,51 @@ public final class WebAdmin {
             }
         }
         return out;
+    }
+
+    /** 读取 JSON 字符串字面量（i 指向开引号后一字符），返回 [解码值, 闭引号后一位置]。
+     *  支持 \\n \\r \\t \\b \\f \\/ \\" \\\\ 与 uXXXX 十六进制转义（未闭合时返回剩余内容）。 */
+    private static Object[] readJsonString(String s, int i) {
+        StringBuilder v = new StringBuilder();
+        int p = i;
+        while (p < s.length()) {
+            char c = s.charAt(p);
+            if (c == '\\' && p + 1 < s.length()) {
+                char n = s.charAt(p + 1);
+                switch (n) {
+                    case 'n': v.append('\n'); break;
+                    case 'r': v.append('\r'); break;
+                    case 't': v.append('\t'); break;
+                    case 'b': v.append('\b'); break;
+                    case 'f': v.append('\f'); break;
+                    case '/': v.append('/'); break;
+                    case '"': v.append('"'); break;
+                    case '\\': v.append('\\'); break;
+                    case 'u': {
+                        if (p + 5 < s.length()) {
+                            try {
+                                v.append((char) Integer.parseInt(s.substring(p + 2, p + 6), 16));
+                                p += 4; // uXXXX 转义共 6 字符：p+=4 后由下方 p+=2 收尾
+                            } catch (NumberFormatException e) {
+                                v.append('u');
+                            }
+                        } else {
+                            v.append('u');
+                        }
+                        break;
+                    }
+                    default: v.append(n); break;
+                }
+                p += 2;
+                continue;
+            }
+            if (c == '"') {
+                return new Object[]{v.toString(), p + 1};
+            }
+            v.append(c);
+            p++;
+        }
+        return new Object[]{v.toString(), p}; // 未闭合引号
     }
 
     /** 从解析出的参数取字符串值。 */
@@ -3969,6 +4284,7 @@ public final class WebAdmin {
             <a data-page="ocsp">OCSP 签发</a>
             <a data-page="timestamp">时间戳签发</a>
             <a data-page="verify">证书验证</a>
+            <a data-page="template">模板管理</a>
             <a data-page="debug">调试专区</a>
             <a data-page="ctlog">SCT服务管理</a>
             <a data-page="sign">签名专区</a>
@@ -4207,6 +4523,7 @@ public final class WebAdmin {
                   <div class="row">
                     <div><label>KeyUsage 编号</label>
                       <select id="scKu" onchange="kuSelChanged()">
+                        <option value="">（无 KeyUsage 扩展）</option>
                         <option value="1">1 - 数字签名+不可否认+密钥加密+数据加密+密钥协商（通用）</option>
                         <option value="2">2 - 数字签名+不可否认+证书签名+CRL签名（CA用途）</option>
                         <option value="3">3 - 仅加密 Encipher Only</option>
@@ -4242,6 +4559,11 @@ public final class WebAdmin {
                     <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="scPolDoc"><span>文档签名（1.3.6.1.5.5.7.3.36）</span></label>
                     <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="scPolTsa"><span>TSA 策略（2.23.140.1.4.2）</span></label>
                   </div>
+                  <div style="display:flex;gap:6px;align-items:center;padding-top:8px">
+                    <input id="scPolCustomOid" placeholder="自定义策略 OID，如 1.2.3.4.5" style="flex:1;min-width:220px" onkeydown="if(event.key==='Enter')addScPolCustom()">
+                    <button type="button" onclick="addScPolCustom()">添加自定义策略</button>
+                  </div>
+                  <div id="scPolCustomBox"></div>
                 </div>
 
                 <div class="fsec"><div class="fsec-title">有效期</div>
@@ -4340,6 +4662,24 @@ public final class WebAdmin {
                   <input type="file" id="vfFile" accept=".cer,.crt,.pem" onchange="verifyFile()" style="flex:1;max-width:320px">
                 </div>
                 <pre class="out" id="vfOut"></pre>
+              </div>
+            </div>
+
+            <!-- 模板管理 -->
+            <div class="page" id="page-template">
+              <div class="card">
+                <div class="toolbar">
+                  <h2 style="margin:0">模板管理</h2>
+                  <span style="color:var(--dim);font-size:12px">文件：PKI/tamplate/data.json</span>
+                  <button onclick="openTpModal()">+ 添加模板</button>
+                  <button class="ghost" onclick="loadTemplates()">刷新</button>
+                </div>
+                <div class="hint">模板保存签发证书的全部参数（DN / 算法 / 密钥用途 / EKU / 策略 / 有效期 / SAN），签署时选择 R 或 C 类型颁发者一键签发，操作全程写入 logs.log。</div>
+                <table class="tbl" id="tplTable">
+                  <thead><tr><th style="width:60px">序号</th><th style="width:110px">证书类型</th><th>DN</th><th style="width:150px">时间</th><th style="width:200px">操作</th></tr></thead>
+                  <tbody></tbody>
+                </table>
+                <pre class="out" id="tplMsg"></pre>
               </div>
             </div>
 
@@ -4840,7 +5180,7 @@ public final class WebAdmin {
         </div>
 
         <!-- KeyUsage 密钥用法选择悬浮窗 -->
-        <div class="modal-mask" id="kuModal" style="display:none" onclick="if(event.target===this)closeKuModal()">
+        <div class="modal-mask" id="kuModal" style="display:none;z-index:200" onclick="if(event.target===this)closeKuModal()">
           <div class="modal eku-modal">
             <div class="modal-head">
               <h3>选择密钥用法（KeyUsage</h3>
@@ -4855,7 +5195,7 @@ public final class WebAdmin {
         </div>
 
         <!-- EKU 增强型密钥用法选择悬浮窗 -->
-        <div class="modal-mask" id="ekuModal" style="display:none" onclick="if(event.target===this)closeEkuModal()">
+        <div class="modal-mask" id="ekuModal" style="display:none;z-index:200" onclick="if(event.target===this)closeEkuModal()">
           <div class="modal eku-modal">
             <div class="modal-head">
               <h3>增强型密钥用法（EKU）选择</h3>
@@ -4865,6 +5205,176 @@ public final class WebAdmin {
             <div class="modal-foot">
               <button onclick="ekuOk()">确定</button>
               <button class="ghost" onclick="closeEkuModal()">取消</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 模板管理：添加/编辑模板 -->
+        <div class="modal-mask" id="tpModal" style="display:none" onclick="if(event.target===this)closeTpModal()">
+          <div class="modal" style="width:min(960px,94vw);max-height:88vh">
+            <div class="modal-head">
+              <h3 id="tpModalTitle">添加模板</h3>
+              <button class="ghost" onclick="closeTpModal()">取消</button>
+            </div>
+            <div class="modal-body" style="overflow:auto">
+
+              <div class="fsec"><div class="fsec-title">模板信息</div>
+                <div class="row">
+                  <div><label>模板名称（可选，便于识别）</label><input id="tpName" placeholder="例如：Web 服务器证书 / 代码签名证书"></div>
+                </div>
+              </div>
+
+              <div class="fsec"><div class="fsec-title">主体信息</div>
+                <div class="row">
+                  <div style="grid-column:1/-1"><label>证书 DN（key=value 逗号分隔，key 可为标准属性或 OID）</label><input id="tpDn" placeholder="如 CN=www.test.com,O=My Org,C=CN"></div>
+                </div>
+              </div>
+
+              <div class="fsec" style="margin-top:14px">
+                <div class="fsec-title">DN 辅助编辑 — 基础字段 / EV 注册字段 / 自定义 OID</div>
+                <div class="row">
+                  <div><label>CN 通用名称</label><input id="tpDnCn" placeholder="通用名称（CN），如 www.test.com" oninput="syncDn('tp')"></div>
+                  <div><label>O 组织</label><input id="tpDnO" placeholder="组织（O），如 My Org" oninput="syncDn('tp')"></div>
+                  <div><label>OU 组织单位</label><input id="tpDnOu" placeholder="组织单位（OU），如 IT Dept（可选）" oninput="syncDn('tp')"></div>
+                  <div><label>C 国家</label><input id="tpDnC" placeholder="国家代码（C），如 CN（两位）" maxlength="2" oninput="syncDn('tp')"></div>
+                  <div><label>S 省/州</label><input id="tpDnS" placeholder="省/州（S），如 Guangdong（可选）" oninput="syncDn('tp')"></div>
+                  <div><label>L 城市</label><input id="tpDnL" placeholder="城市（L），如 Shenzhen（可选）" oninput="syncDn('tp')"></div>
+                  <div><label>E 邮箱（OID 字段）</label><input id="tpDnE" placeholder="邮箱（E，OID 1.2.840.113549.1.9.1）" oninput="syncDn('tp')"></div>
+                  <div><label>是否 EV 扩展验证</label>
+                    <label style="display:flex;justify-content:flex-start;align-items:center;width:100%;height:32px;cursor:pointer;margin:0"><input type="checkbox" id="tpDnEvToggle" onchange="toggleDnEv('tp')" style="margin:0;flex:none"></label>
+                  </div>
+                </div>
+                <div id="tpDnEvFields" style="margin-top:14px;display:none">
+                  <div class="fsec-title" style="font-size:12px;margin-bottom:8px">EV 注册字段（EV Guidelines 专属 OID；注册类型四选一，注册号填营业执照/统一社会信用代码）</div>
+                  <div class="row">
+                    <div><label>注册类型（businessCategory 2.5.4.15）</label>
+                      <select id="tpDnBc" onchange="syncDn('tp')">
+                        <option value="">（不填）</option>
+                        <option>Private Organization</option>
+                        <option>Government Entity</option>
+                        <option>Business Entity</option>
+                        <option>Non-Commercial Entity</option>
+                      </select>
+                    </div>
+                    <div><label>注册号（serialNumber 2.5.4.5）</label><input id="tpDnReg" placeholder="注册号（serialNumber 2.5.4.5）" oninput="syncDn('tp')"></div>
+                    <div><label>注册国家（jurisdictionCountry）</label><input id="tpDnJc" placeholder="注册国家（jurisdictionCountry），如 CN（两位）" maxlength="2" oninput="syncDn('tp')"></div>
+                    <div><label>注册省（jurisdictionStateOrProvince）</label><input id="tpDnJs" placeholder="注册省（jurisdictionStateOrProvince）" oninput="syncDn('tp')"></div>
+                    <div><label>注册市（jurisdictionLocality）</label><input id="tpDnJl" placeholder="注册市（jurisdictionLocality）" oninput="syncDn('tp')"></div>
+                    <div><label>注册地址（streetAddress 2.5.4.9）</label><input id="tpDnAddr" placeholder="注册地址（streetAddress 2.5.4.9）" oninput="syncDn('tp')"></div>
+                    <div><label>组织标识符（2.5.4.97）</label><input id="tpDnOi" placeholder="组织标识符（2.5.4.97）" oninput="syncDn('tp')"></div>
+                    <div><label>组织标识符扩展 OID 版本</label>
+                      <label style="display:flex;justify-content:flex-start;align-items:center;width:100%;height:32px;cursor:pointer;margin:0" title="未勾选=旧版 1.3.6.1.4.1.57264.1.8（SC27-2019）；勾选=新版 2.23.140.3.1（EVG 2.0.1）"><input type="checkbox" id="tpDnOidNew" style="margin:0;flex:none"></label>
+                    </div>
+                  </div>
+                </div>
+                <div style="margin-top:12px">
+                  <div class="fsec-title" style="font-size:12px;margin-bottom:8px">自定义字段（key 可写字段名或对象标识符 OID）</div>
+                  <div id="tpDnOidRows"></div>
+                  <button type="button" class="ghost" onclick="addDnRow('tp','','')">+ 添加自定义字段</button>
+                </div>
+                <div style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+                  <button type="button" class="ghost" onclick="parseDn('tp')">从上方 DN 解析回填</button>
+                </div>
+              </div>
+
+              <div class="fsec"><div class="fsec-title">密钥与算法</div>
+                <div class="row">
+                  <div><label>证书类型</label><select id="tpCa" onchange="tpCaChanged()"><option value="0">终端证书</option><option value="1">中间 CA</option></select></div>
+                  <div id="tpPathLenWrap" style="display:none"><label>路径长度</label><select id="tpPathLen" title="中间CA 的 BasicConstraints pathLenConstraint；null 表示不限制"><option value="">null</option><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option></select></div>
+                  <div><label>密钥算法</label><select id="tpAlgo" onchange="tpAlgoChanged()"><option>RSA</option><option>RSA-PSS</option><option>ECC</option><option>SM2</option><option>DSA</option><option>EdDSA</option><option>PQC</option></select></div>
+                  <div><label>密钥位数</label><select id="tpBits"></select></div>
+                  <div><label>哈希算法</label><select id="tpHash"><option>sha256</option><option>sha1</option><option>sha384</option><option>sha512</option><option>SHA3-224</option><option>SHA3-256</option><option>SHA3-384</option><option>SHA3-512</option><option>SM3</option><option>NULL</option></select></div>
+                </div>
+              </div>
+
+              <div class="fsec"><div class="fsec-title">密钥用途</div>
+                <div class="row">
+                  <div><label>KeyUsage 编号</label>
+                    <select id="tpKu" onchange="kuSelChanged('tp')">
+                      <option value="">（无 KeyUsage 扩展）</option>
+                      <option value="1">1 - 数字签名+不可否认+密钥加密+数据加密+密钥协商（通用）</option>
+                      <option value="2">2 - 数字签名+不可否认+证书签名+CRL签名（CA用途）</option>
+                      <option value="3">3 - 仅加密 Encipher Only</option>
+                      <option value="4">4 - 仅解密 Decipher Only</option>
+                      <option value="5">5 - 数字签名+不可否认（签名用途）</option>
+                      <option value="6">6 - 数据加密 Data Encipherment</option>
+                      <option value="7">7 - 密钥加密 Key Encipherment</option>
+                      <option value="8">8 - 密钥协商 Key Agreement</option>
+                      <option value="custom">自定义组合…（密钥用法选择器）</option>
+                    </select>
+                    <div style="display:flex;gap:6px;align-items:center;margin-top:6px">
+                      <input id="tpKuCustom" placeholder="自定义数值：各位值相加，如 5=数字签名1+密钥加密4" style="display:none">
+                      <button type="button" class="ghost" onclick="openKuModal('tp')" style="white-space:nowrap;flex:none">密钥用法…</button>
+                    </div>
+                  </div>
+                  <div><label>EKU 编号/OID（逗号分隔）</label>
+                    <div style="display:flex;gap:6px;align-items:center">
+                      <input id="tpEu" value="1" onclick="openEkuModal('tp')" title="点击输入框或右侧按钮弹出 EKU 选择器">
+                      <button type="button" class="ghost" onclick="openEkuModal('tp')" style="white-space:nowrap;flex:none">选择…</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="fsec" id="tpPolWrap" style="display:none"><div class="fsec-title">证书策略（仅终端证书，勾选的策略才写入证书策略扩展）</div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(235px,1fr));gap:8px 16px;padding-top:6px">
+                  <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="tpPolDv"><span>SSL DV（2.23.140.1.2.1）</span></label>
+                  <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="tpPolIv"><span>SSL IV（2.23.140.1.2.3）</span></label>
+                  <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="tpPolOv"><span>SSL OV（2.23.140.1.2.2）</span></label>
+                  <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="tpPolEv"><span>SSL EV（2.23.140.1.1）</span></label>
+                  <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="tpPolCsStd"><span>代码签名-标准（2.23.140.1.4.1）</span></label>
+                  <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="tpPolCsEv"><span>代码签名-EV（2.23.140.1.3）</span></label>
+                  <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="tpPolDoc"><span>文档签名（1.3.6.1.5.5.7.3.36）</span></label>
+                  <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="tpPolTsa"><span>TSA 策略（2.23.140.1.4.2）</span></label>
+                </div>
+                <div style="display:flex;gap:6px;align-items:center;padding-top:8px">
+                  <input id="tpPolCustomOid" placeholder="自定义策略 OID，如 1.2.3.4.5" style="flex:1;min-width:220px" onkeydown="if(event.key==='Enter')addTpPolCustom()">
+                  <button type="button" onclick="addTpPolCustom()">添加自定义策略</button>
+                </div>
+                <div id="tpPolCustomBox"></div>
+              </div>
+
+              <div class="fsec"><div class="fsec-title">有效期</div>
+                <div class="row">
+                  <div><label>有效期（年数或 起始T截至）</label><input id="tpDays" value="1" title="数字=年数；或格式 起始T截至，如 2026/09/12-10:30:00T2027/09/12-10:30:00"></div>
+                </div>
+              </div>
+
+              <div class="fsec"><div class="fsec-title">SAN 扩展</div>
+                <div class="row">
+                  <div><label>SAN 域名（逗号分隔，无则 null）</label><input id="tpDns" value="null"></div>
+                  <div><label>SAN IP（逗号分隔，无则 null）</label><input id="tpIps" value="null"></div>
+                </div>
+              </div>
+
+              <pre class="out" id="tpSaveOut" style="margin-top:12px"></pre>
+
+            </div>
+            <div class="modal-foot">
+              <button onclick="saveTemplate()">保存模板</button>
+              <button class="ghost" onclick="closeTpModal()">取消</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 模板管理：签署模板（选择 R/C 颁发者） -->
+        <div class="modal-mask" id="tpSignModal" style="display:none" onclick="if(event.target===this)closeSignModal()">
+          <div class="modal" style="width:min(640px,94vw)">
+            <div class="modal-head">
+              <h3 id="tpSignTitle">签署模板</h3>
+              <button class="ghost" onclick="closeSignModal()">取消</button>
+            </div>
+            <div class="modal-body">
+              <div class="kv" id="tpSignInfo"></div>
+              <div style="margin-top:10px"><label>颁发者证书（CERTS.txt 中 R/C 类型序列号）</label>
+                <select id="tpSignIssuer" onchange="tpSignIssuerChanged()"></select>
+              </div>
+              <div id="tpSignTip" style="margin-top:10px;padding:10px;background:rgba(128,128,128,.07);border-radius:8px;font-size:12px;line-height:1.9"></div>
+              <pre class="out" id="tpSignOut" style="margin-top:10px"></pre>
+            </div>
+            <div class="modal-foot">
+              <button onclick="signDo()">确定签署</button>
+              <button class="ghost" onclick="closeSignModal()">取消</button>
             </div>
           </div>
         </div>
@@ -4954,7 +5464,7 @@ public final class WebAdmin {
                 window.addEventListener('error', function(e){ var d=document.getElementById('jsErr'); if(!d){ d=document.createElement('div'); d.id='jsErr'; d.style.cssText='position:fixed;bottom:10px;right:10px;background:#7f1d1d;color:#fecaca;padding:8px 12px;border-radius:8px;font-size:12px;z-index:99999;max-width:60vw;white-space:pre-wrap'; document.body.appendChild(d); } d.textContent='JS Error: '+(e.message||e); setTimeout(function(){d.remove()},8000); });
 const $ = id => document.getElementById(id);
         const v = id => $(id).value.trim();
-        const TITLES = { dashboard:'仪表盘', certs:'证书库', makeroot:'签发根证书', signcert:'签发证书', revoke:'吊销证书', crl:'CRL 刷新', ocsp:'OCSP 签发', timestamp:'时间戳签发', verify:'证书验证', debug:'调试专区', ctlog:'SCT服务管理', sign:'签名专区', init:'初始化环境', config:'系统配置', logs:'操作日志' };
+        const TITLES = { dashboard:'仪表盘', certs:'证书库', makeroot:'签发根证书', signcert:'签发证书', revoke:'吊销证书', crl:'CRL 刷新', ocsp:'OCSP 签发', timestamp:'时间戳签发', verify:'证书验证', template:'模板管理', debug:'调试专区', ctlog:'SCT服务管理', sign:'签名专区', init:'初始化环境', config:'系统配置', logs:'操作日志' };
 
         async function api(path, body) {
           const opt = { method: body ? 'POST' : 'GET', headers: {} };
@@ -5444,6 +5954,7 @@ const $ = id => document.getElementById(id);
             if (p === 'config') loadConfig();
             if (p === 'logs') loadLogs();
             if (p === 'sign') loadSignCerts();
+            if (p === 'template') { loadTemplates(); loadCerts(); loadIssuers(); }
             if (p === 'ctlog') loadCtLog();          };
         });
 
@@ -6076,10 +6587,32 @@ const $ = id => document.getElementById(id);
         function pathLenVal() {
           return $('scPathLen').value || 'null';
         }
+        // 自定义证书策略（签发证书页）：{oid, on}，勾选的才写入证书策略扩展
+        let scPolCustom = [];
+        function addScPolCustom() {
+          const oid = v('scPolCustomOid').trim();
+          if (!oid) { showOut('scOut', '请输入自定义策略 OID', false); return; }
+          if (!/^(\\d+)(\\.\\d+)+$/.test(oid)) { showOut('scOut', 'OID 格式不正确（如 1.2.3.4.5）', false); return; }
+          if (scPolCustom.some(x => x.oid === oid)) { showOut('scOut', '该策略 OID 已添加', false); return; }
+          scPolCustom.push({oid: oid, on: true});
+          $('scPolCustomOid').value = '';
+          renderScPolCustom();
+        }
+        function delScPolCustom(i) { scPolCustom.splice(i, 1); renderScPolCustom(); }
+        function renderScPolCustom() {
+          const box = $('scPolCustomBox');
+          box.innerHTML = scPolCustom.map((x, i) =>
+            '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding-top:6px">' +
+            '<input type="checkbox" ' + (x.on ? 'checked' : '') + ' onchange="scPolCustom[' + i + '].on=this.checked">' +
+            '<span style="font-family:Consolas,monospace">' + esc(x.oid) + '</span>' +
+            '<a style="color:#c0392b;cursor:pointer" onclick="delScPolCustom(' + i + ')">删除</a></label>').join('');
+        }
         function policyVal() {
           const ids = ['scPolDv','scPolIv','scPolOv','scPolEv','scPolCsStd','scPolCsEv','scPolDoc','scPolTsa'];
           const OIDS = {scPolDv:'2.23.140.1.2.1',scPolIv:'2.23.140.1.2.3',scPolOv:'2.23.140.1.2.2',scPolEv:'2.23.140.1.1',scPolCsStd:'2.23.140.1.4.1',scPolCsEv:'2.23.140.1.3',scPolDoc:'1.3.6.1.5.5.7.3.36',scPolTsa:'2.23.140.1.4.2'};
-          return ids.filter(id => $(id) && $(id).checked).map(id => OIDS[id]).join(',');
+          const arr = ids.filter(id => $(id) && $(id).checked).map(id => OIDS[id]);
+          (scPolCustom || []).forEach(x => { if (x.on && !arr.includes(x.oid)) arr.push(x.oid); });
+          return arr.join(',');
         }
         function algoChanged() {
           const algo = $('scAlgo').value;
@@ -6166,37 +6699,53 @@ const $ = id => document.getElementById(id);
             '<label class="eku-item"><input type="checkbox" value="' + o[1] + '"><span>' + o[0] + '</span><code>' + o[1] + '</code></label>'
           ).join('');
         }
-        function kuSelChanged() {
-          $('scKuCustom').style.display = $('scKu').value === 'custom' ? 'block' : 'none';
-          if ($('scKu').value === 'custom' && !$('scKuCustom').value) {
-            $('scKuCustom').value = '1';
+        function kuSelChanged(p) {
+          p = p || 'sc';
+          $(p + 'KuCustom').style.display = $(p + 'Ku').value === 'custom' ? 'block' : 'none';
+          if ($(p + 'Ku').value === 'custom' && !$(p + 'KuCustom').value) {
+            $(p + 'KuCustom').value = '1';
           }
         }
         // 取当前 KeyUsage 实际数值（预设编号或自定义组合值；自定义加 C 前缀避免与编号冲突）
-        function kuVal() {
-          const s = $('scKu').value;
-          return s === 'custom' ? 'C' + ($('scKuCustom').value || '1') : s;
+        function kuVal(p) {
+          p = p || 'sc';
+          const s = $(p + 'Ku').value;
+          return s === 'custom' ? 'C' + ($(p + 'KuCustom').value || '1') : s;
         }
-        function openKuModal() {
+        function openKuModal(p) {
+          p = p || 'sc';
+          window._kuTarget = p;
           renderKuOpts();
-          const cur = parseInt(kuVal(), 10) || 0;
+          // 回显：预设编号取位掩码，自定义(C前缀)取数值，其余按数字解析
+          const raw = kuVal(p);
+          let cur = 0;
+          if (/^C\\d+$/.test(raw)) cur = parseInt(raw.substring(1), 10) || 0;
+          else if (KU_PRESETS[raw]) cur = KU_PRESETS[raw];
+          else cur = parseInt(raw, 10) || 0;
           document.querySelectorAll('#kuBody input[type=checkbox]').forEach(c => { c.checked = (cur & parseInt(c.value, 10)) !== 0; });
           $('kuModal').style.display = 'flex';
         }
         function kuOk() {
+          let p = window._kuTarget || 'sc';
           let sum = 0;
           document.querySelectorAll('#kuBody input[type=checkbox]:checked').forEach(c => { sum += parseInt(c.value, 10); });
-          if (sum === 0) { closeKuModal(); return; }
+          // 未勾选任何项 = 证书不携带 KeyUsage 扩展，置空
+          if (sum === 0) {
+            $(p + 'Ku').value = '';
+            $(p + 'KuCustom').value = '';
+            $(p + 'KuCustom').style.display = 'none';
+            closeKuModal(); return;
+          }
           // 命中预设编号则选中下拉，否则用自定义数值
           let preset = null;
           for (const k in KU_PRESETS) { if (KU_PRESETS[k] === sum) { preset = k; break; } }
           if (preset) {
-            $('scKu').value = preset;
-            $('scKuCustom').style.display = 'none';
+            $(p + 'Ku').value = preset;
+            $(p + 'KuCustom').style.display = 'none';
           } else {
-            $('scKu').value = 'custom';
-            $('scKuCustom').value = String(sum);
-            $('scKuCustom').style.display = 'block';
+            $(p + 'Ku').value = 'custom';
+            $(p + 'KuCustom').value = String(sum);
+            $(p + 'KuCustom').style.display = 'block';
           }
           closeKuModal();
         }
@@ -6247,23 +6796,31 @@ const $ = id => document.getElementById(id);
             '<label class="eku-item"><input type="checkbox" value="' + o[1] + '"><span>' + o[0] + '</span><code>' + o[1] + '</code></label>'
           ).join('');
         }
-        function openEkuModal() {
+        function openEkuModal(p) {
+          p = p || 'sc';
+          window._ekuTarget = p;
           renderEkuOpts();
-          const cur = $('scEu').value.split(',').map(s => s.trim()).filter(Boolean);
+          // 回显：输入框中的编号(1~46)映射为对应 OID，OID/自定义值原样匹配
+          const cur = $(p + 'Eu').value.split(',').map(s => s.trim()).filter(Boolean)
+            .map(s => NUM_EKU[s] || s);
           document.querySelectorAll('#ekuBody input[type=checkbox]').forEach(c => { c.checked = cur.includes(c.value); });
           $('ekuModal').style.display = 'flex';
         }
         function ekuOk() {
+          const p = window._ekuTarget || 'sc';
           const checked = [...document.querySelectorAll('#ekuBody input[type=checkbox]:checked')].map(c => c.value);
-          // 保留输入框中未被勾选的旧值（编号 / 自定义 OID）；
-          // 编号若对应 OID 已被勾选，或旧值本身就是重复 OID，则丢弃，避免重复
-          const old = $('scEu').value.split(',').map(s => s.trim()).filter(s => {
+          // 未勾选任何项 = 证书不携带 EKU 扩展，置空
+          if (!checked.length) { $(p + 'Eu').value = ''; closeEkuModal(); return; }
+          // 弹窗选项内的旧值（编号或 OID）一律以勾选状态为准：未勾选即删除；
+          // 仅保留不在弹窗选项中的自定义 OID（用户手输的非预设值）
+          const optOids = EKU_OPTS.map(o => o[1]);
+          const old = $(p + 'Eu').value.split(',').map(s => s.trim()).filter(s => {
             if (!s) return false;
             if (checked.includes(s)) return false;
-            const oid = NUM_EKU[s];
-            return !(oid && checked.includes(oid));
+            const oid = NUM_EKU[s] || s;
+            return !optOids.includes(oid);
           });
-          $('scEu').value = checked.concat(old).join(',');
+          $(p + 'Eu').value = checked.concat(old).join(',');
           closeEkuModal();
         }
         // 编号 → OID（对齐 MakeCert builtinEku 0~11 与 EXT_OIDS 12~46）
@@ -6286,6 +6843,194 @@ const $ = id => document.getElementById(id);
           '45': '1.2.840.113635.100.4.1.4', '46': '1.2.840.113635.100.4.2'
         };
         function closeEkuModal() { $('ekuModal').style.display = 'none'; }
+
+        // ===== 模板管理（PKI/tamplate/data.json） =====
+        let tplData = [];
+        async function loadTemplates() {
+          try {
+            const r = await api('/api/template/list');
+            if (r.ok) { tplData = r.data || []; renderTemplates(); }
+          } catch (e) { /* ignore */ }
+        }
+        function tplTip(e) {
+          return '<div class="kv"><b>模板：</b>#' + esc(e.id) + (e.name ? ' ' + esc(e.name) : '') + '</div>' +
+            '<div class="kv"><b>证书类型：</b>' + (e.ctype === '1' ? '中间 CA' : '终端证书') + '</div>' +
+            '<div class="kv"><b>算法：</b>' + esc(e.algo) + ' / 位数：' + esc(e.bits) + ' / 哈希：' + esc(e.hash) + '</div>' +
+            '<div class="kv"><b>KeyUsage：</b>' + esc(e.keyusage) + ' / EKU：' + esc(e.exusage) + '</div>' +
+            '<div class="kv"><b>有效期：</b>' + esc(e.days) + '</div>' +
+            '<div class="kv"><b>创建时间：</b>' + esc(e.createTime || '') + '</div>';
+        }
+        function renderTemplates() {
+          const tb = $('tplTable').querySelector('tbody');
+          tb.innerHTML = '';
+          tplData.forEach(e => {
+            const tr = document.createElement('tr');
+            tr.dataset.id = e.id;
+            tr.innerHTML = '<td>' + esc(e.id) + '</td>' +
+              '<td>' + (e.ctype === '1' ? '中间 CA' : '终端证书') + '</td>' +
+              '<td class="t-box" data-tip="' + esc(tplTip(e)) + '">' + esc(e.dn) + '</td>' +
+              '<td>' + esc(e.createTime || '') + '</td>' +
+              '<td><button class="ghost" data-tp-del="' + esc(e.id) + '" style="padding:4px 12px;font-size:12px">删除</button> ' +
+              '<button class="ghost" data-tp-edit="' + esc(e.id) + '" style="padding:4px 12px;font-size:12px">编辑</button> ' +
+              '<button data-tp-sign="' + esc(e.id) + '" style="padding:4px 12px;font-size:12px">签署</button></td>';
+            tb.appendChild(tr);
+          });
+          if (!tplData.length) tb.innerHTML = '<tr><td colspan="5" style="color:var(--dim)">（暂无模板，点击"添加模板"创建）</td></tr>';
+        }
+        // 行内按钮委托（删除二次确认：第一次点击变为"确认删除？"，3 秒内再点执行）
+        (function initTplTable() {
+          const tb = $('tplTable').querySelector('tbody');
+          tb.onclick = e => {
+            const del = e.target.closest('[data-tp-del]');
+            const ed = e.target.closest('[data-tp-edit]');
+            const sg = e.target.closest('[data-tp-sign]');
+            if (del) delTemplate(del.dataset.tpDel, del);
+            else if (ed) openTpModal(ed.dataset.tpEdit);
+            else if (sg) openSignModal(sg.dataset.tpSign);
+          };
+        })();
+        async function delTemplate(id, btn) {
+          if (!btn || btn.dataset.arm !== '1') {
+            if (btn) {
+              btn.dataset.arm = '1';
+              btn.textContent = '确认删除？';
+              btn.style.color = '#dc2626';
+            }
+            setTimeout(() => {
+              if (btn && btn.dataset.arm === '1') {
+                btn.dataset.arm = '';
+                btn.textContent = '删除';
+                btn.style.color = '';
+              }
+            }, 3000);
+            return;
+          }
+          try {
+            const r = await api('/api/template/delete', {id: id});
+            if (r.ok) loadTemplates();
+            else showOut('tplMsg', r.message || '删除失败', false);
+          } catch (e) { showOut('tplMsg', '请求异常: ' + e, false); }
+        }
+
+        // ===== 添加/编辑模板弹窗 =====
+        let tplEditId = null;
+        function openTpModal(id) {
+          tplEditId = id || null;
+          tplPolCustom = [];
+          renderTpPolCustom();
+          $('tpModalTitle').textContent = id ? '编辑模板 #' + id : '添加模板';
+          const tpl = id ? (tplData.find(x => String(x.id) === String(id)) || {}) : {};
+          $('tpName').value = tpl.name || '';
+          $('tpDn').value = tpl.dn || '';
+          $('tpCa').value = tpl.ctype || '0';
+          tpCaChanged();
+          $('tpAlgo').value = tpl.algo || 'RSA';
+          tpAlgoChanged();
+          $('tpBits').value = tpl.bits || '2048';
+          $('tpHash').value = tpl.hash || 'sha256';
+          const ku = tpl.keyusage || '';
+          $('tpKu').value = String(ku).startsWith('C') ? 'custom' : String(ku);
+          $('tpKuCustom').value = String(ku).startsWith('C') ? String(ku).substring(1) : '';
+          kuSelChanged('tp');
+          $('tpEu').value = tpl.exusage || '';
+          $('tpPathLen').value = (!tpl.pathlen || tpl.pathlen === 'null') ? '' : String(tpl.pathlen);
+          $('tpDays').value = tpl.days || '1';
+          $('tpDns').value = tpl.dns || 'null';
+          $('tpIps').value = tpl.ips || 'null';
+          const POL_OIDS = {tpPolDv:'2.23.140.1.2.1',tpPolIv:'2.23.140.1.2.3',tpPolOv:'2.23.140.1.2.2',tpPolEv:'2.23.140.1.1',tpPolCsStd:'2.23.140.1.4.1',tpPolCsEv:'2.23.140.1.3',tpPolDoc:'1.3.6.1.5.5.7.3.36',tpPolTsa:'2.23.140.1.4.2'};
+          const polSel = (tpl.policy || '').split(',').map(s => s.trim()).filter(Boolean);
+          for (const k in POL_OIDS) { const c = $(k); if (c) c.checked = polSel.includes(POL_OIDS[k]); }
+          // 模板中非预设的策略 OID 作为自定义策略回显（勾选状态）
+          tplPolCustom = polSel.filter(o => !Object.values(POL_OIDS).includes(o)).map(o => ({oid: o, on: true}));
+          renderTpPolCustom();
+          parseDn('tp');
+          $('tpSaveOut').hidden = true;
+          $('tpModal').style.display = 'flex';
+        }
+        function closeTpModal() { $('tpModal').style.display = 'none'; }
+        function tpCaChanged() {
+          const isCa = $('tpCa').value === '1';
+          $('tpPathLenWrap').style.display = isCa ? '' : 'none';
+          $('tpPolWrap').style.display = isCa ? 'none' : '';
+        }
+        function tpAlgoChanged() {
+          const algo = $('tpAlgo').value;
+          const opts = BITS_OPT[algo] || [];
+          const cur = $('tpBits').value;
+          $('tpBits').innerHTML = opts.map(x => '<option>' + x + '</option>').join('');
+          $('tpBits').value = opts.includes(cur) ? String(cur) : String(opts[0]);
+          syncHashForAlgo(algo, $('tpHash'));
+        }
+        function tpPathLenVal() { return $('tpPathLen').value || 'null'; }
+        // 自定义证书策略（模板弹窗）：{oid, on}，勾选的才写入证书策略扩展
+        let tplPolCustom = [];
+        function addTpPolCustom() {
+          const oid = v('tpPolCustomOid').trim();
+          if (!oid) { showOut('tpSaveOut', '请输入自定义策略 OID', false); return; }
+          if (!/^(\\d+)(\\.\\d+)+$/.test(oid)) { showOut('tpSaveOut', 'OID 格式不正确（如 1.2.3.4.5）', false); return; }
+          if (tplPolCustom.some(x => x.oid === oid)) { showOut('tpSaveOut', '该策略 OID 已添加', false); return; }
+          tplPolCustom.push({oid: oid, on: true});
+          $('tpPolCustomOid').value = '';
+          renderTpPolCustom();
+        }
+        function delTpPolCustom(i) { tplPolCustom.splice(i, 1); renderTpPolCustom(); }
+        function renderTpPolCustom() {
+          const box = $('tpPolCustomBox');
+          if (!box) return;
+          box.innerHTML = tplPolCustom.map((x, i) =>
+            '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding-top:6px">' +
+            '<input type="checkbox" ' + (x.on ? 'checked' : '') + ' onchange="tplPolCustom[' + i + '].on=this.checked">' +
+            '<span style="font-family:Consolas,monospace">' + esc(x.oid) + '</span>' +
+            '<a style="color:#c0392b;cursor:pointer" onclick="delTpPolCustom(' + i + ')">删除</a></label>').join('');
+        }
+        function tpPolicyVal() {
+          const ids = ['tpPolDv','tpPolIv','tpPolOv','tpPolEv','tpPolCsStd','tpPolCsEv','tpPolDoc','tpPolTsa'];
+          const OIDS = {tpPolDv:'2.23.140.1.2.1',tpPolIv:'2.23.140.1.2.3',tpPolOv:'2.23.140.1.2.2',tpPolEv:'2.23.140.1.1',tpPolCsStd:'2.23.140.1.4.1',tpPolCsEv:'2.23.140.1.3',tpPolDoc:'1.3.6.1.5.5.7.3.36',tpPolTsa:'2.23.140.1.4.2'};
+          const arr = ids.filter(id => $(id) && $(id).checked).map(id => OIDS[id]);
+          (tplPolCustom || []).forEach(x => { if (x.on && !arr.includes(x.oid)) arr.push(x.oid); });
+          return arr.join(',');
+        }
+        async function saveTemplate() {
+          const p = {id: tplEditId || '', name: v('tpName'), ctype: v('tpCa'), dn: v('tpDn'),
+            bits: v('tpBits'), hash: v('tpHash'), keyusage: kuVal('tp'), exusage: v('tpEu'),
+            pathlen: tpPathLenVal(), policy: tpPolicyVal(), days: v('tpDays'),
+            dns: v('tpDns'), ips: v('tpIps'), algo: v('tpAlgo')};
+          try {
+            const r = await api('/api/template/save', p);
+            showOut('tpSaveOut', r.message || 'OK', !!r.ok);
+            if (r.ok) { closeTpModal(); loadTemplates(); }
+          } catch (e) { showOut('tpSaveOut', '请求异常: ' + e, false); }
+        }
+
+        // ===== 签署模板弹窗（选择 R/C 颁发者） =====
+        let tplSignId = null;
+        function openSignModal(id) {
+          tplSignId = id;
+          const tpl = tplData.find(x => String(x.id) === String(id)) || {};
+          $('tpSignTitle').textContent = '签署模板 #' + id + (tpl.name ? '：' + tpl.name : '');
+          $('tpSignInfo').innerHTML =
+            '<b>模板：</b>#' + esc(id) + ' ' + esc(tpl.name || '') + '<br>' +
+            '<b>证书类型：</b>' + (tpl.ctype === '1' ? '中间 CA' : '终端证书') + '<br>' +
+            '<b>DN：</b>' + esc(tpl.dn || '') + '<br>' +
+            '<b>算法：</b>' + esc(tpl.algo) + ' / ' + esc(tpl.bits) + ' / 哈希 ' + esc(tpl.hash);
+          const sel = $('tpSignIssuer');
+          sel.innerHTML = '<option value="">（请选择颁发者）</option>' +
+            (certData || []).filter(e => e.type === 'R' || e.type === 'C').map(e =>
+              '<option value="' + esc(e.serial) + '">' + esc(e.serial) + '（' + esc(typeName(e.type)) + '）</option>').join('');
+          $('tpSignTip').innerHTML = '';
+          const out = $('tpSignOut'); out.hidden = true; out.textContent = '';
+          $('tpSignModal').style.display = 'flex';
+        }
+        function closeSignModal() { $('tpSignModal').style.display = 'none'; }
+        function tpSignIssuerChanged() {
+          const s = $('tpSignIssuer').value;
+          $('tpSignTip').innerHTML = s ? certTip(s) : '';
+        }
+        async function signDo() {
+          const issuer = v('tpSignIssuer');
+          if (!issuer) { showOut('tpSignOut', '请先选择颁发者证书（类型 R/C）', false); return; }
+          await postForm('/api/template/sign', {id: tplSignId, issuer: issuer}, 'tpSignOut');
+        }
 
         // ===== 系统配置 =====
         async function loadConfig() {

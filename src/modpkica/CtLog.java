@@ -971,4 +971,290 @@ public final class CtLog {
             bos.write((int) ((v >>> (8 * i)) & 0xff));
         }
     }
+
+    // ============================================================
+    // RFC 6962 全套 HTTP API 支持（独立新增，不影响现有 /ct/add）
+    //
+    // 数据结构：每个日志密钥（log_id）维护一棵独立的 append-only Merkle 树，
+    // 树文件 PKI/CTLOG/trees/{log_id_hex}.json 采用 JSON Lines 格式，
+    // 每行一个条目 {"leaf_input":"base64(MerkleTreeLeaf)","extra_data":"base64"}，
+    // 只追加不修改（RFC 6962 §3.4 append-only 属性）。
+    // ============================================================
+
+    /** 日志 Merkle 树文件路径（按 log_id 的 hex 命名，避免 base64 的 +/= 字符）。 */
+    public static String treeFilePath(String baseDir, String logIdB64) {
+        byte[] id;
+        try {
+            id = Base64.getDecoder().decode(logIdB64);
+        } catch (Exception e) {
+            id = logIdB64.getBytes(StandardCharsets.UTF_8);
+        }
+        return baseDir + "/PKI/CTLOG/trees/" + toHex(id) + ".json";
+    }
+
+    /** 树条目（leaf_input = MerkleTreeLeaf TLS 编码；extra_data = 证书链向量编码）。 */
+    public static final class TreeEntry {
+        public String leafInput = "";   // base64
+        public String extraData = "";   // base64
+    }
+
+    /** 读取指定日志的 Merkle 树全部条目（JSON Lines，逐行解析）。 */
+    public static synchronized List<TreeEntry> loadTreeEntries(String baseDir, String logIdB64) {
+        List<TreeEntry> out = new ArrayList<>();
+        Path p = Paths.get(treeFilePath(baseDir, logIdB64));
+        if (!Files.exists(p)) {
+            return out;
+        }
+        try {
+            String text = new String(Files.readAllBytes(p), StandardCharsets.UTF_8);
+            for (String line : text.split("\n", -1)) {
+                String t = line.trim();
+                if (t.isEmpty()) {
+                    continue;
+                }
+                Map<String, Object> m = MiniJson.parse(t);
+                TreeEntry e = new TreeEntry();
+                e.leafInput = MiniJson.strVal(m.get("leaf_input"));
+                e.extraData = MiniJson.strVal(m.get("extra_data"));
+                if (e.leafInput != null && !e.leafInput.isEmpty()) {
+                    out.add(e);
+                }
+            }
+        } catch (Exception e) {
+            MLog.appendErr(baseDir, "CTLog树读取异常", treeFilePath(baseDir, logIdB64), String.valueOf(e));
+        }
+        return out;
+    }
+
+    /** 向指定日志的 Merkle 树追加一个条目（JSON Lines 追加一行，O(1)）。 */
+    public static synchronized void appendTreeEntry(String baseDir, String logIdB64,
+            byte[] leafInput, byte[] extraData) {
+        try {
+            Path p = Paths.get(treeFilePath(baseDir, logIdB64));
+            if (p.getParent() != null && !Files.exists(p.getParent())) {
+                Files.createDirectories(p.getParent());
+            }
+            String line = "{\"leaf_input\":\"" + Base64.getEncoder().encodeToString(leafInput)
+                    + "\",\"extra_data\":\"" + (extraData == null ? "" : Base64.getEncoder().encodeToString(extraData))
+                    + "\"}\n";
+            Files.writeString(p, line, StandardCharsets.UTF_8,
+                    StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+        } catch (Exception e) {
+            MLog.appendErr(baseDir, "CTLog树写入异常", treeFilePath(baseDir, logIdB64), String.valueOf(e));
+        }
+    }
+
+    /**
+     * 构造 x509_entry 的 MerkleTreeLeaf（RFC 6962 §3.4）与 extra_data。
+     * chainDer：完整证书链 DER（[0]=叶子证书，其余为颁发者链）。
+     * 返回 [leaf_input, extra_data]。
+     */
+    public static byte[][] buildX509LeafAndExtra(long ts, List<byte[]> chainDer) {
+        ByteArrayOutputStream leaf = new ByteArrayOutputStream();
+        leaf.write(0);                                   // version = v1
+        leaf.write(0);                                   // leaf_type = timestamped_entry
+        writeU64(leaf, ts);                              // timestamp
+        writeU16(leaf, 0);                               // entry_type = x509_entry
+        byte[] cert = chainDer.get(0);                   // leaf_certificate
+        writeU24(leaf, cert.length);
+        leaf.write(cert, 0, cert.length);
+        writeU16(leaf, 0);                               // CtExtensions（空）
+        // extra_data = certificate_chain 向量（从颁发者开始，每证书 3 字节长度前缀）
+        ByteArrayOutputStream extra = new ByteArrayOutputStream();
+        for (int i = 1; i < chainDer.size(); i++) {
+            byte[] c = chainDer.get(i);
+            writeU24(extra, c.length);
+            extra.write(c, 0, c.length);
+        }
+        return new byte[][] {leaf.toByteArray(), extra.toByteArray()};
+    }
+
+    /**
+     * 构造 precert_entry 的 MerkleTreeLeaf（RFC 6962 §3.4）与 extra_data。
+     * chainDer：完整链 DER（[0]=预证书，其余为颁发者链）。
+     * 返回 [leaf_input, extra_data]。
+     */
+    public static byte[][] buildPrecertLeafAndExtra(long ts, byte[] issuerKeyHash,
+            byte[] tbsNoPoison, List<byte[]> chainDer) {
+        ByteArrayOutputStream leaf = new ByteArrayOutputStream();
+        leaf.write(0);                                   // version = v1
+        leaf.write(0);                                   // leaf_type = timestamped_entry
+        writeU64(leaf, ts);                              // timestamp
+        writeU16(leaf, 1);                               // entry_type = precert_entry
+        leaf.write(issuerKeyHash, 0, 32);                // issuer_key_hash
+        writeU24(leaf, tbsNoPoison.length);              // tbs_certificate（去 poison）
+        leaf.write(tbsNoPoison, 0, tbsNoPoison.length);
+        writeU16(leaf, 0);                               // CtExtensions（空）
+        // extra_data = 整个 PrecertChainEntry（pre_certificate + precertificate_chain 向量）
+        ByteArrayOutputStream extra = new ByteArrayOutputStream();
+        byte[] pre = chainDer.get(0);
+        writeU24(extra, pre.length);
+        extra.write(pre, 0, pre.length);
+        for (int i = 1; i < chainDer.size(); i++) {
+            byte[] c = chainDer.get(i);
+            writeU24(extra, c.length);
+            extra.write(c, 0, c.length);
+        }
+        return new byte[][] {leaf.toByteArray(), extra.toByteArray()};
+    }
+
+    /** MerkleTreeLeaf 的叶子哈希 = SHA-256(0x00 || leaf_input)（RFC 6962 §3.4）。 */
+    public static byte[] leafHash(byte[] leafInput) throws Exception {
+        ByteArrayOutputStream b = new ByteArrayOutputStream();
+        b.write(0);
+        b.write(leafInput, 0, leafInput.length);
+        return sha256(b.toByteArray());
+    }
+
+    /** 计算 D[start,end) 的 Merkle Tree Hash（RFC 6962 §3.4.1，k = 小于区间长的最大 2 的幂）。 */
+    static byte[] mthNode(List<byte[]> hashes, int start, int end) throws Exception {
+        if (end - start == 1) {
+            return hashes.get(start);
+        }
+        int k = Integer.highestOneBit(end - start - 1);
+        byte[] l = mthNode(hashes, start, start + k);
+        byte[] r = mthNode(hashes, start + k, end);
+        ByteArrayOutputStream b = new ByteArrayOutputStream();
+        b.write(1);
+        b.write(l, 0, 32);
+        b.write(r, 0, 32);
+        return sha256(b.toByteArray());
+    }
+
+    /** 整棵树根哈希 MTH(D[0:n])；空树返回 32 字节全零。 */
+    public static byte[] mthRoot(List<byte[]> hashes) throws Exception {
+        if (hashes.isEmpty()) {
+            return new byte[32];
+        }
+        return mthNode(hashes, 0, hashes.size());
+    }
+
+    /** 叶子索引 m 的 Merkle 审计路径（RFC 6962 §3.4.2，顺序：近叶 → 近根）。 */
+    public static List<byte[]> auditPath(List<byte[]> hashes, int m) throws Exception {
+        List<byte[]> out = new ArrayList<>();
+        pathNode(hashes, m, 0, hashes.size(), out);
+        return out;
+    }
+
+    static void pathNode(List<byte[]> hashes, int m, int start, int end, List<byte[]> out)
+            throws Exception {
+        if (end - start == 1) {
+            return;
+        }
+        int k = Integer.highestOneBit(end - start - 1);
+        if (m - start < k) {
+            out.add(mthNode(hashes, start + k, end));
+            pathNode(hashes, m, start, start + k, out);
+        } else {
+            out.add(mthNode(hashes, start, start + k));
+            pathNode(hashes, m, start + k, end, out);
+        }
+    }
+
+    /**
+     * 两棵树头之间的一致性证明（RFC 6962 §3.4.3 CONSISTENCY_PROOF）。
+     * hashes：当前树（size=second）的全部叶子哈希；first/second 为两个 tree_size（first<second）。
+     */
+    public static List<byte[]> consistencyProof(List<byte[]> hashes, int first, int second)
+            throws Exception {
+        List<byte[]> out = new ArrayList<>();
+        consNode(hashes, 0, second, first, out);
+        return out;
+    }
+
+    static void consNode(List<byte[]> hashes, int start, int end, int m, List<byte[]> out)
+            throws Exception {
+        // m == 0：空树到任意树的一致性证明为空（Google CT API 对 first=0 返回 []）；
+        // m == end - start：前缀即整棵子树，证明为空。
+        if (m == 0 || m == end - start) {
+            return;
+        }
+        int k = Integer.highestOneBit(end - start - 1);
+        if (m <= k) {
+            out.add(mthNode(hashes, start + k, end));
+            consNode(hashes, start, start + k, m, out);
+        } else {
+            out.add(mthNode(hashes, start, start + k));
+            consNode(hashes, start + k, end, m - k, out);
+        }
+    }
+
+    /**
+     * TreeHeadSignature（RFC 6962 §3.5）：version(0) + signature_type=tree_hash(1) + timestamp(8)
+     * + root_hash(32)，用日志密钥签名。
+     */
+    public static byte[] treeHeadSignature(LogKey k, long ts, byte[] rootHash) throws Exception {
+        ByteArrayOutputStream b = new ByteArrayOutputStream();
+        b.write(0);                                     // version = v1
+        b.write(1);                                     // signature_type = tree_hash
+        writeU64(b, ts);                                // timestamp
+        b.write(rootHash, 0, 32);                       // MerkleTreeHash
+        return signInput(Base64.getDecoder().decode(k.privateKey), b.toByteArray(), k.type);
+    }
+
+    /** RFC 6962 §3.2 SCT 签名输入（x509_entry 版：signed_entry = 叶子证书 DER）。 */
+    public static byte[] buildSctInputX509(long ts, byte[] leafCertDer) {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        bos.write(0);                                  // sct_version = v1
+        bos.write(0);                                  // signature_type = certificate_timestamp
+        writeU64(bos, ts);
+        writeU16(bos, 0);                              // entry_type = x509_entry
+        writeU24(bos, leafCertDer.length);
+        bos.write(leafCertDer, 0, leafCertDer.length);
+        return bos.toByteArray();
+    }
+
+    /** 单条 SCT 签发结果（RFC 6962 §4.1/§4.2 响应用）。 */
+    public static final class SctOutcome {
+        public String logId = "";       // base64（= 日志密钥 log_id）
+        public long timestamp;
+        public byte[] sct;              // SerializedSCT 全量
+        public byte[] signature;        // 原始签名（响应 JSON 的 signature 字段）
+    }
+
+    /**
+     * 用单个日志密钥签发 SCT（RFC 6962 §4.1/§4.2 add-chain/add-pre-chain 语义），
+     * 并把 MerkleTreeLeaf 追加到该日志的 Merkle 树（leaf 与 SCT 使用同一 timestamp）。
+     *
+     * @param entryType     0=x509_entry（add-chain），1=precert_entry（add-pre-chain）
+     * @param tbsNoPoison   预证书 TBS 去 poison 后的 DER（仅 precert_entry 需要）
+     * @param issuerKeyHash 颁发者公钥 SPKI 的 SHA-256（仅 precert_entry 需要）
+     * @param chainDer      完整链 DER（[0]=叶子证书/预证书，其余为颁发者链）
+     */
+    public static SctOutcome signOneSct(String baseDir, LogKey k, int entryType, long ts,
+            byte[] tbsNoPoison, byte[] issuerKeyHash, List<byte[]> chainDer) throws Exception {
+        byte[] input = (entryType == 0)
+                ? buildSctInputX509(ts, chainDer.get(0))
+                : buildSctInput(ts, tbsNoPoison, issuerKeyHash);
+        byte[] sig = signInput(Base64.getDecoder().decode(k.privateKey), input, k.type);
+        byte[] sct = buildSerializedSct(k.logId, ts, sig, k.type);
+        byte[][] leafExtra = (entryType == 0)
+                ? buildX509LeafAndExtra(ts, chainDer)
+                : buildPrecertLeafAndExtra(ts, issuerKeyHash, tbsNoPoison, chainDer);
+        appendTreeEntry(baseDir, k.logId, leafExtra[0], leafExtra[1]);
+        SctOutcome o = new SctOutcome();
+        o.logId = k.logId;
+        o.timestamp = ts;
+        o.sct = sct;
+        o.signature = sig;
+        return o;
+    }
+
+    /** 从 MerkleTreeLeaf 解析 timestamp（version+leaf_type 各 1 字节后的 8 字节大端）。 */
+    public static long treeEntryTimestamp(byte[] leafInput) {
+        long ts = 0;
+        for (int i = 2; i < 10 && i < leafInput.length; i++) {
+            ts = (ts << 8) | (leafInput[i] & 0xff);
+        }
+        return ts;
+    }
+
+    /** base64 → hex。 */
+    public static String b64ToHex(String b64) {
+        try {
+            return toHex(Base64.getDecoder().decode(b64));
+        } catch (Exception e) {
+            return "";
+        }
+    }
 }

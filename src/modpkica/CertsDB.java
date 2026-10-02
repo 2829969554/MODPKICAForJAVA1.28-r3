@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * CertsDB —— 证书台账 CERTS.txt 的读取 / 追加 / 吊销修改。
@@ -37,8 +38,12 @@ public class CertsDB {
     private static final DateTimeFormatter TIME_FMT =
             DateTimeFormatter.ofPattern("yyyy/MM/dd-HH:mm:ss");
 
-    /** 内存中缓存的全部台账条目 */
-    private final List<CertEntry> entries = new ArrayList<>();
+    /** 内存中缓存的全部台账条目（CopyOnWriteArrayList：读多写少，遍历永不抛 CME） */
+    private final CopyOnWriteArrayList<CertEntry> entries = new CopyOnWriteArrayList<>();
+
+    /** 原文件中 # 注释行与空行（用户"删除证书=行首 # 注释"的语义载体）。
+     *  仅 load 与 rewriteAll 在锁内访问；rewriteAll 时原样保留，避免重写抹掉注释。 */
+    private final List<String> preservedLines = new ArrayList<>();
 
     /** CERTS.txt 的完整路径 */
     private Path dbPath;
@@ -95,6 +100,7 @@ public class CertsDB {
     public void load(String baseDir) {
         dbPath = Paths.get(baseDir, "PKI", "CERTS.txt");
         entries.clear();
+        preservedLines.clear();
         lastLoadWarning = "";
         if (!Files.exists(dbPath)) {
             return;
@@ -110,7 +116,13 @@ public class CertsDB {
         int bad = 0;
         for (String raw : lines) {
             String line = stripCrLf(raw).trim();
+            // 防御 UTF-8 BOM：外部工具（如记事本/PowerShell）可能写入 BOM，剥掉后注释行才能被识别
+            if (!line.isEmpty() && line.charAt(0) == '\uFEFF') {
+                line = line.substring(1).trim();
+            }
             if (line.isEmpty() || line.startsWith("#")) {
+                // 保留注释/空行：重写文件时不丢失（用户"删除=行首 # 注释"语义）
+                preservedLines.add(raw);
                 continue;
             }
             // 按空白切分：serial type status reason time issuerId algo
@@ -201,6 +213,7 @@ public class CertsDB {
 
     /**
      * 追加一条新条目到内存并写回 CERTS.txt 文件末尾。
+     * 内存 add 与文件写同在锁内，保证并发追加不会出现内存/磁盘不一致。
      *
      * @param e 新条目
      */
@@ -217,25 +230,34 @@ public class CertsDB {
                 // 写文件失败必须暴露：否则内存记录与磁盘不一致（重启后记录丢失）
                 throw new java.io.UncheckedIOException("写 CERTS.txt 失败: " + dbPath, ex);
             }
+            entries.add(e); // 写成功后才加入内存（锁内，避免并发 add）
         });
-        entries.add(e); // 写成功后才加入内存
     }
 
     /**
      * 把指定序列号证书状态改为 R（吊销），更新原因与时间，并整文件重写。
+     * 内存采用"新对象替换"而非改字段，读方不会看到半更新状态。
      *
      * @param serial 证书序列号
      * @param reason 吊销原因码
      * @param time   吊销时间
      */
     public void revokeCert(String serial, int reason, LocalDateTime time) {
-        CertEntry e = findBySerial(serial);
-        if (e == null) {
-            return;
+        synchronized (FILE_LOCK) {
+            CertEntry e = findBySerial(serial);
+            if (e == null) {
+                return;
+            }
+            CertEntry n = cloneEntry(e);
+            n.status = 'R';
+            n.reason = reason;
+            n.time = time;
+            int idx = entries.indexOf(e);
+            if (idx >= 0) {
+                entries.set(idx, n);
+            }
         }
-        e.status = 'R';
-        e.reason = reason;
-        e.time = time;
+        // 重写文件（withLock 内部重新获取 FILE_LOCK，synchronized 可重入 + 文件锁此时无重叠）
         rewriteAll();
     }
 
@@ -265,14 +287,31 @@ public class CertsDB {
         return out;
     }
 
-    /** 返回全部条目（只读语义，调用方不要修改）。 */
+    /** 返回全部条目（只读快照，调用方修改不影响库内数据）。 */
     public List<CertEntry> getAll() {
-        return entries;
+        return new ArrayList<>(entries);
     }
 
-    /** 把内存中全部条目按行重写回文件（P2-01：tmp → fsync → .bak → 原子替换，锁内执行）。 */
+    /** 复制条目（吊销/恢复时以新对象替换旧对象，避免读方看到半更新字段）。 */
+    private static CertEntry cloneEntry(CertEntry e) {
+        CertEntry n = new CertEntry();
+        n.serial = e.serial;
+        n.type = e.type;
+        n.status = e.status;
+        n.reason = e.reason;
+        n.time = e.time;
+        n.issuerId = e.issuerId;
+        n.algo = e.algo;
+        return n;
+    }
+
+    /** 把内存中全部条目按行重写回文件（P2-01：tmp → fsync → .bak → 原子替换，锁内执行）。
+     *  注释/空行（preservedLines）按原顺序写回最前，保证"行首 # 注释"的删除语义不被重写抹掉。 */
     private void rewriteAll() {
         StringBuilder sb = new StringBuilder();
+        for (String cl : preservedLines) {
+            sb.append(cl).append(System.lineSeparator());
+        }
         for (CertEntry e : entries) {
             sb.append(formatLine(e)).append(System.lineSeparator());
         }

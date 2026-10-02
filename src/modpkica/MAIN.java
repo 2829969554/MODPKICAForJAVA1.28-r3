@@ -5,6 +5,8 @@ import com.sun.net.httpserver.HttpServer;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.DigestCalculator;
@@ -57,6 +59,9 @@ public final class MAIN {
     /** 证书登记表 */
     private static CertsDB db;
 
+    /** 安静模式开关：-Dmodpkica.quiet=true 时关闭请求级控制台日志（错误仍输出 stderr）。 */
+    private static final boolean QUIET = Boolean.getBoolean("modpkica.quiet");
+
     private MAIN() {
     }
 
@@ -85,8 +90,11 @@ public final class MAIN {
         server.createContext("/timestamp", MAIN::handleTimestampSha256);
         server.createContext("/rfc3161", MAIN::handleRfc3161);
         server.createContext("/ct/add", MAIN::handleCtAdd);
+        server.createContext("/ct/v1", MAIN::handleCtV1);
         server.createContext("/", MAIN::handleFile);
-        server.setExecutor(null);
+        // 多线程处理请求：OCSP/时间戳/CT/静态文件互不阻塞，响应更快。
+        // CertsDB 已改为 CopyOnWriteArrayList + 锁内写，可安全并发 reload/查询。
+        server.setExecutor(java.util.concurrent.Executors.newFixedThreadPool(8));
         server.start();
 
         // 启动可视化 WebAdmin 管理界面（默认 127.0.0.1:8080，
@@ -108,8 +116,12 @@ public final class MAIN {
         System.out.println("MOD PKI CA RFC3161文档签名专用时间戳(SHA1&SHA256&SM3自适应) 服务启动: http://localhost:"
                 + port + "/rfc3161");
         System.out.println("MOD PKI CA CT日志服务启动: http://localhost:" + port + "/ct/add（RFC 6962 / Certificate Transparency，接收 PEM 预证书+颁发者证书）");
+        System.out.println("MOD PKI CA CT标准API启动(RFC 6962 §4): http://localhost:" + port + "/ct/v1/add-chain | add-pre-chain | get-sth | get-roots | get-entries | get-proof-by-hash | get-sth-consistency | get-entry-and-proof");
         System.out.println("MOD PKI CA 监听端口  :" + port);
         System.out.println("如需修改配置请编辑./PKI/CONFIG.txt文件");
+        if (QUIET) {
+            System.out.println("安静模式已开启(-Dmodpkica.quiet=true)：请求日志不输出控制台，仅写 logs.log");
+        }
         System.out.println("本程序作者：@魔帝本尊  QQ：2829969554");
         System.out.println("MOD PKI CA SERVER支持x.509 证书管理、CRL吊销列表、时间戳服务器、OCSP在线状态协议、自动化签发。");
         System.out.println("本系统仅供学习 x.509 ASN.1编码使用。作者不承担任何由此产生的一切问题。");
@@ -256,6 +268,7 @@ public final class MAIN {
             MLog.append(baseDir, "OCSP处理异常", "错误=" + e);
             System.err.println("OCSP 处理异常: " + e);
             ex.sendResponseHeaders(500, -1);
+            ex.close();
         }
     }
 
@@ -445,6 +458,7 @@ public final class MAIN {
             }
             System.err.println("时间戳处理异常: " + e);
             ex.sendResponseHeaders(500, -1);
+            ex.close();
         }
     }
 
@@ -624,6 +638,7 @@ public final class MAIN {
             MLog.append(baseDir, "时间戳处理异常(RFC3161)", "错误=" + e);
             System.err.println("RFC3161 处理异常: " + e);
             ex.sendResponseHeaders(500, -1);
+            ex.close();
         }
     }
 
@@ -720,6 +735,415 @@ public final class MAIN {
             sendText(ex, 400, "CT Log 错误: " + e.getMessage());
         }
     }
+
+    // ============================================================
+    // RFC 6962 标准 HTTP API（/ct/v1/*，新增，不影响现有 /ct/add）
+    // 接口：add-chain / add-pre-chain / get-sth / get-roots / get-entries /
+    //       get-proof-by-hash / get-sth-consistency / get-entry-and-proof
+    // 所有响应均为 JSON（application/json），错误返回 4xx/5xx + 人类可读消息。
+    // ============================================================
+
+    /** /ct/v1 统一分发入口。 */
+    private static void handleCtV1(HttpExchange ex) throws IOException {
+        String path = ex.getRequestURI().getPath();
+        try {
+            switch (path) {
+                case "/ct/v1/add-chain":          handleCtAddChain(ex); break;
+                case "/ct/v1/add-pre-chain":      handleCtAddPreChain(ex); break;
+                case "/ct/v1/get-sth":            handleCtGetSth(ex); break;
+                case "/ct/v1/get-roots":          handleCtGetRoots(ex); break;
+                case "/ct/v1/get-entries":        handleCtGetEntries(ex); break;
+                case "/ct/v1/get-proof-by-hash":  handleCtGetProofByHash(ex); break;
+                case "/ct/v1/get-sth-consistency":handleCtGetConsistency(ex); break;
+                case "/ct/v1/get-entry-and-proof":handleCtGetEntryAndProof(ex); break;
+                default:
+                    sendJson(ex, 404, "{\"error\":\"unknown CT v1 endpoint: " + path + "\"}");
+            }
+        } catch (IOException e) {
+            // 请求校验/业务错误：RFC 6962 §4 约定 4xx 客户端错误
+            MLog.appendErr(baseDir, "CTLog v1 API 异常", path, String.valueOf(e.getMessage()));
+            log("CTLog v1 API 异常: " + e.getMessage());
+            sendJson(ex, 400, "{\"error\":\"" + jsonEscape(String.valueOf(e.getMessage())) + "\"}");
+        } catch (Exception e) {
+            MLog.appendErr(baseDir, "CTLog v1 API 异常", path, String.valueOf(e));
+            log("CTLog v1 API 异常: " + e);
+            sendJson(ex, 500, "{\"error\":\"" + jsonEscape(String.valueOf(e.getMessage())) + "\"}");
+        }
+    }
+
+    /** POST /ct/v1/add-chain：提交正式证书链，返回该日志的 SCT（RFC 6962 §4.1）。 */
+    private static void handleCtAddChain(HttpExchange ex) throws Exception {
+        if (!"POST".equalsIgnoreCase(ex.getRequestMethod())) {
+            sendJson(ex, 405, "{\"error\":\"add-chain requires POST\"}");
+            return;
+        }
+        String body = new String(readAll(ex.getRequestBody()), StandardCharsets.UTF_8);
+        java.util.Map<String, Object> root = CtLog.MiniJson.parse(body);
+        java.util.List<byte[]> chainDer = parseB64Chain(root.get("chain"));
+        List<X509Certificate> chain = derToCerts(chainDer);
+        if (chain.size() < 1) {
+            throw new IOException("chain 数组为空");
+        }
+        // RFC 6962：add-chain 不接受预证书（含 poison 扩展的必须是 add-pre-chain）
+        if (chain.get(0).getExtensionValue(CtLog.OID_POISON) != null) {
+            throw new IOException("该证书含 poison 扩展（预证书），请使用 add-pre-chain 接口");
+        }
+        verifyChainLinks(chain);
+        X509Certificate leaf = chain.get(0);
+        boolean sm2 = CtLog.isSm2Precert(leaf);
+        CtLog.LogKey k = resolveLogKey(baseDir, queryParam(ex, "log_id"), sm2);
+        long ts = System.currentTimeMillis();
+        CtLog.SctOutcome out = CtLog.signOneSct(baseDir, k, 0, ts, null, null, chainDer);
+        MLog.append(baseDir, "CTLog add-chain",
+                "日志=" + k.description + " log_id=" + k.logId + " 叶子=" + leaf.getSubjectX500Principal(),
+                "已签发 SCT timestamp=" + ts + "，并追加到 Merkle 树");
+        log("CTLog v1 add-chain 叶子=" + leaf.getSubjectX500Principal()
+                + " 日志=" + k.description + " SCT=" + Base64.getEncoder().encodeToString(out.signature).length() + "字节");
+        sendJson(ex, 200, "{\"sct_version\":0,\"id\":\"" + k.logId
+                + "\",\"timestamp\":" + ts
+                + ",\"extensions\":\"\",\"signature\":\""
+                + Base64.getEncoder().encodeToString(out.signature) + "\"}");
+    }
+
+    /** POST /ct/v1/add-pre-chain：提交预证书链，返回该日志的 SCT（RFC 6962 §4.2）。 */
+    private static void handleCtAddPreChain(HttpExchange ex) throws Exception {
+        if (!"POST".equalsIgnoreCase(ex.getRequestMethod())) {
+            sendJson(ex, 405, "{\"error\":\"add-pre-chain requires POST\"}");
+            return;
+        }
+        String body = new String(readAll(ex.getRequestBody()), StandardCharsets.UTF_8);
+        java.util.Map<String, Object> root = CtLog.MiniJson.parse(body);
+        java.util.List<byte[]> chainDer = parseB64Chain(root.get("chain"));
+        List<X509Certificate> chain = derToCerts(chainDer);
+        if (chain.size() < 2) {
+            throw new IOException("add-pre-chain 至少需要预证书 + 颁发者两个证书");
+        }
+        X509Certificate precert = chain.get(0);
+        if (precert.getExtensionValue(CtLog.OID_POISON) == null) {
+            throw new IOException("precert missing poison extension " + CtLog.OID_POISON
+                    + "（正式证书请使用 add-chain 接口）");
+        }
+        verifyChainLinks(chain);
+        // RFC 6962 §3.1：tbs_certificate = 预证书 TBS 删除 poison 扩展
+        byte[] tbs = CtLog.tbsWithoutPoison(precert);
+        byte[] issuerKeyHash = CtLog.sha256(chain.get(1).getPublicKey().getEncoded());
+        boolean sm2 = CtLog.isSm2Precert(precert);
+        CtLog.LogKey k = resolveLogKey(baseDir, queryParam(ex, "log_id"), sm2);
+        long ts = System.currentTimeMillis();
+        CtLog.SctOutcome out = CtLog.signOneSct(baseDir, k, 1, ts, tbs, issuerKeyHash, chainDer);
+        MLog.append(baseDir, "CTLog add-pre-chain",
+                "日志=" + k.description + " log_id=" + k.logId + " 预证书=" + precert.getSubjectX500Principal(),
+                "已签发 SCT timestamp=" + ts + "，并追加到 Merkle 树");
+        log("CTLog v1 add-pre-chain 预证书=" + precert.getSubjectX500Principal()
+                + " 日志=" + k.description);
+        sendJson(ex, 200, "{\"sct_version\":0,\"id\":\"" + k.logId
+                + "\",\"timestamp\":" + ts
+                + ",\"extensions\":\"\",\"signature\":\""
+                + Base64.getEncoder().encodeToString(out.signature) + "\"}");
+    }
+
+    /** GET /ct/v1/get-sth：最新签名树头（RFC 6962 §4.3）。可选 ?log_id= 指定日志，默认第一个 usable。 */
+    private static void handleCtGetSth(HttpExchange ex) throws Exception {
+        CtLog.LogKey k = resolveLogKey(baseDir, queryParam(ex, "log_id"), false);
+        List<CtLog.TreeEntry> es = CtLog.loadTreeEntries(baseDir, k.logId);
+        List<byte[]> hashes = new java.util.ArrayList<>();
+        for (CtLog.TreeEntry e : es) {
+            hashes.add(CtLog.leafHash(Base64.getDecoder().decode(e.leafInput)));
+        }
+        long ts = es.isEmpty() ? System.currentTimeMillis()
+                : CtLog.treeEntryTimestamp(Base64.getDecoder().decode(es.get(es.size() - 1).leafInput));
+        byte[] root = CtLog.mthRoot(hashes);
+        byte[] sig = CtLog.treeHeadSignature(k, ts, root);
+        sendJson(ex, 200, "{\"tree_size\":" + es.size()
+                + ",\"timestamp\":" + ts
+                + ",\"sha256_root_hash\":\"" + Base64.getEncoder().encodeToString(root)
+                + "\",\"tree_head_signature\":\"" + Base64.getEncoder().encodeToString(sig)
+                + "\",\"log_id\":\"" + k.logId + "\"}");
+    }
+
+    /** GET /ct/v1/get-roots：日志接受的根证书（RFC 6962 §4.7，来自 CERTS.txt type=R）。 */
+    private static void handleCtGetRoots(HttpExchange ex) throws Exception {
+        StringBuilder arr = new StringBuilder("{\"certificates\":[");
+        boolean first = true;
+        for (CertsDB.CertEntry e : db.getAll()) {
+            if (e.type != 'R') {
+                continue;
+            }
+            Path p = Paths.get(baseDir, "PKI", "ROOT", e.serial + ".crt");
+            if (!Files.exists(p)) {
+                continue;
+            }
+            byte[] der = Files.readAllBytes(p);
+            // ROOT 目录 .crt 可能为 PEM（-----BEGIN CERTIFICATE-----），RFC 6962 §4.7 要求 DER
+            if (der.length > 0 && der[0] == '-' && new String(der, 0,
+                    Math.min(der.length, 28), StandardCharsets.US_ASCII).contains("-----BEGIN")) {
+                der = X509JsonConverter.pemToDer(der);
+            }
+            if (!first) {
+                arr.append(',');
+            }
+            arr.append('"').append(Base64.getEncoder().encodeToString(der)).append('"');
+            first = false;
+        }
+        arr.append("]}");
+        sendJson(ex, 200, arr.toString());
+    }
+
+    /** GET /ct/v1/get-entries：批量取日志条目（RFC 6962 §4.6）。可选 ?log_id=。 */
+    private static void handleCtGetEntries(HttpExchange ex) throws Exception {
+        int start = intParam(ex, "start", 0);
+        int end = intParam(ex, "end", -1);
+        CtLog.LogKey k = resolveLogKey(baseDir, queryParam(ex, "log_id"), false);
+        List<CtLog.TreeEntry> es = CtLog.loadTreeEntries(baseDir, k.logId);
+        if (end < 0) {
+            end = es.size() - 1;
+        }
+        if (start < 0 || start >= es.size() || end < start) {
+            throw new IOException("无效范围 start=" + start + " end=" + end + "（tree_size=" + es.size() + "）");
+        }
+        // RFC：允许 end >= tree_size 时返回部分（截断到有效区间）
+        if (end >= es.size()) {
+            end = es.size() - 1;
+        }
+        StringBuilder arr = new StringBuilder("{\"entries\":[");
+        for (int i = start; i <= end; i++) {
+            CtLog.TreeEntry e = es.get(i);
+            if (i > start) {
+                arr.append(',');
+            }
+            arr.append("{\"leaf_input\":\"").append(e.leafInput)
+                    .append("\",\"extra_data\":\"").append(e.extraData).append("\"}");
+        }
+        arr.append("]}");
+        sendJson(ex, 200, arr.toString());
+    }
+
+    /** GET /ct/v1/get-proof-by-hash：按叶子哈希取审计证明（RFC 6962 §4.5）。可选 ?log_id=。 */
+    private static void handleCtGetProofByHash(HttpExchange ex) throws Exception {
+        String hashB64 = queryParam(ex, "hash");
+        if (hashB64.isEmpty()) {
+            throw new IOException("缺少 hash 参数（base64 叶子哈希）");
+        }
+        int treeSize = intParam(ex, "tree_size", -1);
+        CtLog.LogKey k = resolveLogKey(baseDir, queryParam(ex, "log_id"), false);
+        List<CtLog.TreeEntry> es = CtLog.loadTreeEntries(baseDir, k.logId);
+        if (treeSize < 0 || treeSize > es.size()) {
+            treeSize = es.size();
+        }
+        List<byte[]> hashes = new java.util.ArrayList<>();
+        for (CtLog.TreeEntry e : es) {
+            hashes.add(CtLog.leafHash(Base64.getDecoder().decode(e.leafInput)));
+        }
+        byte[] target = Base64.getDecoder().decode(hashB64);
+        int idx = -1;
+        for (int i = 0; i < treeSize; i++) {
+            if (java.util.Arrays.equals(hashes.get(i), target)) {
+                idx = i;
+                break;
+            }
+        }
+        if (idx < 0) {
+            throw new IOException("hash 未在日志中找到（tree_size=" + treeSize + "）");
+        }
+        List<byte[]> path = CtLog.auditPath(hashes.subList(0, treeSize), idx);
+        StringBuilder arr = new StringBuilder("{\"leaf_index\":" + idx + ",\"audit_path\":[");
+        for (int i = 0; i < path.size(); i++) {
+            if (i > 0) {
+                arr.append(',');
+            }
+            arr.append('"').append(Base64.getEncoder().encodeToString(path.get(i))).append('"');
+        }
+        arr.append("]}");
+        sendJson(ex, 200, arr.toString());
+    }
+
+    /** GET /ct/v1/get-sth-consistency：两棵树头间一致性证明（RFC 6962 §4.4）。可选 ?log_id=。 */
+    private static void handleCtGetConsistency(HttpExchange ex) throws Exception {
+        int first = intParam(ex, "first", -1);
+        int second = intParam(ex, "second", -1);
+        CtLog.LogKey k = resolveLogKey(baseDir, queryParam(ex, "log_id"), false);
+        List<CtLog.TreeEntry> es = CtLog.loadTreeEntries(baseDir, k.logId);
+        if (first < 0 || second < 0 || first > second || second > es.size()) {
+            throw new IOException("无效范围 first=" + first + " second=" + second + "（tree_size=" + es.size() + "）");
+        }
+        List<byte[]> hashes = new java.util.ArrayList<>();
+        for (CtLog.TreeEntry e : es) {
+            hashes.add(CtLog.leafHash(Base64.getDecoder().decode(e.leafInput)));
+        }
+        List<byte[]> proof = CtLog.consistencyProof(hashes, first, second);
+        StringBuilder arr = new StringBuilder("{\"consistency\":[");
+        for (int i = 0; i < proof.size(); i++) {
+            if (i > 0) {
+                arr.append(',');
+            }
+            arr.append('"').append(Base64.getEncoder().encodeToString(proof.get(i))).append('"');
+        }
+        arr.append("]}");
+        sendJson(ex, 200, arr.toString());
+    }
+
+    /** GET /ct/v1/get-entry-and-proof：按索引取条目 + 审计证明（RFC 6962 §4.8）。可选 ?log_id=。 */
+    private static void handleCtGetEntryAndProof(HttpExchange ex) throws Exception {
+        int leafIndex = intParam(ex, "leaf_index", -1);
+        int treeSize = intParam(ex, "tree_size", -1);
+        CtLog.LogKey k = resolveLogKey(baseDir, queryParam(ex, "log_id"), false);
+        List<CtLog.TreeEntry> es = CtLog.loadTreeEntries(baseDir, k.logId);
+        if (treeSize < 0 || treeSize > es.size()) {
+            treeSize = es.size();
+        }
+        if (leafIndex < 0 || leafIndex >= treeSize) {
+            throw new IOException("无效 leaf_index=" + leafIndex + "（tree_size=" + treeSize + "）");
+        }
+        CtLog.TreeEntry e = es.get(leafIndex);
+        List<byte[]> hashes = new java.util.ArrayList<>();
+        for (CtLog.TreeEntry x : es) {
+            hashes.add(CtLog.leafHash(Base64.getDecoder().decode(x.leafInput)));
+        }
+        List<byte[]> path = CtLog.auditPath(hashes.subList(0, treeSize), leafIndex);
+        StringBuilder arr = new StringBuilder("{\"leaf_input\":\"").append(e.leafInput)
+                .append("\",\"extra_data\":\"").append(e.extraData)
+                .append("\",\"audit_path\":[");
+        for (int i = 0; i < path.size(); i++) {
+            if (i > 0) {
+                arr.append(',');
+            }
+            arr.append('"').append(Base64.getEncoder().encodeToString(path.get(i))).append('"');
+        }
+        arr.append("]}");
+        sendJson(ex, 200, arr.toString());
+    }
+
+    /** 解析 add-chain/add-pre-chain 的 chain 数组（base64 DER 证书）。 */
+    private static java.util.List<byte[]> parseB64Chain(Object chainObj) throws IOException {
+        if (!(chainObj instanceof java.util.List)) {
+            throw new IOException("chain 必须是 base64 证书数组");
+        }
+        java.util.List<byte[]> out = new java.util.ArrayList<>();
+        for (Object o : (java.util.List<?>) chainObj) {
+            String b64 = CtLog.MiniJson.strVal(o);
+            if (b64 == null || b64.isEmpty()) {
+                throw new IOException("chain 中存在空证书项");
+            }
+            try {
+                out.add(Base64.getDecoder().decode(b64));
+            } catch (Exception e) {
+                throw new IOException("chain 中 base64 解码失败: " + e);
+            }
+        }
+        return out;
+    }
+
+    /** DER 字节列表 → X509Certificate 列表。 */
+    private static List<X509Certificate> derToCerts(java.util.List<byte[]> ders) throws Exception {
+        List<X509Certificate> out = new java.util.ArrayList<>();
+        for (byte[] der : ders) {
+            out.add(new JcaX509CertificateConverter().setProvider("BC")
+                    .getCertificate(new X509CertificateHolder(der)));
+        }
+        return out;
+    }
+
+    /** 校验链的颁发者-使用者关系与逐级签名（RFC 6962 §4.1 链校验）。 */
+    private static void verifyChainLinks(List<X509Certificate> chain) throws IOException {
+        for (int i = 0; i + 1 < chain.size(); i++) {
+            X509Certificate c = chain.get(i);
+            X509Certificate p = chain.get(i + 1);
+            if (!c.getIssuerX500Principal().equals(p.getSubjectX500Principal())) {
+                throw new IOException("chain[" + i + "] 颁发者与 chain[" + (i + 1) + "] 使用者不匹配："
+                        + c.getIssuerX500Principal() + " != " + p.getSubjectX500Principal());
+            }
+            try {
+                c.verify(p.getPublicKey(), "BC");
+            } catch (Exception ve) {
+                throw new IOException("chain[" + i + "] 签名验证失败（用 chain[" + (i + 1) + "] 公钥）: " + ve);
+            }
+        }
+    }
+
+    /**
+     * 解析日志密钥：优先 ?log_id= 精确匹配；否则选第一个 usable 且类型匹配
+     * （sm2Only 时只选 SM2）的密钥。无可用密钥抛异常。
+     */
+    private static CtLog.LogKey resolveLogKey(String baseDir, String logIdParam, boolean sm2Only)
+            throws IOException {
+        List<CtLog.LogKey> keys = CtLog.loadKeys(baseDir);
+        if (!logIdParam.isEmpty()) {
+            for (CtLog.LogKey k : keys) {
+                if (k.logId.equals(logIdParam)) {
+                    if (!"usable".equals(k.state)) {
+                        throw new IOException("指定日志密钥已暂停（disable）: " + logIdParam);
+                    }
+                    if (sm2Only && !"SM2".equalsIgnoreCase(k.type)) {
+                        throw new IOException("预证书类型为 SM2，指定日志密钥类型不匹配: " + k.type);
+                    }
+                    return k;
+                }
+            }
+            throw new IOException("log_id 未找到: " + logIdParam);
+        }
+        for (CtLog.LogKey k : keys) {
+            if (!"usable".equals(k.state)) {
+                continue;
+            }
+            if (sm2Only && !"SM2".equalsIgnoreCase(k.type)) {
+                continue;
+            }
+            return k;
+        }
+        throw new IOException("没有 usable 的 CT 日志密钥，请先在「SCT服务管理」生成并启用密钥");
+    }
+
+    /** 读取 GET query 参数（无则返回空串）。 */
+    private static String queryParam(HttpExchange ex, String name) {
+        String q = ex.getRequestURI().getRawQuery();
+        if (q == null || q.isEmpty()) {
+            return "";
+        }
+        for (String pair : q.split("&")) {
+            int eq = pair.indexOf('=');
+            String k = eq >= 0 ? pair.substring(0, eq) : pair;
+            String v = eq >= 0 ? pair.substring(eq + 1) : "";
+            if (name.equals(k)) {
+                try {
+                    return java.net.URLDecoder.decode(v, StandardCharsets.UTF_8);
+                } catch (Exception e) {
+                    return v;
+                }
+            }
+        }
+        return "";
+    }
+
+    /** 读取 GET 整数参数，缺失/非法返回默认值。 */
+    private static int intParam(HttpExchange ex, String name, int def) {
+        String v = queryParam(ex, name);
+        if (v.isEmpty()) {
+            return def;
+        }
+        try {
+            return Integer.parseInt(v);
+        } catch (Exception e) {
+            return def;
+        }
+    }
+
+    /** 发送 JSON 响应。 */
+    private static void sendJson(HttpExchange ex, int code, String json) throws IOException {
+        byte[] msg = json.getBytes(StandardCharsets.UTF_8);
+        ex.getResponseHeaders().set("Content-Type", "application/json");
+        ex.sendResponseHeaders(code, msg.length);
+        try (OutputStream os = ex.getResponseBody()) {
+            os.write(msg);
+        }
+    }
+
+    /** JSON 字符串字段转义（用于错误消息）。 */
+    private static String jsonEscape(String s) {
+        if (s == null) {
+            return "";
+        }
+        return s.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
     // ============================================================
     // 辅助函数
     // ============================================================
@@ -806,8 +1230,9 @@ public final class MAIN {
         }
     }
 
-    /** 写文件（相对 baseDir，自动创建父目录）。 */
-    private static void writeFile(String relPath, byte[] data) throws IOException {
+    /** 写文件（相对 baseDir，自动创建父目录）。synchronized：多线程下文件写串行化，
+     *  避免 OCSP/时间戳/CT 的调试文件并发交错覆盖（Files.write 非原子）。 */
+    private static synchronized void writeFile(String relPath, byte[] data) throws IOException {
         Path p = Paths.get(baseDir, relPath);
         Path parent = p.getParent();
         if (parent != null && !Files.exists(parent)) {
@@ -845,8 +1270,11 @@ public final class MAIN {
         return -1;
     }
 
-    /** 控制台日志（前缀时间）。 */
+    /** 控制台请求日志（前缀时间；安静模式下静默，日志仍完整写入 PKI/logs.log）。 */
     private static void log(String msg) {
+        if (QUIET) {
+            return;
+        }
         System.out.println(new java.text.SimpleDateFormat("yyyy/MM/dd HH:mm:ss")
                 .format(new Date()) + " " + msg);
     }

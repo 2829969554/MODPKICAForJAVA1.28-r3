@@ -206,9 +206,18 @@ public final class CertUtil {
         if ("EdDSA".equalsIgnoreCase(keyType)) {
             return new ASN1ObjectIdentifier("1.3.101.112");
         }
-        // PQC（ML-DSA 等）：签名算法 OID 即密钥算法 OID（内部自带哈希）
+        // PQC（ML-DSA 等）：签名算法 OID 即密钥算法 OID（内部自带哈希），按规格区分：
+        // 2.16.840.1.101.3.4.3.17=ML-DSA-44 / .18=ML-DSA-65 / .19=ML-DSA-87（FIPS 204）
         if ("PQC".equalsIgnoreCase(keyType)) {
-            return new ASN1ObjectIdentifier("2.16.840.1.101.3.4.3.18"); // 默认 ML-DSA-65
+            switch (normalizePqcSpec(hash)) {
+                case "ML-DSA-44":
+                    return new ASN1ObjectIdentifier("2.16.840.1.101.3.4.3.17");
+                case "ML-DSA-87":
+                    return new ASN1ObjectIdentifier("2.16.840.1.101.3.4.3.19");
+                case "ML-DSA-65":
+                default:
+                    return new ASN1ObjectIdentifier("2.16.840.1.101.3.4.3.18");
+            }
         }
         String h = normalizeHash(hash);
         if ("RSA".equalsIgnoreCase(keyType)) {
@@ -608,8 +617,10 @@ public final class CertUtil {
      * 参考 Go 版 internal/cps/cps.go。
      */
     private static PolicyInformation buildCpsPolicy(String cpsUri, String userNotice) {
-        // 策略 OID（占位），限定符指向 CPS / UserNotice
-        ASN1ObjectIdentifier policyOid = new ASN1ObjectIdentifier("1.2.3.4.1");
+        // 策略 OID：MODPKICA 项目标准证书颁发策略（与签发证书/证书验证输出一致），
+        // 限定符指向 CPS / UserNotice
+        ASN1ObjectIdentifier policyOid =
+                new ASN1ObjectIdentifier("1.3.6.1.4.1.4146.1.95");
         java.util.List<PolicyQualifierInfo> qualifiers = new java.util.ArrayList<>();
 
         // CPS URI（IA5String）：BC 便捷构造器自动使用 OID 1.3.6.1.5.5.7.2.1

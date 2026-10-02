@@ -103,11 +103,16 @@ public final class PemIO {
 
         switch (type) {
             case "SM2 PRIVATE KEY":
-            case "PRIVATE KEY":
-            case "ENCRYPTED PRIVATE KEY": {
+            case "PRIVATE KEY": {
                 // PKCS#8 直通
                 PrivateKeyInfo pki = PrivateKeyInfo.getInstance(der);
                 return PrivateKeyFactory.createKey(pki);
+            }
+            case "ENCRYPTED PRIVATE KEY": {
+                // 加密私钥（EncryptedPrivateKeyInfo）需密码解密，本项目离线环境不存储口令，
+                // 明确报错而非解析失败（旧实现会把加密块当 PKCS#8 解析，报错难以理解）
+                throw new IllegalArgumentException(
+                        "不支持加密私钥（ENCRYPTED PRIVATE KEY）：请先解密为标准 PKCS#8 私钥再导入");
             }
             case "RSA PRIVATE KEY": {
                 // PKCS#1 -> PrivateKeyInfo
@@ -229,9 +234,29 @@ public final class PemIO {
             }
             // 标准 PRIVATE KEY：读算法 OID 判断
             PrivateKeyInfo pki = PrivateKeyInfo.getInstance(po.getContent());
-            ASN1ObjectIdentifier alg = pki.getPrivateKeyAlgorithm().getAlgorithm();
+            AlgorithmIdentifier algId = pki.getPrivateKeyAlgorithm();
+            ASN1ObjectIdentifier alg = algId.getAlgorithm();
             if (Sm2Util.OID_SM2_PUBLIC_KEY.equals(alg.getId())) {
                 return "SM2";
+            }
+            if ("1.2.840.10045.2.1".equals(alg.getId())) {
+                // id-ecPublicKey：需再看曲线参数——SM2 曲线（1.2.156.10197.1.301）为 SM2，
+                // 其它为 ECC（兼容第三方工具导出的标准 PKCS#8 国密密钥）
+                ASN1Encodable params = algId.getParameters();
+                if (params != null) {
+                    ASN1Primitive p = params.toASN1Primitive();
+                    if (p instanceof ASN1ObjectIdentifier
+                            && Sm2Util.OID_SM2_PUBLIC_KEY.equals(((ASN1ObjectIdentifier) p).getId())) {
+                        return "SM2";
+                    }
+                }
+                return "ECC";
+            }
+            if ("1.2.840.113549.1.1.1".equals(alg.getId())) {
+                return "RSA"; // rsaEncryption（标准 PKCS#8 RSA 私钥）
+            }
+            if ("1.2.840.113549.1.1.10".equals(alg.getId())) {
+                return "RSA-PSS"; // rsassaPss
             }
             if ("1.2.840.10040.4.1".equals(alg.getId())) {
                 return "DSA"; // id-dsa
@@ -242,6 +267,7 @@ public final class PemIO {
             if (isPqcOid(alg.getId())) {
                 return "PQC";
             }
+            // 未知算法：保留原行为按 ECC 兜底（调用方会因密钥不匹配而显式报错）
             return "ECC";
         }
         return null;
@@ -303,7 +329,7 @@ public final class PemIO {
         }
     }
 
-    /** 把 PemObject 写出到文件。 */
+    /** 把 PemObject 写出到文件（原子写：tmp → fsync → 备份 → move，避免断电/并发读到半截文件）。 */
     private static void writePemObject(String path, PemObject po) throws Exception {
         Path out = Paths.get(path);
         if (out.getParent() != null) {
@@ -313,6 +339,30 @@ public final class PemIO {
         try (PemWriter pw = new PemWriter(sw)) {
             pw.writeObject(po);
         }
-        Files.write(out, sw.toString().getBytes(StandardCharsets.UTF_8));
+        byte[] bytes = sw.toString().getBytes(StandardCharsets.UTF_8);
+        atomicWrite(out, bytes);
+    }
+
+    /** 原子写文件（对齐 CertsDB.rewriteAll：tmp → fsync → .bak → move），POSIX 上私钥收紧为 600。 */
+    public static void atomicWrite(Path out, byte[] bytes) throws Exception {
+        Path tmp = out.resolveSibling(out.getFileName() + ".tmp");
+        try (java.io.FileOutputStream fos = new java.io.FileOutputStream(tmp.toString())) {
+            fos.write(bytes);
+            fos.getFD().sync();
+        }
+        if (Files.exists(out)) {
+            Files.copy(out, out.resolveSibling(out.getFileName() + ".bak"),
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        }
+        Files.move(tmp, out, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        // 私钥/证书类敏感文件：POSIX 平台收紧权限（Windows 无 POSIX 权限，忽略）
+        try {
+            Files.setPosixFilePermissions(out,
+                    java.nio.file.attribute.PosixFilePermissions.fromString("rw-------"));
+        } catch (UnsupportedOperationException ignored) {
+            // 非 POSIX 文件系统（如 Windows NTFS）不支持，跳过
+        } catch (java.io.IOException ignored) {
+            // 权限设置失败不影响写入结果
+        }
     }
 }

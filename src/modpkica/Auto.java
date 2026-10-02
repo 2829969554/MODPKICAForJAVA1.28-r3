@@ -53,7 +53,7 @@ public final class Auto {
         }
         if ("newcert".equalsIgnoreCase(cmd) && args.length >= 5) {
             // 参数：序列号 类型 状态 原因 时间 颁发者ID 算法
-            String time = "null".equals(args[4]) ? nowMinus3Days() : args[4];
+            String time = "null".equals(args[4]) ? now() : args[4];
             addCert(baseDir, args[1], args[2], args[3], time, args[5], args[6]);
             return;
         }
@@ -61,9 +61,9 @@ public final class Auto {
         System.out.println("用法: auto init | auto revoke 序列号 [原因] | auto newcert 序列号 类型 状态 原因 时间 颁发者ID 算法");
     }
 
-    /** 当前时间 - 3 天（对齐 Go 版 getmodtimeNow）。 */
-    private static String nowMinus3Days() {
-        return LocalDateTime.now().minusDays(3).format(MOD_TIME);
+    /** 当前真实时间（登记/吊销时间戳，用户确认不偏移）。 */
+    private static String now() {
+        return LocalDateTime.now().format(MOD_TIME);
     }
 
     /** 供 ADMIN 内部调用：初始化环境（备份 + 模板）。 */
@@ -145,7 +145,7 @@ public final class Auto {
     private static void revokeCert(String baseDir, String serial, String reason) throws Exception {
         Path certs = Paths.get(baseDir, "PKI", "CERTS.txt");
         List<String> lines = Files.readAllLines(certs, StandardCharsets.UTF_8);
-        String newTime = nowMinus3Days();
+        String newTime = now();
         boolean found = false;
         StringBuilder sb = new StringBuilder();
         for (String line : lines) {

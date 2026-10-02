@@ -63,7 +63,8 @@ echo "  [2] java \"-Dfile.encoding=UTF-8\" -cp \"out:$RUN_CP\" modpkica.WebAdmin
 echo "      (GUI only)"
 echo "  [3] java \"-Dfile.encoding=UTF-8\" -cp \"out:$RUN_CP\" modpkica.Admin"
 echo "  [4] java \"-Dfile.encoding=UTF-8\" -cp \"out:$RUN_CP\" modpkica.MakeRoot \"CN=Root,O=Org,C=CN\" 2048 sha256 RSA"
-echo "  [5] java \"-Dfile.encoding=UTF-8\" -cp \"out:$RUN_CP\" modpkica.MakeCert \"CN=www.test.com\" 2048 sha256 1 1 0 1 \"www.test.com\" null null root RSA"
+echo "  [5] java \"-Dfile.encoding=UTF-8\" -cp \"out:$RUN_CP\" modpkica.MakeCert \"CN=www.test.com\" 2048 sha256 1 1 0 1 \"www.test.com\" null null ROOTSERIAL RSA"
+echo "      (ROOTSERIAL = CERTS.txt 中 R 类型根证书的序列号，多根模型已废除 root 别名)"
 echo "  [6] java \"-Dfile.encoding=UTF-8\" -cp \"out:$RUN_CP\" modpkica.RootGetCrl"
 echo "  [7] java \"-Dfile.encoding=UTF-8\" -cp \"out:$RUN_CP\" modpkica.CertVerify cert.crt"
 echo "  [8] java \"-Dfile.encoding=UTF-8\" -cp \"out:$RUN_CP\" modpkica.Auto revoke 1234567890 1"
@@ -87,7 +88,7 @@ if [ -n "$RUN" ]; then
         2) java "-Dfile.encoding=UTF-8" -cp "out:$RUN_CP" modpkica.WebAdmin ;;
         3) java "-Dfile.encoding=UTF-8" -cp "out:$RUN_CP" modpkica.Admin ;;
         4) java "-Dfile.encoding=UTF-8" -cp "out:$RUN_CP" modpkica.MakeRoot "CN=Root,O=Org,C=CN" 2048 sha256 RSA ;;
-        5) java "-Dfile.encoding=UTF-8" -cp "out:$RUN_CP" modpkica.MakeCert "CN=www.test.com" 2048 sha256 1 1 0 1 "www.test.com" null null root RSA ;;
+        5) java "-Dfile.encoding=UTF-8" -cp "out:$RUN_CP" modpkica.MakeCert "CN=www.test.com" 2048 sha256 1 1 0 1 "www.test.com" null null ROOTSERIAL RSA ;; # ROOTSERIAL = R 类型根证书序列号
         6) java "-Dfile.encoding=UTF-8" -cp "out:$RUN_CP" modpkica.RootGetCrl ;;
         7) java "-Dfile.encoding=UTF-8" -cp "out:$RUN_CP" modpkica.CertVerify cert.crt ;;
         8) java "-Dfile.encoding=UTF-8" -cp "out:$RUN_CP" modpkica.Auto revoke 1234567890 1 ;;

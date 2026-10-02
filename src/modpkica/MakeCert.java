@@ -825,8 +825,13 @@ public final class MakeCert {
     }
 
     private int parseKeyUsage(String mode) {
-        if (mode == null || mode.isEmpty()) {
+        if (mode == null) {
+            // 命令行完全缺省：保持默认通用组合（兼容历史行为）
             return 1 | 2 | 4 | 8 | 16;
+        }
+        if (mode.isEmpty() || "null".equalsIgnoreCase(mode)) {
+            // 显式空值 = 证书不携带 KeyUsage 扩展
+            return 0;
         }
         switch (mode) {
             case "1": return 1 | 2 | 4 | 8 | 16;
@@ -1015,7 +1020,9 @@ public final class MakeCert {
         BasicConstraints bc = (pathLen == null) ? new BasicConstraints(isCa)
                 : new BasicConstraints(pathLen.intValue());
         cb.addExtension(Extension.basicConstraints, true, bc);
-        cb.addExtension(Extension.keyUsage, true, new KeyUsage(keyUsage));
+        if (keyUsage != 0) {
+            cb.addExtension(Extension.keyUsage, true, new KeyUsage(keyUsage));
+        }
         cb.addExtension(Extension.authorityKeyIdentifier, false,
                 new AuthorityKeyIdentifier(issuerSki));
         cb.addExtension(Extension.subjectKeyIdentifier, false,
@@ -1112,14 +1119,16 @@ public final class MakeCert {
         e.type = isCa ? 'C' : 'E';
         e.status = 'V';
         e.reason = 0;
-        e.time = LocalDateTime.now().minusDays(3);
+        e.time = LocalDateTime.now(); // 登记时间=当前真实签发时间
         e.issuerId = issuerId; // 实际用颁发者序列号
         e.algo = algo;
         db.addEntry(e);
     }
 
-    /** 从 CERTS.txt 删除指定序列号行（重跑替换旧登记）。 */
-    private void removeCertsLine(String serial) throws Exception {
+    /** 从 CERTS.txt 删除指定序列号行（重跑替换旧登记）。
+     *  保留 # 注释/空行（与 CertsDB 语义一致）；PemIO.atomicWrite 原子替换，
+     *  避免 TSA/OCSP 重跑时并发或中断导致 CERTS.txt 半截。 */
+    private synchronized void removeCertsLine(String serial) throws Exception {
         java.nio.file.Path p = java.nio.file.Paths.get(baseDir + "/PKI/CERTS.txt");
         if (!java.nio.file.Files.exists(p)) {
             return;
@@ -1128,7 +1137,12 @@ public final class MakeCert {
                 java.nio.charset.StandardCharsets.UTF_8);
         List<String> out = new ArrayList<>();
         for (String line : lines) {
-            String[] f = line.trim().split("\\s+");
+            String t = line.trim();
+            if (t.isEmpty() || t.startsWith("#")) {
+                out.add(line);
+                continue;
+            }
+            String[] f = t.split("\\s+");
             if (f.length > 0 && f[0].equals(serial)) {
                 continue;
             }
@@ -1138,7 +1152,7 @@ public final class MakeCert {
             out.remove(out.size() - 1);
         }
         String text = String.join("\n", out) + "\n";
-        java.nio.file.Files.write(p, text.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        PemIO.atomicWrite(p, text.getBytes(java.nio.charset.StandardCharsets.UTF_8));
     }
 
     // ===================== 工具 =====================
